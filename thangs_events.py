@@ -11,17 +11,19 @@ class ThangsEvents(object):
 
     def send_amplitude_event(self, event_name, event_properties=None):
         threading.Thread(
-            target=self._send_amplitude_event, args=(event_name, event_properties)
+            target=self._send_amplitude_event,
+            args=(event_name, event_properties)
         ).start()
         return
 
     def _construct_event(self, event_name, event_properties):
         event = {
-            "event_type": self._event_name(event_name),
-            "device_id": str(self.deviceId),
+            'event_type': self._event_name(event_name),
+            'device_id': str(self.deviceId),
+            'event_properties': {}
         }
         if event_properties:
-            event.event_properties = event_properties
+            event['event_properties'] = event_properties
 
         return event
 
@@ -29,5 +31,5 @@ class ThangsEvents(object):
         return "thangs breeze - " + name
 
     def _send_amplitude_event(self, event_name, event_properties):
-        event = self._construct_event(event_name, event_properties);
+        event = self._construct_event(event_name, event_properties)
         requests.post(self.ampURL, json=[event])

@@ -26,12 +26,16 @@ amplitude = ThangsEvents()
 
 class ThangsFetcher():
     def __init__(self, callback=None):
-        self.thumbnails = []
+        self.search_thread = None
+        self.search_callback = callback
         self.context = ""
         self.thangs_ui_mode = ''
-        self.modelIds = []
-        self.modelTitles = []
-        self.filePaths = []
+        self.Directory = ""
+        self.pcoll = ""
+        self.query = ""
+        self.devideOS = ""
+        self.deviceVer = ""
+
         self.modelInfo = []
         self.enumItems = []
         self.enumModels1 = []
@@ -47,20 +51,51 @@ class ThangsFetcher():
         self.filetype = []
         self.length = []
         self.thumbnailNumbers = []
-        self.totalModels = 0
-        self.Counter = 0
-        self.pcoll = ""
-        self.PageNumber = 1
-        self.Directory = ""
-        self.PageTotal = 0
+
         self.preview_collections = {}
-        self.eventCall = ""
+
+        self.totalModels = 0
+        self.PageTotal = 0
+        self.PageNumber = 1
         self.CurrentPage = 1
+
         self.searching = False
         self.failed = False
-        self.query = ""
+        pass
+
+    def reset(self):
         self.search_thread = None
-        self.search_callback = callback
+        self.context = ""
+        self.thangs_ui_mode = ''
+        self.Directory = ""
+        self.pcoll = ""
+        self.query = ""
+
+        self.modelInfo = []
+        self.enumItems = []
+        self.enumModels1 = []
+        self.enumModels2 = []
+        self.enumModels3 = []
+        self.enumModels4 = []
+        self.enumModels5 = []
+        self.enumModels6 = []
+        self.enumModels7 = []
+        self.enumModels8 = []
+        self.licenses = []
+        self.creators = []
+        self.filetype = []
+        self.length = []
+        self.thumbnailNumbers = []
+
+        self.preview_collections = {}
+
+        self.totalModels = 0
+        self.PageTotal = 0
+        self.PageNumber = 1
+        self.CurrentPage = 1
+
+        self.searching = False
+        self.failed = False
 
         pass
 
@@ -83,36 +118,6 @@ class ThangsFetcher():
             return True
         return False
 
-    def reset(self):
-        self.thumbnails = []
-        self.context = ""
-        self.thangs_ui_mode = ''
-        self.modelIds = []
-        self.modelTitles = []
-        self.filePaths = []
-        self.modelInfo = []
-        self.enumItems = []
-        self.enumModels = []
-        self.totalModels = 0
-        self.i = 0
-        self.x = 0
-        self.Counter = 0
-        self.pcoll = ""
-        self.PageNumber = 1
-        self.Directory = ""
-        self.PageTotal = 0
-        self.preview_collections = {}
-        self.eventCall = ""
-        self.CurrentPage = 1
-        self.searching = False
-        self.failed = False
-        self.query = ""
-        self.deviceId = ""
-        self.ampURL = 'https://production-api.thangs.com/system/events'
-        self.search_thread = None
-        self.event_thread = None
-        pass
-
     def get_total_results(self, response):
         if response.status_code != 200:
             self.totalModels = 0
@@ -128,7 +133,6 @@ class ThangsFetcher():
                 self.PageTotal = math.ceil(self.totalModels/8)
 
             amplitude.send_amplitude_event("search results", event_properties={"number_of_results": self.totalModels})
-
 
     def get_http_search(self):
         print("Started Search")
@@ -156,11 +160,8 @@ class ThangsFetcher():
             self.search_callback()
             return
 
-        self.thumbnails.clear()
-        self.modelIds.clear()
-        self.modelTitles.clear()
-        self.filePaths.clear()
         self.modelInfo.clear()
+        
         self.enumItems.clear()
         self.enumModels1.clear()
         self.enumModels2.clear()
@@ -170,6 +171,7 @@ class ThangsFetcher():
         self.enumModels6.clear()
         self.enumModels7.clear()
         self.enumModels8.clear()
+
         self.licenses.clear()
         self.creators.clear()
         self.filetype.clear()
@@ -207,7 +209,7 @@ class ThangsFetcher():
 
         self.pcoll = self.preview_collections["main"]
 
-        amplitude.send_amplitude_event("search started", event_properties={'searchTerm': self.query});
+        amplitude.send_amplitude_event("search started", event_properties={'searchTerm': self.query})
 
         response = requests.get(
             "https://thangs.com/api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query+"&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs")
@@ -215,7 +217,7 @@ class ThangsFetcher():
         self.get_total_results(response)
 
         if response.status_code != 200:
-            amplitude.send_amplitude_event("search failed")
+            amplitude.send_amplitude_event("search failed", event_properties={'device_os': str(self.devideOS), 'device_ver': str(self.deviceVer), 'searchTerm': self.query})
 
         else:
             responseData = response.json()
@@ -228,16 +230,16 @@ class ThangsFetcher():
                     thumbnailAPIURL = item["thumbnailUrl"]
                     thumbnailURL = requests.head(thumbnailAPIURL)
                     thumbnail = thumbnailURL.headers["Location"]
-                self.thumbnails.append(thumbnail)
-                modelId = item["modelId"]
-                self.modelIds.append(modelId)
 
                 modelTitle = item["modelTitle"]
-                self.modelTitles.append(modelTitle)
                 product_url = item["attributionUrl"]
+                modelId = item["modelId"]
 
+                # Stateful Model Information
                 self.modelInfo.append(
                     tuple([modelTitle, product_url, modelId]))
+                self.enumItems.append(
+                    (modelTitle, modelId, item["ownerUsername"], "LCs Coming Soon!", item["originalFileType"]))
 
                 thumbnail = thumbnail.replace("https", "http", 1)
 
@@ -247,12 +249,8 @@ class ThangsFetcher():
 
                 thumb = self.pcoll.load(modelId, filepath, 'IMAGE')
 
-                self.filePaths.append(filePath[0])
-
                 self.thumbnailNumbers.append(thumb.icon_id)
 
-                self.enumItems.append(
-                    (modelTitle, modelId, item["ownerUsername"], "LCs Coming Soon!", item["originalFileType"]))
                 z = 0
                 if self.i == 0:
                     self.enumModels1.append(
@@ -291,15 +289,18 @@ class ThangsFetcher():
                     self.x = z
                     for part in parts:
                         ModelTitle = part["modelFileName"]
+                        modelID = part["modelId"]
+
                         thumbnailAPIURL = part["thumbnailUrl"]
                         thumbnailURL = requests.head(thumbnailAPIURL)
                         thumbnail = thumbnailURL.headers["Location"]
                         thumbnail = thumbnail.replace("https", "http", 1)
+
                         filePath = urllib.request.urlretrieve(thumbnail)
                         filePath = filePath[0]
-                        modelID = part["modelId"]
                         filepath = os.path.join(modelID, filePath)
                         thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
+
                         if self.i == 0:
                             self.enumModels1.append(
                                 (modelID, ModelTitle, "", thumb.icon_id, self.x+1))
