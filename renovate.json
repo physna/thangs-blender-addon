@@ -1,0 +1,9 @@
+{
+  "enabledManagers": ["circleci"],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["*"],
+      "groupName": "circleci"
+    }
+  ]
+}
