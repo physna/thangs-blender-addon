@@ -127,7 +127,8 @@ class ThangsFetcher():
             else:
                 self.PageTotal = math.ceil(self.totalModels/8)
 
-            amplitude.send_amplitude_event("saerch results", event_properties={"number_of_results": self.totalModels})
+            amplitude.send_amplitude_event("search results", event_properties={"number_of_results": self.totalModels})
+
 
     def get_http_search(self):
         print("Started Search")
