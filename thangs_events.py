@@ -22,7 +22,7 @@ from bpy_extras.object_utils import AddObjectHelper, object_data_add
 from bpy.app.handlers import persistent
 
 
-class ThangsEvents():
+class ThangsEvents(object):
     def __init__(self):
         self.deviceId = ""
         self.devideOS = ""
@@ -32,13 +32,13 @@ class ThangsEvents():
 
     def send_amplitude_event(self, event_name, event_properties=None):
         threading.Thread(
-            target=self.amplitudeEventCall, args=(event_name, event_properties)
+            target=self._send_amplitude_event, args=(event_name, event_properties)
         ).start()
         return
 
-    def construct_event(self, event_name, event_properties):
+    def _construct_event(self, event_name, event_properties):
         event = {
-            "event_type": self.event_name(event_name),
+            "event_type": self._event_name(event_name),
             "device_id": str(self.deviceId),
             "device_os": str(self.devideOS),
             "device_ver": str(self.deviceVer)
@@ -48,9 +48,9 @@ class ThangsEvents():
 
         return event
 
-    def event_name(self, name):
+    def _event_name(self, name):
         return "thangs breeze - " + name
 
-    def amplitudeEventCall(self, event_name, event_properties):
-        event = self.construct_event(event_name, event_properties);
+    def _send_amplitude_event(self, event_name, event_properties):
+        event = self._construct_event(event_name, event_properties);
         requests.post(self.ampURL, json=event)
