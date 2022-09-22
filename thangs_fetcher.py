@@ -127,7 +127,8 @@ class ThangsFetcher():
             else:
                 self.PageTotal = math.ceil(self.totalModels/8)
 
-            amplitude.sendAmplitudeEvent("results")
+            amplitude.send_amplitude_event("search results", event_properties={"number_of_results": self.totalModels})
+
 
     def get_http_search(self):
         print("Started Search")
@@ -206,7 +207,7 @@ class ThangsFetcher():
 
         self.pcoll = self.preview_collections["main"]
 
-        amplitude.sendAmplitudeEvent("startedSearch")
+        amplitude.send_amplitude_event("search started", event_properties={'searchTerm': self.query});
 
         response = requests.get(
             "https://thangs.com/api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query+"&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs")
@@ -214,7 +215,7 @@ class ThangsFetcher():
         self.get_total_results(response)
 
         if response.status_code != 200:
-            amplitude.sendAmplitudeEvent("searchFailed")
+            amplitude.send_amplitude_event("search failed")
 
         else:
             responseData = response.json()
@@ -366,6 +367,6 @@ class ThangsFetcher():
 
         print("Search Completed!")
 
-        amplitude.sendAmplitudeEvent("searchCompleted")
+        amplitude.send_amplitude_event("search ended")
 
         return

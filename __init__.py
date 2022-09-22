@@ -235,7 +235,7 @@ class ThangsLink(bpy.types.Operator):
     bl_label = "Redirect to Thangs"
 
     def execute(self, context):
-        amplitude.sendAmplitudeEvent("toThangs")
+        amplitude.send_amplitude_event("nav to thangs")
         webbrowser.open("https://thangs.com/search/"+fetcher.query +
                         "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs", new=0, autoraise=True)
         return {'FINISHED'}
@@ -633,7 +633,7 @@ def register():
     amplitude.deviceId = socket.gethostname().split(".")[0]
     amplitude.devideOS = platform.system()
     amplitude.deviceVer = platform.release()
-    amplitude.sendAmplitudeEvent("heartbeat")
+    amplitude.send_amplitude_event("heartbeat")
 
     addon_updater_ops.register(bl_info)
 
