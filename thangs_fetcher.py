@@ -432,6 +432,7 @@ class ThangsFetcher():
         print("Search Completed!")
 
         amplitude.send_amplitude_event("Search Completed", event_properties={
-                                       'source': "Blender Addon"})
+                                       'source': "blender"})
+
 
         return
