@@ -16,4 +16,4 @@ jobs:
       - run: apt-get update && apt-get -y install rsync zip
       - run: make build-package
       - store_artifacts:
-          path: thangs-blender-addon.zip
+          path: .build/thangs-blender-addon.zip
