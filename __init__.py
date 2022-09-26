@@ -23,6 +23,9 @@ from . import addon_updater_ops
 import socket
 import platform
 import requests
+import logging
+
+log = logging.getLogger(__name__)
 
 
 bl_info = {
@@ -709,6 +712,13 @@ def startSearch(self, value):
     fetcher.search(query=queryText)
 
 
+def heartbeat_timer():
+    log.info('sending thangs heartbeat')
+    amplitude.send_amplitude_event("heartbeat", event_properties={'device_os': str(
+        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
+    return 300
+
+
 def register():
     global fetcher
     from bpy.types import WindowManager
@@ -824,18 +834,20 @@ def register():
     amplitude.deviceId = socket.gethostname().split(".")[0]
     fetcher.devideOS = platform.system()
     fetcher.deviceVer = platform.release()
-    amplitude.send_amplitude_event("heartbeat", event_properties={'device_os': str(
-        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
+
 
     addon_updater_ops.register(bl_info)
 
-    print("Finished Register")
+    bpy.app.timers.register(heartbeat_timer)
+
+    log.info("Finished Register")
 
 
 def unregister():
     from bpy.types import WindowManager
 
     del WindowManager.Model
+    bpy.app.timers.unregister(heartbeat_timer)
 
     for pcoll in fetcher.preview_collections.values():
         bpy.utils.previews.remove(pcoll)
@@ -859,6 +871,7 @@ def unregister():
     bpy.utils.unregister_class(WM_OT_url_pop6)
     bpy.utils.unregister_class(WM_OT_url_pop7)
     bpy.utils.unregister_class(WM_OT_url_pop8)
+    addon_updater_ops.unregister()
 
 
 if __name__ == "__main__":

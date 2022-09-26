@@ -2,7 +2,9 @@ import threading
 import requests
 import threading
 import time
+import logging
 
+log = logging.getLogger(__name__)
 
 class ThangsEvents(object):
     def __init__(self):
@@ -56,9 +58,6 @@ class ThangsEvents(object):
 
     def _send_amplitude_event(self, event_name, event_properties):
         event = self._construct_event(event_name, event_properties)
+        response = requests.post(self.ampURL, json=[event])
+        log.info('Sent amplitude event: ' + event_name + 'Response: ' + str(response.status_code))
 
-        if event_name == "heartbeat":
-            while(True):
-                requests.post(self.ampURL, json=[event])
-                time.sleep(300)
-        requests.post(self.ampURL, json=[event])
