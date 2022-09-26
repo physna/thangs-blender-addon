@@ -42,7 +42,7 @@ class ThangsEvents(object):
 
     def _construct_event(self, event_name, event_properties):
         event = {
-            'event_type': self._event_name(event_name),
+            'event_type': event_name,
             'device_id': str(self.deviceId),
             'event_properties': {}
         }
@@ -50,11 +50,6 @@ class ThangsEvents(object):
             event['event_properties'] = event_properties
 
         return event
-
-    def _event_name(self, name):
-        if name == "Thangs Model Link":
-            return
-        return "Text Search - " + name
 
     def _send_amplitude_event(self, event_name, event_properties):
         event = self._construct_event(event_name, event_properties)

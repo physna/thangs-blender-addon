@@ -232,14 +232,18 @@ class FirstPageChange(bpy.types.Operator):
 
 
 def Model_Event(position):
-    amplitude.send_amplitude_event("Thangs Model Link", event_properties={
+
+    scope = fetcher.modelInfo[position][6]
+    event_name = 'Thangs Model Link' if scope == 'thangs' else 'External Model Link'
+
+    amplitude.send_amplitude_event(event_name, event_properties={
         'path': fetcher.modelInfo[position][1],
         'type': "text",
-                'domain': fetcher.modelInfo[position][5],
-                'scope': fetcher.modelInfo[position][6],
-                'searchIndex': fetcher.modelInfo[position][3],
-                'phyndexerID': fetcher.modelInfo[position][2],
-                'searchMetadata': fetcher.searchMetaData,
+        'domain': fetcher.modelInfo[position][5],
+        'scope': fetcher.modelInfo[position][6],
+        'searchIndex': fetcher.modelInfo[position][3],
+        'phyndexerID': fetcher.modelInfo[position][2],
+        'searchMetadata': fetcher.searchMetaData,
     })
     data = {
         "modelId": fetcher.modelInfo[position][2],
@@ -714,7 +718,7 @@ def startSearch(self, value):
 
 def heartbeat_timer():
     log.info('sending thangs heartbeat')
-    amplitude.send_amplitude_event("heartbeat", event_properties={'device_os': str(
+    amplitude.send_amplitude_event("Thangs Blender Addon - Heartbeat", event_properties={'device_os': str(
         fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
     return 300
 
