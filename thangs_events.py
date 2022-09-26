@@ -56,9 +56,4 @@ class ThangsEvents(object):
 
     def _send_amplitude_event(self, event_name, event_properties):
         event = self._construct_event(event_name, event_properties)
-
-        if event_name == "heartbeat":
-            while(True):
-                requests.post(self.ampURL, json=[event])
-                time.sleep(300)
         requests.post(self.ampURL, json=[event])

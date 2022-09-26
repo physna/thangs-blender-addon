@@ -709,6 +709,12 @@ def startSearch(self, value):
     fetcher.search(query=queryText)
 
 
+def heartbeat_timer():
+    amplitude.send_amplitude_event("heartbeat", event_properties={'device_os': str(
+        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
+    return 300
+
+
 def register():
     global fetcher
     from bpy.types import WindowManager
@@ -824,10 +830,11 @@ def register():
     amplitude.deviceId = socket.gethostname().split(".")[0]
     fetcher.devideOS = platform.system()
     fetcher.deviceVer = platform.release()
-    amplitude.send_amplitude_event("heartbeat", event_properties={'device_os': str(
-        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
+
 
     addon_updater_ops.register(bl_info)
+
+    bpy.app.timers.register(heartbeat_timer)
 
     print("Finished Register")
 
@@ -836,6 +843,7 @@ def unregister():
     from bpy.types import WindowManager
 
     del WindowManager.Model
+    bpy.app.timers.unregister(heartbeat_timer)
 
     for pcoll in fetcher.preview_collections.values():
         bpy.utils.previews.remove(pcoll)
