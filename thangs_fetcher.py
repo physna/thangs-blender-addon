@@ -258,7 +258,8 @@ class ThangsFetcher():
                 'device_os': str(self.devideOS),
                 'device_ver': str(self.deviceVer),
                 'searchTerm': self.query,
-                'source': "Blender Addon"
+                'source': "blender"
+
             })
 
         else:
