@@ -841,7 +841,6 @@ def register():
     fetcher.devideOS = platform.system()
     fetcher.deviceVer = platform.release()
 
-
     addon_updater_ops.register(bl_info)
 
     bpy.app.timers.register(heartbeat_timer)
