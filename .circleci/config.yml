@@ -12,6 +12,7 @@ jobs:
       - image: 'python:3.10-slim'
     steps:
       - checkout
+      - run: pwd
       - run: apt-get update && apt-get -y install zip && zip -r thangs-blender-addon.zip . -x@exclude.lst
       - store_artifacts:
           path: thangs-blender-addon.zip
