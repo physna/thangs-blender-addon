@@ -13,5 +13,5 @@ jobs:
     steps:
       - checkout
       - run: apt-get update && apt-get -y install zip && zip -r thangs-blender-addon.zip . -x@exclude.lst
-      - store-artifacts:
+      - store_artifacts:
           path: thangs-blender-addon.zip
