@@ -23,6 +23,9 @@ from . import addon_updater_ops
 import socket
 import platform
 import requests
+import logging
+
+log = logging.getLogger(__name__)
 
 
 bl_info = {
@@ -710,7 +713,7 @@ def startSearch(self, value):
 
 
 def heartbeat_timer():
-    print('thangs - heartbeat')
+    log.warning('sending thangs heartbeat')
     amplitude.send_amplitude_event("heartbeat", event_properties={'device_os': str(
         fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
     return 30
