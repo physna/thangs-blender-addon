@@ -1,5 +1,7 @@
 import threading
+import json
 import requests
+import uuid
 from urllib.request import urlopen
 import urllib.request
 import urllib.parse
@@ -35,6 +37,7 @@ class ThangsFetcher():
         self.query = ""
         self.devideOS = ""
         self.deviceVer = ""
+        self.uuid = ""
 
         self.modelInfo = []
         self.enumItems = []
@@ -53,6 +56,7 @@ class ThangsFetcher():
         self.thumbnailNumbers = []
 
         self.preview_collections = {}
+        self.searchMetaData = {}
 
         self.totalModels = 0
         self.PageTotal = 0
@@ -61,6 +65,7 @@ class ThangsFetcher():
 
         self.searching = False
         self.failed = False
+        self.newSearch = False
         pass
 
     def reset(self):
@@ -126,13 +131,30 @@ class ThangsFetcher():
             print("Started Counting Results")
             responseData = response.json()
             items = responseData["searchMetadata"]
-            self.totalModels = items["totalResults"]
+            self.totalModels = items['totalResults']
             if math.ceil(self.totalModels/8) > 99:
                 self.PageTotal = 99
             else:
                 self.PageTotal = math.ceil(self.totalModels/8)
 
-            amplitude.send_amplitude_event("search results", event_properties={"number_of_results": self.totalModels})
+            if items['totalResults'] == 0:
+                amplitude.send_amplitude_event("No Results", event_properties={
+                    'searchTerm': items['originalQuery'],
+                    'searchId': self.uuid,
+                    'numOfMatches': items['totalResults'],
+                    'pageCount': items['page'],
+                    'searchMetadata': self.searchMetaData,
+                    'source': "Blender Addon",
+                })
+            else:
+                amplitude.send_amplitude_event("Results", event_properties={
+                    'searchTerm': items['originalQuery'],
+                    'searchId': self.uuid,
+                    'numOfMatches': items['totalResults'],
+                    'pageCount': items['page'],
+                    'searchMetadata': self.searchMetaData,
+                    'source': "Blender Addon",
+                })
 
     def get_http_search(self):
         print("Started Search")
@@ -141,6 +163,11 @@ class ThangsFetcher():
         self.Directory = self.query
         # Added
         self.CurrentPage = self.PageNumber
+
+        amplitude.send_amplitude_event("Started", event_properties={
+            'searchTerm': self.query,
+            'source': "Blender Addon",
+        })
 
         # Get the preview collection (defined in register func).
 
@@ -152,6 +179,7 @@ class ThangsFetcher():
                 self.search_callback()
                 return
             else:
+                self.newSearch = True
                 self.PageNumber = 1
                 self.CurrentPage = 1
 
@@ -161,7 +189,7 @@ class ThangsFetcher():
             return
 
         self.modelInfo.clear()
-        
+
         self.enumItems.clear()
         self.enumModels1.clear()
         self.enumModels2.clear()
@@ -209,19 +237,47 @@ class ThangsFetcher():
 
         self.pcoll = self.preview_collections["main"]
 
-        amplitude.send_amplitude_event("search started", event_properties={'searchTerm': self.query})
+        amplitude.send_amplitude_event("search started", event_properties={
+                                       'searchTerm': self.query,
+                                       'source': "Blender Addon",
+                                       })
 
-        response = requests.get(
-            "https://thangs.com/api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query+"&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs")
-
-        self.get_total_results(response)
+        if self.newSearch == True:
+            response = requests.get(
+                "https://thangs.com/api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query+"&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs")
+        else:
+            response = requests.get(
+                "https://thangs.com/api/models/v2/search-by-text?page=" +
+                str(self.CurrentPage-1)+"&searchTerm="+self.query +
+                "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
+                headers={"x-thangs-searchmetadata": self.searchMetaData},
+            )
 
         if response.status_code != 200:
-            amplitude.send_amplitude_event("search failed", event_properties={'device_os': str(self.devideOS), 'device_ver': str(self.deviceVer), 'searchTerm': self.query})
+            amplitude.send_amplitude_event("Search Failed", event_properties={
+                'device_os': str(self.devideOS),
+                'device_ver': str(self.deviceVer),
+                'searchTerm': self.query,
+                'source': "Blender Addon"
+            })
 
         else:
             responseData = response.json()
             items = responseData["results"]  # Each model result is X
+            if self.newSearch == True:
+                self.uuid = str(uuid.uuid4())
+                self.searchMetaData = responseData["searchMetadata"]
+                self.searchMetaData['searchID'] = self.uuid
+                self.searchMetaData = json.JSONEncoder().encode(self.searchMetaData)
+                data = {
+                    "searchId": self.searchMetaData,
+                    "searchTerm": self.query,
+                }
+
+                amplitude.send_thangs_event("Capture", data)
+
+            self.get_total_results(response)
+
             self.i = 0
             for item in items:
                 if len(item["thumbnails"]) > 0:
@@ -234,10 +290,14 @@ class ThangsFetcher():
                 modelTitle = item["modelTitle"]
                 product_url = item["attributionUrl"]
                 modelId = item["modelId"]
+                searchIndex = ((self.CurrentPage-1)*8) + self.i
+                position = self.i
+                domain = item["domain"]
+                scope = item["scope"]
 
                 # Stateful Model Information
                 self.modelInfo.append(
-                    tuple([modelTitle, product_url, modelId]))
+                    tuple([modelTitle, product_url, modelId, searchIndex, position, domain, scope]))
                 self.enumItems.append(
                     (modelTitle, modelId, item["ownerUsername"], "LCs Coming Soon!", item["originalFileType"]))
 
@@ -359,6 +419,7 @@ class ThangsFetcher():
         self.pcoll.Model_page = self.CurrentPage
 
         self.searching = False
+        self.newSearch = False
 
         self.thangs_ui_mode = 'VIEW'
 
@@ -368,6 +429,7 @@ class ThangsFetcher():
 
         print("Search Completed!")
 
-        amplitude.send_amplitude_event("search ended")
+        amplitude.send_amplitude_event("Search Completed", event_properties={
+                                       'source': "Blender Addon"})
 
         return
