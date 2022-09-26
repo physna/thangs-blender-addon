@@ -65,7 +65,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
     updater_interval_days: IntProperty(
         name='Days',
         description="Number of days between checking for updates",
-        default=7,
+        default=0,
         min=0,
         max=31)
 
@@ -79,7 +79,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
     updater_interval_minutes: IntProperty(
         name='Minutes',
         description="Number of minutes between checking for updates",
-        default=10,
+        default=1,
         min=0,
         max=59)
 
@@ -662,7 +662,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
         row.scale_x = .18
 
     def draw(self, context):
-        addon_updater_ops.check_for_update_background(context)
+        addon_updater_ops.check_for_update_background()
         if fetcher.thangs_ui_mode == "VIEW":
             self.drawView(context)
         else:
