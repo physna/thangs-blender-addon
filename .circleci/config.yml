@@ -12,7 +12,6 @@ jobs:
       - image: 'python:3.10'
     steps:
       - checkout
-      - run: pwd
       - run: apt-get update && apt-get -y install rsync zip
       - run: make build-package
       - store_artifacts:
