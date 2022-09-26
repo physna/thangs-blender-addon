@@ -140,7 +140,7 @@ class ThangsFetcher():
                 self.PageTotal = math.ceil(self.totalModels/8)
 
             if items['totalResults'] == 0:
-                amplitude.send_amplitude_event("No Results", event_properties={
+                amplitude.send_amplitude_event("Text Search - No Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
@@ -149,7 +149,7 @@ class ThangsFetcher():
                     'source': "blender",
                 })
             else:
-                amplitude.send_amplitude_event("Results", event_properties={
+                amplitude.send_amplitude_event("Text Search - Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
@@ -166,7 +166,7 @@ class ThangsFetcher():
         # Added
         self.CurrentPage = self.PageNumber
 
-        amplitude.send_amplitude_event("Started", event_properties={
+        amplitude.send_amplitude_event("Text Search Started", event_properties={
             'searchTerm': self.query,
             'source': "blender",
         })
@@ -238,11 +238,6 @@ class ThangsFetcher():
         self.preview_collections["main"] = self.pcoll
 
         self.pcoll = self.preview_collections["main"]
-
-        amplitude.send_amplitude_event("search started", event_properties={
-                                       'searchTerm': self.query,
-                                       'source': "blender",
-                                       })
 
         if self.newSearch == True:
             response = requests.get(
@@ -439,7 +434,6 @@ class ThangsFetcher():
 
         print("Search Completed!")
 
-        amplitude.send_amplitude_event("Search Completed", event_properties={
-                                       'source': "blender"})
+
 
         return
