@@ -1,4 +1,5 @@
-.git
-.github
-.circleci
-renovate.json
+*.git*
+*.circleci*
+*renovate.json*
+*.idea*
+*exclude.lst*
