@@ -713,10 +713,10 @@ def startSearch(self, value):
 
 
 def heartbeat_timer():
-    log.warning('sending thangs heartbeat')
+    log.info('sending thangs heartbeat')
     amplitude.send_amplitude_event("heartbeat", event_properties={'device_os': str(
         fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
-    return 30
+    return 300
 
 
 def register():
@@ -840,7 +840,7 @@ def register():
 
     bpy.app.timers.register(heartbeat_timer)
 
-    print("Finished Register")
+    log.info("Finished Register")
 
 
 def unregister():
@@ -871,6 +871,7 @@ def unregister():
     bpy.utils.unregister_class(WM_OT_url_pop6)
     bpy.utils.unregister_class(WM_OT_url_pop7)
     bpy.utils.unregister_class(WM_OT_url_pop8)
+    addon_updater_ops.unregister()
 
 
 if __name__ == "__main__":
