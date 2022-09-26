@@ -22,6 +22,7 @@ from .thangs_events import ThangsEvents
 from . import addon_updater_ops
 import socket
 import platform
+import requests
 
 
 bl_info = {
@@ -104,7 +105,6 @@ def tag_redraw_areas(area_types: iter = ["ALL"]):
             fetcher.thangs_ui_mode = 'VIEW'
     area_types = confirm_list(area_types)
     screens = [bpy.context.screen] if bpy.context.screen else bpy.data.screens
-    # print(screens)
     for screen in screens:
         for area in screen.areas:
             for area_type in area_types:
@@ -228,6 +228,169 @@ class FirstPageChange(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def Model_Event(position):
+    amplitude.send_amplitude_event("Thangs Model Link", event_properties={
+        'path': fetcher.modelInfo[position][1],
+        'type': "text",
+                'domain': fetcher.modelInfo[position][5],
+                'scope': fetcher.modelInfo[position][6],
+                'searchIndex': fetcher.modelInfo[position][3],
+                'phyndexerID': fetcher.modelInfo[position][2],
+                'searchMetadata': fetcher.searchMetaData,
+    })
+    data = {
+        "modelId": fetcher.modelInfo[position][2],
+        "searchId": fetcher.uuid,
+        "searchResultIndex": fetcher.modelInfo[position][3],
+    }
+    amplitude.send_thangs_event("Results", data)
+    return
+
+
+class WM_OT_url_pop1(Operator):
+    """Open model in browser"""
+    bl_idname = "wm.url_pop1"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Model to open",
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(0)
+        return {'FINISHED'}
+
+
+class WM_OT_url_pop2(Operator):
+    """Open model in browser"""
+    bl_idname = "wm.url_pop2"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Model to open",
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(1)
+        return {'FINISHED'}
+
+
+class WM_OT_url_pop3(Operator):
+    """Open model in browser"""
+    bl_idname = "wm.url_pop3"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Model to open",
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(2)
+        return {'FINISHED'}
+
+
+class WM_OT_url_pop4(Operator):
+    """Open model in browser"""
+    bl_idname = "wm.url_pop4"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Model to open",
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(3)
+        return {'FINISHED'}
+
+
+class WM_OT_url_pop5(Operator):
+    """Open model in browser"""
+    bl_idname = "wm.url_pop5"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Model to open",
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(4)
+        return {'FINISHED'}
+
+
+class WM_OT_url_pop6(Operator):
+    """Open model in browser"""
+    bl_idname = "wm.url_pop6"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Model to open",
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(5)
+        return {'FINISHED'}
+
+
+class WM_OT_url_pop7(Operator):
+    """Open model in browser"""
+    bl_idname = "wm.url_pop7"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Model to open",
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(6)
+        return {'FINISHED'}
+
+
+class WM_OT_url_pop8(Operator):
+    """Open model in browser"""
+    bl_idname = "wm.url_pop8"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Model to open",
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(7)
+        return {'FINISHED'}
+
+
 class ThangsLink(bpy.types.Operator):
     """Click to continue on Thangs"""
     bl_idname = "link.thangs"
@@ -236,7 +399,7 @@ class ThangsLink(bpy.types.Operator):
 
     def execute(self, context):
         amplitude.send_amplitude_event("nav to thangs", event_properties={
-                                       'device_os': str(fetcher.devideOS), 'device_ver': str(fetcher.deviceVer)})
+                                       'device_os': str(fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
         webbrowser.open("https://thangs.com/search/"+fetcher.query +
                         "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs", new=0, autoraise=True)
         return {'FINISHED'}
@@ -358,12 +521,32 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     row = col.row()
                     row.label(text="{}".format(model[4]), icon='FILEBROWSER')
 
-                    for x in range(0, len(fetcher.modelInfo)):
-                        if fetcher.modelInfo[x][0] == model[0]:
-                            modelURL = fetcher.modelInfo[x][1]
+                    modelURL = fetcher.modelInfo[z][1]
 
-                    cell.operator('wm.url_open', text="%s" % model[0]).url = modelURL + \
-                        "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    if z == 0:
+                        cell.operator('wm.url_pop1', text="%s" % model[0]).url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    elif z == 1:
+                        cell.operator('wm.url_pop2', text="%s" % model[0]).url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    elif z == 2:
+                        cell.operator('wm.url_pop3', text="%s" % model[0]).url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    elif z == 3:
+                        cell.operator('wm.url_pop4', text="%s" % model[0]).url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    elif z == 4:
+                        cell.operator('wm.url_pop5', text="%s" % model[0]).url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    elif z == 5:
+                        cell.operator('wm.url_pop6', text="%s" % model[0]).url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    elif z == 6:
+                        cell.operator('wm.url_pop7', text="%s" % model[0]).url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    elif z == 7:
+                        cell.operator('wm.url_pop8', text="%s" % model[0]).url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
 
                     z = z + 1
 
@@ -622,6 +805,14 @@ def register():
     bpy.utils.register_class(LastPageChange)
     bpy.utils.register_class(FirstPageChange)
     bpy.utils.register_class(DemoPreferences)
+    bpy.utils.register_class(WM_OT_url_pop1)
+    bpy.utils.register_class(WM_OT_url_pop2)
+    bpy.utils.register_class(WM_OT_url_pop3)
+    bpy.utils.register_class(WM_OT_url_pop4)
+    bpy.utils.register_class(WM_OT_url_pop5)
+    bpy.utils.register_class(WM_OT_url_pop6)
+    bpy.utils.register_class(WM_OT_url_pop7)
+    bpy.utils.register_class(WM_OT_url_pop8)
 
     bpy.types.Scene.thangs_model_search = bpy.props.StringProperty(
         name="",
@@ -634,7 +825,7 @@ def register():
     fetcher.devideOS = platform.system()
     fetcher.deviceVer = platform.release()
     amplitude.send_amplitude_event("heartbeat", event_properties={'device_os': str(
-        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer)})
+        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
 
     addon_updater_ops.register(bl_info)
 
@@ -660,6 +851,14 @@ def unregister():
     bpy.utils.unregister_class(LastPageChange)
     bpy.utils.unregister_class(FirstPageChange)
     bpy.utils.unregister_class(DemoPreferences)
+    bpy.utils.unregister_class(WM_OT_url_pop1)
+    bpy.utils.unregister_class(WM_OT_url_pop2)
+    bpy.utils.unregister_class(WM_OT_url_pop3)
+    bpy.utils.unregister_class(WM_OT_url_pop4)
+    bpy.utils.unregister_class(WM_OT_url_pop5)
+    bpy.utils.unregister_class(WM_OT_url_pop6)
+    bpy.utils.unregister_class(WM_OT_url_pop7)
+    bpy.utils.unregister_class(WM_OT_url_pop8)
 
 
 if __name__ == "__main__":
