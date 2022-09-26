@@ -713,7 +713,7 @@ def heartbeat_timer():
     print('thangs - heartbeat')
     amplitude.send_amplitude_event("heartbeat", event_properties={'device_os': str(
         fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
-    return 300
+    return 30
 
 
 def register():
