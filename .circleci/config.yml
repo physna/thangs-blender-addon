@@ -13,7 +13,7 @@ jobs:
     steps:
       - checkout
       - run: pwd
-      - run: apt-get update && apt-get -y install rsync
+      - run: apt-get update && apt-get -y install rsync zip
       - run: make build-package
       - store_artifacts:
           path: build/thangs-blender-addon/thangs-blender-addon.zip
