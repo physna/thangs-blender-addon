@@ -25,7 +25,6 @@ import platform
 import requests
 
 
-
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
@@ -230,25 +229,23 @@ class FirstPageChange(bpy.types.Operator):
 
 
 def Model_Event(position):
-    for x in range(0, len(fetcher.modelInfo)):
-        if fetcher.modelInfo[x][4] == position:
-            amplitude.send_amplitude_event("Thangs Model Link", event_properties={
-                'path': fetcher.modelInfo[x][1],
-                'type': "text",
-                'domain': fetcher.modelInfo[x][5],
-                'scope': fetcher.modelInfo[x][6],
-                'searchIndex': fetcher.modelInfo[x][3],
-                'phyndexerID': fetcher.modelInfo[x][2],
+    amplitude.send_amplitude_event("Thangs Model Link", event_properties={
+        'path': fetcher.modelInfo[position][1],
+        'type': "text",
+                'domain': fetcher.modelInfo[position][5],
+                'scope': fetcher.modelInfo[position][6],
+                'searchIndex': fetcher.modelInfo[position][3],
+                'phyndexerID': fetcher.modelInfo[position][2],
                 'searchMetadata': fetcher.searchMetaData,
-            })
-            data = {
-                "modelId": fetcher.modelInfo[x][2],
-                "searchId": fetcher.uuid,
-                "searchResultIndex": fetcher.modelInfo[x][3],
-            }
+    })
+    data = {
+        "modelId": fetcher.modelInfo[position][2],
+        "searchId": fetcher.uuid,
+        "searchResultIndex": fetcher.modelInfo[position][3],
+    }
+    amplitude.send_thangs_event("Results", data)
+    return
 
-            amplitude.send_thangs_event("Results", data)
-            return
 
 class WM_OT_url_pop1(Operator):
     """Open model in browser"""
@@ -403,7 +400,6 @@ class ThangsLink(bpy.types.Operator):
     def execute(self, context):
         amplitude.send_amplitude_event("nav to thangs", event_properties={
                                        'device_os': str(fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
-
         webbrowser.open("https://thangs.com/search/"+fetcher.query +
                         "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs", new=0, autoraise=True)
         return {'FINISHED'}
@@ -525,9 +521,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     row = col.row()
                     row.label(text="{}".format(model[4]), icon='FILEBROWSER')
 
-                    for x in range(0, len(fetcher.modelInfo)):
-                        if fetcher.modelInfo[x][0] == model[0]:
-                            modelURL = fetcher.modelInfo[x][1]
+                    modelURL = fetcher.modelInfo[z][1]
 
                     if z == 0:
                         cell.operator('wm.url_pop1', text="%s" % model[0]).url = modelURL + \
@@ -831,7 +825,7 @@ def register():
     fetcher.devideOS = platform.system()
     fetcher.deviceVer = platform.release()
     amplitude.send_amplitude_event("heartbeat", event_properties={'device_os': str(
-        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "Blender Addon"})
+        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
 
     addon_updater_ops.register(bl_info)
 
