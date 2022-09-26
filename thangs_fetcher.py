@@ -239,7 +239,8 @@ class ThangsFetcher():
 
         amplitude.send_amplitude_event("search started", event_properties={
                                        'searchTerm': self.query,
-                                       'source': "Blender Addon",
+                                       'source': "blender",
+
                                        })
 
         if self.newSearch == True:
