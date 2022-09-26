@@ -9,9 +9,10 @@ workflows:
 jobs:
   build:
     docker:
-      - image: 'python:3.10-slim'
+      - image: 'python:3.10'
     steps:
       - checkout
-      - run: apt-get update && apt-get -y install zip && zip -r thangs-blender-addon.zip . -x@exclude.lst
-      - store-artifacts:
-          path: thangs-blender-addon.zip
+      - run: apt-get update && apt-get -y install rsync zip
+      - run: make build-package
+      - store_artifacts:
+          path: .build/thangs-blender-addon.zip

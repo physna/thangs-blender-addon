@@ -1,5 +1,6 @@
 import threading
 import json
+import base64
 import requests
 import uuid
 from urllib.request import urlopen
@@ -251,7 +252,7 @@ class ThangsFetcher():
                 "https://thangs.com/api/models/v2/search-by-text?page=" +
                 str(self.CurrentPage-1)+"&searchTerm="+self.query +
                 "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
-                headers={"x-thangs-searchmetadata": self.searchMetaData},
+                headers={"x-thangs-searchmetadata": base64.b64encode(json.dumps(self.searchMetaData).encode()).decode()},
             )
 
         if response.status_code != 200:
@@ -269,7 +270,6 @@ class ThangsFetcher():
                 self.uuid = str(uuid.uuid4())
                 self.searchMetaData = responseData["searchMetadata"]
                 self.searchMetaData['searchID'] = self.uuid
-                self.searchMetaData = json.JSONEncoder().encode(self.searchMetaData)
                 data = {
                     "searchId": self.uuid,
                     "searchTerm": self.query,
