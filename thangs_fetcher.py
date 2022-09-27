@@ -1,4 +1,5 @@
 import threading
+import configparser
 import json
 import base64
 import requests
@@ -26,6 +27,11 @@ from bpy_extras.object_utils import AddObjectHelper, object_data_add
 from bpy.app.handlers import persistent
 
 amplitude = ThangsEvents()
+
+config_obj = configparser.ConfigParser()
+config_path = os.path.join(os.path.dirname(__file__), 'prod_config.ini')
+config_obj.read(config_path)
+thangs_config = config_obj['DEFAULT']
 
 
 class ThangsFetcher():
@@ -159,6 +165,7 @@ class ThangsFetcher():
                 })
 
     def get_http_search(self):
+        global thangs_config
         print("Started Search")
         self.searching = True
 
@@ -239,15 +246,18 @@ class ThangsFetcher():
 
         self.pcoll = self.preview_collections["main"]
 
+        nav_url = thangs_config['url']
+
         if self.newSearch == True:
-            response = requests.get(
-                "https://thangs.com/api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query+"&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs")
+            response = requests.get(nav_url+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
+                                    "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs")
         else:
             response = requests.get(
-                "https://thangs.com/api/models/v2/search-by-text?page=" +
+                str(thangs_config['url'])+"api/models/v2/search-by-text?page=" +
                 str(self.CurrentPage-1)+"&searchTerm="+self.query +
                 "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
-                headers={"x-thangs-searchmetadata": base64.b64encode(json.dumps(self.searchMetaData).encode()).decode()},
+                headers={"x-thangs-searchmetadata": base64.b64encode(
+                    json.dumps(self.searchMetaData).encode()).decode()},
             )
 
         if response.status_code != 200:
@@ -433,7 +443,5 @@ class ThangsFetcher():
             self.search_callback()
 
         print("Search Completed!")
-
-
 
         return
