@@ -735,7 +735,7 @@ def open_timer():
                     n_panel_is_open = space.show_region_ui
 
     amplitude.send_amplitude_event("Thangs Blender Addon - Opened", event_properties={'device_os': str(
-        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
+        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender", 'panel_open': n_panel_is_open})
     return 60
 
 def register():
