@@ -254,9 +254,9 @@ def Model_Event(position):
     return
 
 
-class WM_OT_url_pop1(Operator):
+class BrowseToModelOperator(Operator):
     """Open model in browser"""
-    bl_idname = "wm.url_pop1"
+    bl_idname = "wm.browse_to_model"
     bl_label = ""
     bl_options = {'INTERNAL'}
 
@@ -264,137 +264,15 @@ class WM_OT_url_pop1(Operator):
         name="URL",
         description="Model to open",
     )
-
-    def execute(self, _context):
-        import webbrowser
-        webbrowser.open(self.url)
-        Model_Event(0)
-        return {'FINISHED'}
-
-
-class WM_OT_url_pop2(Operator):
-    """Open model in browser"""
-    bl_idname = "wm.url_pop2"
-    bl_label = ""
-    bl_options = {'INTERNAL'}
-
-    url: StringProperty(
-        name="URL",
-        description="Model to open",
+    modelIndex: IntProperty(
+        name="Index",
+        description="The index of the model to open"
     )
 
     def execute(self, _context):
         import webbrowser
         webbrowser.open(self.url)
-        Model_Event(1)
-        return {'FINISHED'}
-
-
-class WM_OT_url_pop3(Operator):
-    """Open model in browser"""
-    bl_idname = "wm.url_pop3"
-    bl_label = ""
-    bl_options = {'INTERNAL'}
-
-    url: StringProperty(
-        name="URL",
-        description="Model to open",
-    )
-
-    def execute(self, _context):
-        import webbrowser
-        webbrowser.open(self.url)
-        Model_Event(2)
-        return {'FINISHED'}
-
-
-class WM_OT_url_pop4(Operator):
-    """Open model in browser"""
-    bl_idname = "wm.url_pop4"
-    bl_label = ""
-    bl_options = {'INTERNAL'}
-
-    url: StringProperty(
-        name="URL",
-        description="Model to open",
-    )
-
-    def execute(self, _context):
-        import webbrowser
-        webbrowser.open(self.url)
-        Model_Event(3)
-        return {'FINISHED'}
-
-
-class WM_OT_url_pop5(Operator):
-    """Open model in browser"""
-    bl_idname = "wm.url_pop5"
-    bl_label = ""
-    bl_options = {'INTERNAL'}
-
-    url: StringProperty(
-        name="URL",
-        description="Model to open",
-    )
-
-    def execute(self, _context):
-        import webbrowser
-        webbrowser.open(self.url)
-        Model_Event(4)
-        return {'FINISHED'}
-
-
-class WM_OT_url_pop6(Operator):
-    """Open model in browser"""
-    bl_idname = "wm.url_pop6"
-    bl_label = ""
-    bl_options = {'INTERNAL'}
-
-    url: StringProperty(
-        name="URL",
-        description="Model to open",
-    )
-
-    def execute(self, _context):
-        import webbrowser
-        webbrowser.open(self.url)
-        Model_Event(5)
-        return {'FINISHED'}
-
-
-class WM_OT_url_pop7(Operator):
-    """Open model in browser"""
-    bl_idname = "wm.url_pop7"
-    bl_label = ""
-    bl_options = {'INTERNAL'}
-
-    url: StringProperty(
-        name="URL",
-        description="Model to open",
-    )
-
-    def execute(self, _context):
-        import webbrowser
-        webbrowser.open(self.url)
-        Model_Event(6)
-        return {'FINISHED'}
-
-
-class WM_OT_url_pop8(Operator):
-    """Open model in browser"""
-    bl_idname = "wm.url_pop8"
-    bl_label = ""
-    bl_options = {'INTERNAL'}
-
-    url: StringProperty(
-        name="URL",
-        description="Model to open",
-    )
-
-    def execute(self, _context):
-        import webbrowser
-        webbrowser.open(self.url)
-        Model_Event(7)
+        Model_Event(self.modelIndex)
         return {'FINISHED'}
 
 
@@ -530,30 +408,9 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
                     modelURL = fetcher.modelInfo[z][1]
 
-                    if z == 0:
-                        cell.operator('wm.url_pop1', text="%s" % model[0]).url = modelURL + \
-                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    elif z == 1:
-                        cell.operator('wm.url_pop2', text="%s" % model[0]).url = modelURL + \
-                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    elif z == 2:
-                        cell.operator('wm.url_pop3', text="%s" % model[0]).url = modelURL + \
-                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    elif z == 3:
-                        cell.operator('wm.url_pop4', text="%s" % model[0]).url = modelURL + \
-                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    elif z == 4:
-                        cell.operator('wm.url_pop5', text="%s" % model[0]).url = modelURL + \
-                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    elif z == 5:
-                        cell.operator('wm.url_pop6', text="%s" % model[0]).url = modelURL + \
-                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    elif z == 6:
-                        cell.operator('wm.url_pop7', text="%s" % model[0]).url = modelURL + \
-                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    elif z == 7:
-                        cell.operator('wm.url_pop8', text="%s" % model[0]).url = modelURL + \
-                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    props = cell.operator('wm.browse_to_model', text="%s" % model[0])
+                    props.url = modelURL + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    props.modelIndex = z
 
                     z = z + 1
 
@@ -821,14 +678,7 @@ def register():
     bpy.utils.register_class(LastPageChange)
     bpy.utils.register_class(FirstPageChange)
     bpy.utils.register_class(DemoPreferences)
-    bpy.utils.register_class(WM_OT_url_pop1)
-    bpy.utils.register_class(WM_OT_url_pop2)
-    bpy.utils.register_class(WM_OT_url_pop3)
-    bpy.utils.register_class(WM_OT_url_pop4)
-    bpy.utils.register_class(WM_OT_url_pop5)
-    bpy.utils.register_class(WM_OT_url_pop6)
-    bpy.utils.register_class(WM_OT_url_pop7)
-    bpy.utils.register_class(WM_OT_url_pop8)
+    bpy.utils.register_class(BrowseToModelOperator)
 
     bpy.types.Scene.thangs_model_search = bpy.props.StringProperty(
         name="",
@@ -868,14 +718,7 @@ def unregister():
     bpy.utils.unregister_class(LastPageChange)
     bpy.utils.unregister_class(FirstPageChange)
     bpy.utils.unregister_class(DemoPreferences)
-    bpy.utils.unregister_class(WM_OT_url_pop1)
-    bpy.utils.unregister_class(WM_OT_url_pop2)
-    bpy.utils.unregister_class(WM_OT_url_pop3)
-    bpy.utils.unregister_class(WM_OT_url_pop4)
-    bpy.utils.unregister_class(WM_OT_url_pop5)
-    bpy.utils.unregister_class(WM_OT_url_pop6)
-    bpy.utils.unregister_class(WM_OT_url_pop7)
-    bpy.utils.unregister_class(WM_OT_url_pop8)
+    bpy.utils.unregister_class(BrowseToModelOperator)
     addon_updater_ops.unregister()
 
 
