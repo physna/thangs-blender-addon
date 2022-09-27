@@ -725,7 +725,7 @@ def heartbeat_timer():
     return 300
 
 def open_timer():
-    # log.info('sending thangs heartbeat')
+    log.info('sending thangs open')
     for area in bpy.context.screen.areas:
         if area.type == 'VIEW_3D':
             for space in area.spaces:
@@ -734,10 +734,9 @@ def open_timer():
                     # False: n-panel is closed
                     n_panel_is_open = space.show_region_ui
 
-    # amplitude.send_amplitude_event("Thangs Blender Addon - Heartbeat", event_properties={'device_os': str(
-    #     fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
-    return 300
-
+    amplitude.send_amplitude_event("Thangs Blender Addon - Opened", event_properties={'device_os': str(
+        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
+    return 60
 
 def register():
     global fetcher
