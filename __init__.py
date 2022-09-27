@@ -53,7 +53,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
     auto_check_update: BoolProperty(
         name="Auto-check for Update",
         description="If enabled, auto-check for updates using an interval",
-        default=False
+        default=True
     )
 
     updater_interval_months: IntProperty(
@@ -65,7 +65,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
     updater_interval_days: IntProperty(
         name='Days',
         description="Number of days between checking for updates",
-        default=7,
+        default=0,
         min=0,
         max=31)
 
@@ -79,7 +79,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
     updater_interval_minutes: IntProperty(
         name='Minutes',
         description="Number of minutes between checking for updates",
-        default=0,
+        default=10,
         min=0,
         max=59)
 
@@ -662,10 +662,12 @@ class THANGS_PT_model_display(bpy.types.Panel):
         row.scale_x = .18
 
     def draw(self, context):
+        addon_updater_ops.check_for_update_background()
         if fetcher.thangs_ui_mode == "VIEW":
             self.drawView(context)
         else:
             self.drawSearch(context)
+        addon_updater_ops.update_notice_box_ui(self, context)
 
 
 def enum_previews_from_thangs_api1(self, context):
@@ -838,7 +840,6 @@ def register():
     amplitude.deviceId = socket.gethostname().split(".")[0]
     fetcher.devideOS = platform.system()
     fetcher.deviceVer = platform.release()
-
 
     addon_updater_ops.register(bl_info)
 

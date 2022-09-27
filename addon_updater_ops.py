@@ -1373,8 +1373,7 @@ def register(bl_info):
 
     # Optional, to hard-set update frequency, use this here - however,
     # this demo has this set via UI properties.
-    # updater.set_check_interval(
-    # 		enable=False,months=0,days=0,hours=0,minutes=2)
+    updater.set_check_interval(enable=True, months=0, days=0, hours=0, minutes=10)
 
     # Optional, consider turning off for production or allow as an option
     # This will print out additional debugging info to the console
@@ -1454,7 +1453,7 @@ def register(bl_info):
     # example targeting another multiple branches allowed to pull from
     # updater.include_branch_list = ['master', 'dev'] # example with two branches
     # None is the equivalent to setting ['master']
-    updater.include_branch_list = None
+    updater.include_branch_list = ['main']
 
     # Only allow manual install, thus prompting the user to open
     # the addon's web page to download, specifically: updater.website
