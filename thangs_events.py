@@ -8,7 +8,6 @@ import logging
 import os
 
 # __location__ = os.path.realpath(
-#     os.path.join(os.getcwd(), os.path.dirname(__file__)))
 # config_file = open(os.path.join(__location__, 'configfile.ini'))
 
 config_obj = configparser.ConfigParser(allow_no_value=True)
