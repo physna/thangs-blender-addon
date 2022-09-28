@@ -14,7 +14,7 @@ import os
 config_obj = configparser.ConfigParser(allow_no_value=True)
 config_path = os.path.join(os.path.dirname(__file__), 'prod_config.ini')
 config_obj.read(config_path)
-thangs_config = config_obj['DEFAULT']
+thangs_config = config_obj['thangs']
 
 log = logging.getLogger(__name__)
 
@@ -66,6 +66,6 @@ class ThangsEvents(object):
 
     def _send_amplitude_event(self, event_name, event_properties):
         event = self._construct_event(event_name, event_properties)
-        response = requests.post(self.ampURL, json=[event])
+        response = requests.post(self.ampURL, json={'events': [event]})
         log.info('Sent amplitude event: ' + event_name +
                  'Response: ' + str(response.status_code))

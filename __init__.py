@@ -579,7 +579,7 @@ def startSearch(self, value):
 def heartbeat_timer():
     log.info('sending thangs heartbeat')
     amplitude.send_amplitude_event("Thangs Blender Addon - Heartbeat", event_properties={'device_os': str(
-        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
+        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender", 'addon_version': str(bl_info["version"])})
     return 300
 
 

@@ -25,13 +25,15 @@ from bpy.props import (StringProperty,
                        )
 from bpy_extras.object_utils import AddObjectHelper, object_data_add
 from bpy.app.handlers import persistent
+import socket
 
 amplitude = ThangsEvents()
+amplitude.deviceId = socket.gethostname().split(".")[0]
 
 config_obj = configparser.ConfigParser()
 config_path = os.path.join(os.path.dirname(__file__), 'prod_config.ini')
 config_obj.read(config_path)
-thangs_config = config_obj['DEFAULT']
+thangs_config = config_obj['thangs']
 
 
 class ThangsFetcher():
@@ -246,10 +248,8 @@ class ThangsFetcher():
 
         self.pcoll = self.preview_collections["main"]
 
-        nav_url = thangs_config['url']
-
         if self.newSearch == True:
-            response = requests.get(nav_url+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
+            response = requests.get(thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
                                     "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs")
         else:
             response = requests.get(
