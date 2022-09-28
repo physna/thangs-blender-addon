@@ -7,7 +7,6 @@ import time
 import logging
 import os
 
-# __location__ = os.path.realpath(
 # config_file = open(os.path.join(__location__, 'configfile.ini'))
 
 config_obj = configparser.ConfigParser(allow_no_value=True)
