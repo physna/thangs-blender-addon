@@ -53,6 +53,6 @@ class ThangsEvents(object):
 
     def _send_amplitude_event(self, event_name, event_properties):
         event = self._construct_event(event_name, event_properties)
-        response = requests.post(self.ampURL, json=[event])
-        log.info('Sent amplitude event: ' + event_name + 'Response: ' + str(response.status_code))
+        response = requests.post(self.ampURL, json={'events': [event]})
+        print('Sent amplitude event: ' + event_name + 'Response: ' + str(response.status_code) + " " + response.headers['x-cloud-trace-context'])
 
