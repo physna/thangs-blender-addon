@@ -1,11 +1,15 @@
 import threading
+import json
+import base64
 import requests
+import uuid
 from urllib.request import urlopen
 import urllib.request
 import urllib.parse
 import threading
 import os
 import math
+from requests.exceptions import Timeout
 from .thangs_events import ThangsEvents
 import bpy
 from bpy.types import WindowManager
@@ -26,12 +30,17 @@ amplitude = ThangsEvents()
 
 class ThangsFetcher():
     def __init__(self, callback=None):
-        self.thumbnails = []
+        self.search_thread = None
+        self.search_callback = callback
         self.context = ""
         self.thangs_ui_mode = ''
-        self.modelIds = []
-        self.modelTitles = []
-        self.filePaths = []
+        self.Directory = ""
+        self.pcoll = ""
+        self.query = ""
+        self.devideOS = ""
+        self.deviceVer = ""
+        self.uuid = ""
+
         self.modelInfo = []
         self.enumItems = []
         self.enumModels1 = []
@@ -47,20 +56,53 @@ class ThangsFetcher():
         self.filetype = []
         self.length = []
         self.thumbnailNumbers = []
-        self.totalModels = 0
-        self.Counter = 0
-        self.pcoll = ""
-        self.PageNumber = 1
-        self.Directory = ""
-        self.PageTotal = 0
+
         self.preview_collections = {}
-        self.eventCall = ""
+        self.searchMetaData = {}
+
+        self.totalModels = 0
+        self.PageTotal = 0
+        self.PageNumber = 1
         self.CurrentPage = 1
+
         self.searching = False
         self.failed = False
-        self.query = ""
+        self.newSearch = False
+        pass
+
+    def reset(self):
         self.search_thread = None
-        self.search_callback = callback
+        self.context = ""
+        self.thangs_ui_mode = ''
+        self.Directory = ""
+        self.pcoll = ""
+        self.query = ""
+
+        self.modelInfo = []
+        self.enumItems = []
+        self.enumModels1 = []
+        self.enumModels2 = []
+        self.enumModels3 = []
+        self.enumModels4 = []
+        self.enumModels5 = []
+        self.enumModels6 = []
+        self.enumModels7 = []
+        self.enumModels8 = []
+        self.licenses = []
+        self.creators = []
+        self.filetype = []
+        self.length = []
+        self.thumbnailNumbers = []
+
+        self.preview_collections = {}
+
+        self.totalModels = 0
+        self.PageTotal = 0
+        self.PageNumber = 1
+        self.CurrentPage = 1
+
+        self.searching = False
+        self.failed = False
 
         pass
 
@@ -83,36 +125,6 @@ class ThangsFetcher():
             return True
         return False
 
-    def reset(self):
-        self.thumbnails = []
-        self.context = ""
-        self.thangs_ui_mode = ''
-        self.modelIds = []
-        self.modelTitles = []
-        self.filePaths = []
-        self.modelInfo = []
-        self.enumItems = []
-        self.enumModels = []
-        self.totalModels = 0
-        self.i = 0
-        self.x = 0
-        self.Counter = 0
-        self.pcoll = ""
-        self.PageNumber = 1
-        self.Directory = ""
-        self.PageTotal = 0
-        self.preview_collections = {}
-        self.eventCall = ""
-        self.CurrentPage = 1
-        self.searching = False
-        self.failed = False
-        self.query = ""
-        self.deviceId = ""
-        self.ampURL = 'https://production-api.thangs.com/system/events'
-        self.search_thread = None
-        self.event_thread = None
-        pass
-
     def get_total_results(self, response):
         if response.status_code != 200:
             self.totalModels = 0
@@ -121,13 +133,30 @@ class ThangsFetcher():
             print("Started Counting Results")
             responseData = response.json()
             items = responseData["searchMetadata"]
-            self.totalModels = items["totalResults"]
+            self.totalModels = items['totalResults']
             if math.ceil(self.totalModels/8) > 99:
                 self.PageTotal = 99
             else:
                 self.PageTotal = math.ceil(self.totalModels/8)
 
-            amplitude.sendAmplitudeEvent("results")
+            if items['totalResults'] == 0:
+                amplitude.send_amplitude_event("Text Search - No Results", event_properties={
+                    'searchTerm': items['originalQuery'],
+                    'searchId': self.uuid,
+                    'numOfMatches': items['totalResults'],
+                    'pageCount': items['page'],
+                    'searchMetadata': self.searchMetaData,
+                    'source': "blender",
+                })
+            else:
+                amplitude.send_amplitude_event("Text Search - Results", event_properties={
+                    'searchTerm': items['originalQuery'],
+                    'searchId': self.uuid,
+                    'numOfMatches': items['totalResults'],
+                    'pageCount': items['page'],
+                    'searchMetadata': self.searchMetaData,
+                    'source': "blender",
+                })
 
     def get_http_search(self):
         print("Started Search")
@@ -136,6 +165,11 @@ class ThangsFetcher():
         self.Directory = self.query
         # Added
         self.CurrentPage = self.PageNumber
+
+        amplitude.send_amplitude_event("Text Search Started", event_properties={
+            'searchTerm': self.query,
+            'source': "blender",
+        })
 
         # Get the preview collection (defined in register func).
 
@@ -147,6 +181,7 @@ class ThangsFetcher():
                 self.search_callback()
                 return
             else:
+                self.newSearch = True
                 self.PageNumber = 1
                 self.CurrentPage = 1
 
@@ -155,11 +190,8 @@ class ThangsFetcher():
             self.search_callback()
             return
 
-        self.thumbnails.clear()
-        self.modelIds.clear()
-        self.modelTitles.clear()
-        self.filePaths.clear()
         self.modelInfo.clear()
+
         self.enumItems.clear()
         self.enumModels1.clear()
         self.enumModels2.clear()
@@ -169,6 +201,7 @@ class ThangsFetcher():
         self.enumModels6.clear()
         self.enumModels7.clear()
         self.enumModels8.clear()
+
         self.licenses.clear()
         self.creators.clear()
         self.filetype.clear()
@@ -206,19 +239,41 @@ class ThangsFetcher():
 
         self.pcoll = self.preview_collections["main"]
 
-        amplitude.sendAmplitudeEvent("startedSearch")
-
-        response = requests.get(
-            "https://thangs.com/api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query+"&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs")
-
-        self.get_total_results(response)
+        if self.newSearch == True:
+            response = requests.get(
+                "https://thangs.com/api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query+"&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs")
+        else:
+            response = requests.get(
+                "https://thangs.com/api/models/v2/search-by-text?page=" +
+                str(self.CurrentPage-1)+"&searchTerm="+self.query +
+                "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
+                headers={"x-thangs-searchmetadata": base64.b64encode(json.dumps(self.searchMetaData).encode()).decode()},
+            )
 
         if response.status_code != 200:
-            amplitude.sendAmplitudeEvent("searchFailed")
+            amplitude.send_amplitude_event("Search Failed", event_properties={
+                'device_os': str(self.devideOS),
+                'device_ver': str(self.deviceVer),
+                'searchTerm': self.query,
+                'source': "blender"
+            })
 
         else:
             responseData = response.json()
             items = responseData["results"]  # Each model result is X
+            if self.newSearch == True:
+                self.uuid = str(uuid.uuid4())
+                self.searchMetaData = responseData["searchMetadata"]
+                self.searchMetaData['searchID'] = self.uuid
+                data = {
+                    "searchId": self.uuid,
+                    "searchTerm": self.query,
+                }
+
+                amplitude.send_thangs_event("Capture", data)
+
+            self.get_total_results(response)
+
             self.i = 0
             for item in items:
                 if len(item["thumbnails"]) > 0:
@@ -227,16 +282,20 @@ class ThangsFetcher():
                     thumbnailAPIURL = item["thumbnailUrl"]
                     thumbnailURL = requests.head(thumbnailAPIURL)
                     thumbnail = thumbnailURL.headers["Location"]
-                self.thumbnails.append(thumbnail)
-                modelId = item["modelId"]
-                self.modelIds.append(modelId)
 
                 modelTitle = item["modelTitle"]
-                self.modelTitles.append(modelTitle)
                 product_url = item["attributionUrl"]
+                modelId = item["modelId"]
+                searchIndex = ((self.CurrentPage-1)*8) + self.i
+                position = self.i
+                domain = item["domain"]
+                scope = item["scope"]
 
+                # Stateful Model Information
                 self.modelInfo.append(
-                    tuple([modelTitle, product_url, modelId]))
+                    tuple([modelTitle, product_url, modelId, searchIndex, position, domain, scope]))
+                self.enumItems.append(
+                    (modelTitle, modelId, item["ownerUsername"], "LCs Coming Soon!", item["originalFileType"]))
 
                 thumbnail = thumbnail.replace("https", "http", 1)
 
@@ -246,12 +305,8 @@ class ThangsFetcher():
 
                 thumb = self.pcoll.load(modelId, filepath, 'IMAGE')
 
-                self.filePaths.append(filePath[0])
-
                 self.thumbnailNumbers.append(thumb.icon_id)
 
-                self.enumItems.append(
-                    (modelTitle, modelId, item["ownerUsername"], "LCs Coming Soon!", item["originalFileType"]))
                 z = 0
                 if self.i == 0:
                     self.enumModels1.append(
@@ -290,13 +345,17 @@ class ThangsFetcher():
                     self.x = z
                     for part in parts:
                         ModelTitle = part["modelFileName"]
+                        modelID = part["modelId"]
                         thumbnailAPIURL = part["thumbnailUrl"]
-                        thumbnailURL = requests.head(thumbnailAPIURL)
+                        try:
+                            thumbnailURL = requests.head(
+                                thumbnailAPIURL, timeout=5)
+                        except Timeout:
+                            continue
                         thumbnail = thumbnailURL.headers["Location"]
                         thumbnail = thumbnail.replace("https", "http", 1)
                         filePath = urllib.request.urlretrieve(thumbnail)
                         filePath = filePath[0]
-                        modelID = part["modelId"]
                         filepath = os.path.join(modelID, filePath)
                         thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
                         if self.i == 0:
@@ -333,14 +392,22 @@ class ThangsFetcher():
                         self.x = self.x + 1
                 self.i = self.i + 1
 
-        self.length.append(len(self.enumModels1))
-        self.length.append(len(self.enumModels2))
-        self.length.append(len(self.enumModels3))
-        self.length.append(len(self.enumModels4))
-        self.length.append(len(self.enumModels5))
-        self.length.append(len(self.enumModels6))
-        self.length.append(len(self.enumModels7))
-        self.length.append(len(self.enumModels8))
+        if self.enumModels1:
+            self.length.append(len(self.enumModels1))
+        if self.enumModels2:
+            self.length.append(len(self.enumModels2))
+        if self.enumModels3:
+            self.length.append(len(self.enumModels3))
+        if self.enumModels4:
+            self.length.append(len(self.enumModels4))
+        if self.enumModels5:
+            self.length.append(len(self.enumModels5))
+        if self.enumModels6:
+            self.length.append(len(self.enumModels6))
+        if self.enumModels7:
+            self.length.append(len(self.enumModels7))
+        if self.enumModels8:
+            self.length.append(len(self.enumModels8))
 
         self.pcoll.Model = self.enumItems
         self.pcoll.ModelView1 = self.enumModels1
@@ -357,6 +424,7 @@ class ThangsFetcher():
         self.pcoll.Model_page = self.CurrentPage
 
         self.searching = False
+        self.newSearch = False
 
         self.thangs_ui_mode = 'VIEW'
 
@@ -366,6 +434,6 @@ class ThangsFetcher():
 
         print("Search Completed!")
 
-        amplitude.sendAmplitudeEvent("searchCompleted")
+
 
         return

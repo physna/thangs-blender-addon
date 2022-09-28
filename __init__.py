@@ -22,6 +22,10 @@ from .thangs_events import ThangsEvents
 from . import addon_updater_ops
 import socket
 import platform
+import requests
+import logging
+
+log = logging.getLogger(__name__)
 
 
 bl_info = {
@@ -49,7 +53,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
     auto_check_update: BoolProperty(
         name="Auto-check for Update",
         description="If enabled, auto-check for updates using an interval",
-        default=False
+        default=True
     )
 
     updater_interval_months: IntProperty(
@@ -61,7 +65,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
     updater_interval_days: IntProperty(
         name='Days',
         description="Number of days between checking for updates",
-        default=7,
+        default=0,
         min=0,
         max=31)
 
@@ -75,7 +79,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
     updater_interval_minutes: IntProperty(
         name='Minutes',
         description="Number of minutes between checking for updates",
-        default=0,
+        default=10,
         min=0,
         max=59)
 
@@ -104,7 +108,6 @@ def tag_redraw_areas(area_types: iter = ["ALL"]):
             fetcher.thangs_ui_mode = 'VIEW'
     area_types = confirm_list(area_types)
     screens = [bpy.context.screen] if bpy.context.screen else bpy.data.screens
-    # print(screens)
     for screen in screens:
         for area in screen.areas:
             for area_type in area_types:
@@ -228,6 +231,51 @@ class FirstPageChange(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def Model_Event(position):
+
+    scope = fetcher.modelInfo[position][6]
+    event_name = 'Thangs Model Link' if scope == 'thangs' else 'External Model Link'
+
+    amplitude.send_amplitude_event(event_name, event_properties={
+        'path': fetcher.modelInfo[position][1],
+        'type': "text",
+        'domain': fetcher.modelInfo[position][5],
+        'scope': fetcher.modelInfo[position][6],
+        'searchIndex': fetcher.modelInfo[position][3],
+        'phyndexerID': fetcher.modelInfo[position][2],
+        'searchMetadata': fetcher.searchMetaData,
+    })
+    data = {
+        "modelId": fetcher.modelInfo[position][2],
+        "searchId": fetcher.uuid,
+        "searchResultIndex": fetcher.modelInfo[position][3],
+    }
+    amplitude.send_thangs_event("Results", data)
+    return
+
+
+class BrowseToModelOperator(Operator):
+    """Open model in browser"""
+    bl_idname = "wm.browse_to_model"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Model to open",
+    )
+    modelIndex: IntProperty(
+        name="Index",
+        description="The index of the model to open"
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(self.modelIndex)
+        return {'FINISHED'}
+
+
 class ThangsLink(bpy.types.Operator):
     """Click to continue on Thangs"""
     bl_idname = "link.thangs"
@@ -235,7 +283,8 @@ class ThangsLink(bpy.types.Operator):
     bl_label = "Redirect to Thangs"
 
     def execute(self, context):
-        amplitude.sendAmplitudeEvent("toThangs")
+        amplitude.send_amplitude_event("nav to thangs", event_properties={
+                                       'device_os': str(fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
         webbrowser.open("https://thangs.com/search/"+fetcher.query +
                         "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs", new=0, autoraise=True)
         return {'FINISHED'}
@@ -357,12 +406,11 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     row = col.row()
                     row.label(text="{}".format(model[4]), icon='FILEBROWSER')
 
-                    for x in range(0, len(fetcher.modelInfo)):
-                        if fetcher.modelInfo[x][0] == model[0]:
-                            modelURL = fetcher.modelInfo[x][1]
+                    modelURL = fetcher.modelInfo[z][1]
 
-                    cell.operator('wm.url_open', text="%s" % model[0]).url = modelURL + \
-                        "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    props = cell.operator('wm.browse_to_model', text="%s" % model[0])
+                    props.url = modelURL + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    props.modelIndex = z
 
                     z = z + 1
 
@@ -471,10 +519,12 @@ class THANGS_PT_model_display(bpy.types.Panel):
         row.scale_x = .18
 
     def draw(self, context):
+        addon_updater_ops.check_for_update_background()
         if fetcher.thangs_ui_mode == "VIEW":
             self.drawView(context)
         else:
             self.drawSearch(context)
+        addon_updater_ops.update_notice_box_ui(self, context)
 
 
 def enum_previews_from_thangs_api1(self, context):
@@ -524,6 +574,26 @@ def startSearch(self, value):
     queryText = bpy.context.scene.thangs_model_search
     fetcher.search(query=queryText)
 
+
+def heartbeat_timer():
+    log.info('sending thangs heartbeat')
+    amplitude.send_amplitude_event("Thangs Blender Addon - Heartbeat", event_properties={'device_os': str(
+        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
+    return 300
+
+def open_timer():
+    log.info('sending thangs open')
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            for space in area.spaces:
+                if space.type == 'VIEW_3D':
+                    # True: n-panel is open
+                    # False: n-panel is closed
+                    n_panel_is_open = space.show_region_ui
+
+                    amplitude.send_amplitude_event("Thangs Blender Addon - Opened", event_properties={'device_os': str(
+                        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender", 'panel_open': n_panel_is_open})
+                    return 60
 
 def register():
     global fetcher
@@ -621,29 +691,33 @@ def register():
     bpy.utils.register_class(LastPageChange)
     bpy.utils.register_class(FirstPageChange)
     bpy.utils.register_class(DemoPreferences)
+    bpy.utils.register_class(BrowseToModelOperator)
 
     bpy.types.Scene.thangs_model_search = bpy.props.StringProperty(
         name="",
         description="Search by text or 'Exact Phrase'",
         default="Search",
         update=startSearch
-        # update=enter_Search
     )
 
     amplitude.deviceId = socket.gethostname().split(".")[0]
-    amplitude.devideOS = platform.system()
-    amplitude.deviceVer = platform.release()
-    amplitude.sendAmplitudeEvent("heartbeat")
+    fetcher.devideOS = platform.system()
+    fetcher.deviceVer = platform.release()
 
     addon_updater_ops.register(bl_info)
 
-    print("Finished Register")
+    bpy.app.timers.register(heartbeat_timer)
+    bpy.app.timers.register(open_timer)
+
+    log.info("Finished Register")
 
 
 def unregister():
     from bpy.types import WindowManager
 
     del WindowManager.Model
+    bpy.app.timers.unregister(heartbeat_timer)
+    bpy.app.timers.unregister(open_timer)
 
     for pcoll in fetcher.preview_collections.values():
         bpy.utils.previews.remove(pcoll)
@@ -659,6 +733,8 @@ def unregister():
     bpy.utils.unregister_class(LastPageChange)
     bpy.utils.unregister_class(FirstPageChange)
     bpy.utils.unregister_class(DemoPreferences)
+    bpy.utils.unregister_class(BrowseToModelOperator)
+    addon_updater_ops.unregister()
 
 
 if __name__ == "__main__":
