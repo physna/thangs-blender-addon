@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 class ThangsEvents(object):
     def __init__(self):
         self.deviceId = ""
-        self.ampURL = 'https://events.thangs.com/'
+        self.ampURL = 'https://events.thangs.com'
         pass
 
     def send_thangs_event(self, event_type, event_properties=None):
@@ -53,6 +53,6 @@ class ThangsEvents(object):
 
     def _send_amplitude_event(self, event_name, event_properties):
         event = self._construct_event(event_name, event_properties)
-        response = requests.post(self.ampURL, json=[event])
-        log.info('Sent amplitude event: ' + event_name + 'Response: ' + str(response.status_code))
+        response = requests.post(self.ampURL, json={'events': [event]})
+        log.info('Sent amplitude event: ' + event_name + 'Response: ' + str(response.status_code) + " " + response.headers['x-cloud-trace-context'])
 
