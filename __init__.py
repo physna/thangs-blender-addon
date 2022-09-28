@@ -24,7 +24,6 @@ from . import addon_updater_ops
 import socket
 import platform
 import logging
-import configparser
 
 log = logging.getLogger(__name__)
 
