@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 class ThangsEvents(object):
     def __init__(self):
         self.deviceId = ""
-        self.ampURL = 'https://events.thangs.com/'
+        self.ampURL = 'https://production-api.thangs.com/system/events'
         pass
 
     def send_thangs_event(self, event_type, event_properties=None):
