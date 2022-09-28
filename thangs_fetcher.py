@@ -35,7 +35,6 @@ config_path = os.path.join(os.path.dirname(__file__), 'prod_config.ini')
 config_obj.read(config_path)
 thangs_config = config_obj['thangs']
 
-
 class ThangsFetcher():
     def __init__(self, callback=None):
         self.search_thread = None

@@ -582,6 +582,19 @@ def heartbeat_timer():
         fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender", 'addon_version': str(bl_info["version"])})
     return 300
 
+def open_timer():
+    log.info('sending thangs open')
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            for space in area.spaces:
+                if space.type == 'VIEW_3D':
+                    # True: n-panel is open
+                    # False: n-panel is closed
+                    n_panel_is_open = space.show_region_ui
+
+                    amplitude.send_amplitude_event("Thangs Blender Addon - Opened", event_properties={'device_os': str(
+                        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender", 'panel_open': n_panel_is_open})
+                    return 60
 
 def register():
     global fetcher
@@ -695,6 +708,7 @@ def register():
     addon_updater_ops.register(bl_info)
 
     bpy.app.timers.register(heartbeat_timer)
+    bpy.app.timers.register(open_timer)
 
     log.info("Finished Register")
 
@@ -704,6 +718,7 @@ def unregister():
 
     del WindowManager.Model
     bpy.app.timers.unregister(heartbeat_timer)
+    bpy.app.timers.unregister(open_timer)
 
     for pcoll in fetcher.preview_collections.values():
         bpy.utils.previews.remove(pcoll)

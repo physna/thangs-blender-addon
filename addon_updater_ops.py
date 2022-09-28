@@ -1353,7 +1353,7 @@ def register(bl_info):
     updater.private_token = None  # "tokenstring"
 
     # choose your own username, must match website (not needed for GitLab)
-    updater.user = "RandyHucker"
+    updater.user = "physna"
 
     # choose your own repository, must match git name
     updater.repo = "thangs-blender-addon"
@@ -1361,7 +1361,7 @@ def register(bl_info):
     # updater.addon = # define at top of module, MUST be done first
 
     # Website for manual addon download, optional but recommended to set
-    updater.website = "https://github.com/RandyHucker/thangs-blender-addon/"
+    updater.website = "https://github.com/physna/thangs-blender-addon/"
 
     # Addon subfolder path
     # "sample/path/to/addon"
