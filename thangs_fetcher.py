@@ -10,8 +10,10 @@ import urllib.parse
 import threading
 import os
 import math
+import platform
 from requests.exceptions import Timeout
 from .thangs_events import ThangsEvents
+from .config import get_config, ThangsConfig
 import bpy
 from bpy.types import WindowManager
 import bpy.utils.previews
@@ -27,13 +29,6 @@ from bpy_extras.object_utils import AddObjectHelper, object_data_add
 from bpy.app.handlers import persistent
 import socket
 
-amplitude = ThangsEvents()
-amplitude.deviceId = socket.gethostname().split(".")[0]
-
-config_obj = configparser.ConfigParser()
-config_path = os.path.join(os.path.dirname(__file__), 'prod_config.ini')
-config_obj.read(config_path)
-thangs_config = config_obj['thangs']
 
 class ThangsFetcher():
     def __init__(self, callback=None):
@@ -44,8 +39,6 @@ class ThangsFetcher():
         self.Directory = ""
         self.pcoll = ""
         self.query = ""
-        self.devideOS = ""
-        self.deviceVer = ""
         self.uuid = ""
 
         self.modelInfo = []
@@ -75,6 +68,14 @@ class ThangsFetcher():
         self.searching = False
         self.failed = False
         self.newSearch = False
+
+        
+        self.Thangs_Config = ThangsConfig()
+        self.amplitude = ThangsEvents()
+        self.amplitude.deviceId = socket.gethostname().split(".")[0]
+        self.amplitude.deviceOs = platform.system()
+        self.amplitude.deviceVer = platform.release()
+
         pass
 
     def reset(self):
@@ -147,22 +148,20 @@ class ThangsFetcher():
                 self.PageTotal = math.ceil(self.totalModels/8)
 
             if items['totalResults'] == 0:
-                amplitude.send_amplitude_event("Text Search - No Results", event_properties={
+                self.amplitude.send_amplitude_event("Text Search - No Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
                     'pageCount': items['page'],
                     'searchMetadata': self.searchMetaData,
-                    'source': "blender",
                 })
             else:
-                amplitude.send_amplitude_event("Text Search - Results", event_properties={
+                self.amplitude.send_amplitude_event("Text Search - Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
                     'pageCount': items['page'],
                     'searchMetadata': self.searchMetaData,
-                    'source': "blender",
                 })
 
     def get_http_search(self):
@@ -174,9 +173,8 @@ class ThangsFetcher():
         # Added
         self.CurrentPage = self.PageNumber
 
-        amplitude.send_amplitude_event("Text Search Started", event_properties={
+        self.amplitude.send_amplitude_event("Text Search Started", event_properties={
             'searchTerm': self.query,
-            'source': "blender",
         })
 
         # Get the preview collection (defined in register func).
@@ -248,11 +246,11 @@ class ThangsFetcher():
         self.pcoll = self.preview_collections["main"]
 
         if self.newSearch == True:
-            response = requests.get(thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
+            response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
                                     "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs")
         else:
             response = requests.get(
-                str(thangs_config['url'])+"api/models/v2/search-by-text?page=" +
+                str(self.Thangs_Config.thangs_config['url'])+"api/models/v2/search-by-text?page=" +
                 str(self.CurrentPage-1)+"&searchTerm="+self.query +
                 "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
                 headers={"x-thangs-searchmetadata": base64.b64encode(
@@ -260,11 +258,8 @@ class ThangsFetcher():
             )
 
         if response.status_code != 200:
-            amplitude.send_amplitude_event("Search Failed", event_properties={
-                'device_os': str(self.devideOS),
-                'device_ver': str(self.deviceVer),
+            self.amplitude.send_amplitude_event("Search Failed", event_properties={
                 'searchTerm': self.query,
-                'source': "blender"
             })
 
         else:
@@ -279,7 +274,7 @@ class ThangsFetcher():
                     "searchTerm": self.query,
                 }
 
-                amplitude.send_thangs_event("Capture", data)
+                self.amplitude.send_thangs_event("Capture", data)
 
             self.get_total_results(response)
 

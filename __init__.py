@@ -20,12 +20,12 @@ import os
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from . import addon_updater_ops
+from .config import initialize
 import socket
 import platform
 import logging
 
 log = logging.getLogger(__name__)
-
 
 bl_info = {
     "name": "Thangs Model Search",
@@ -40,7 +40,6 @@ bl_info = {
     "tracker_url": "https://github.com/RandyHucker/thangs-blender-addon/issues/new/choose",
     "category": "Import/Export"
 }
-
 
 @addon_updater_ops.make_annotations
 class DemoPreferences(bpy.types.AddonPreferences):
@@ -118,7 +117,7 @@ def on_complete_search():
     tag_redraw_areas()
     return
 
-
+initialize(bl_info["version"])
 fetcher = ThangsFetcher(callback=on_complete_search)
 amplitude = ThangsEvents()
 
@@ -282,8 +281,7 @@ class ThangsLink(bpy.types.Operator):
     bl_label = "Redirect to Thangs"
 
     def execute(self, context):
-        amplitude.send_amplitude_event("nav to thangs", event_properties={
-                                       'device_os': str(fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender"})
+        amplitude.send_amplitude_event("nav to thangs", event_properties={})
         webbrowser.open("https://thangs.com/search/"+fetcher.query +
                         "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs", new=0, autoraise=True)
         return {'FINISHED'}
@@ -576,8 +574,7 @@ def startSearch(self, value):
 
 def heartbeat_timer():
     log.info('sending thangs heartbeat')
-    amplitude.send_amplitude_event("Thangs Blender Addon - Heartbeat", event_properties={'device_os': str(
-        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender", 'addon_version': str(bl_info["version"])})
+    amplitude.send_amplitude_event("Thangs Blender Addon - Heartbeat", event_properties={})
     return 300
 
 def open_timer():
@@ -590,8 +587,7 @@ def open_timer():
                     # False: n-panel is closed
                     n_panel_is_open = space.show_region_ui
 
-                    amplitude.send_amplitude_event("Thangs Blender Addon - Opened", event_properties={'device_os': str(
-                        fetcher.devideOS), 'device_ver': str(fetcher.deviceVer), 'source': "blender", 'panel_open': n_panel_is_open})
+                    amplitude.send_amplitude_event("Thangs Blender Addon - Opened", event_properties={'panel_open': n_panel_is_open})
                     return 60
 
 def register():
@@ -700,8 +696,9 @@ def register():
     )
 
     amplitude.deviceId = socket.gethostname().split(".")[0]
-    fetcher.devideOS = platform.system()
-    fetcher.deviceVer = platform.release()
+    amplitude.addon_version = bl_info["version"]
+    amplitude.deviceOs = platform.system()
+    amplitude.deviceVer = platform.release()
 
     addon_updater_ops.register(bl_info)
 

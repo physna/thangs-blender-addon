@@ -5,21 +5,19 @@ import requests
 import threading
 import time
 import logging
-import os
 
-
-config_obj = configparser.ConfigParser(allow_no_value=True)
-config_path = os.path.join(os.path.dirname(__file__), 'prod_config.ini')
-config_obj.read(config_path)
-thangs_config = config_obj['thangs']
+from .config import ThangsConfig, get_config
 
 log = logging.getLogger(__name__)
-
 
 class ThangsEvents(object):
     def __init__(self):
         self.deviceId = ""
-        self.ampURL = thangs_config['event_url']
+        self.Thangs_Config = get_config()
+        self.ampURL = self.Thangs_Config.thangs_config['event_url']
+        self.addon_version = self.Thangs_Config.version
+        self.deviceVer = ""
+        self.deviceOs = ""
         pass
 
     def send_thangs_event(self, event_type, event_properties=None):
@@ -31,13 +29,13 @@ class ThangsEvents(object):
 
     def _send_thangs_event(self, event_type, event_properties):
         if event_type == "Results":
-            requests.post(thangs_config['url']+"api/search/v1/result",
+            requests.post(self.Thangs_Config.thangs_config['url']+"api/search/v1/result",
                           json=event_properties,
                           headers={},
                           )
 
         elif event_type == "Capture":
-            requests.post(thangs_config['url']+"api/search/v1/capture-text-search",
+            requests.post(self.Thangs_Config.thangs_config['url']+"api/search/v1/capture-text-search",
                           json=event_properties,
                           headers={
                               "x-device-id": self.deviceId},
@@ -54,10 +52,15 @@ class ThangsEvents(object):
         event = {
             'event_type': event_name,
             'device_id': str(self.deviceId),
-            'event_properties': {}
+            'event_properties': {
+                'addon_version': str(self.addon_version),
+                'device_os': str(self.deviceOs),
+                'device_ver': str(self.deviceVer),
+                'source': "blender",
+            }
         }
         if event_properties:
-            event['event_properties'] = event_properties
+            event['event_properties'] |= event_properties
 
         return event
 
