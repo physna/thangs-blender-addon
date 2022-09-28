@@ -7,7 +7,6 @@ import time
 import logging
 import os
 
-# config_file = open(os.path.join(__location__, 'configfile.ini'))
 
 config_obj = configparser.ConfigParser(allow_no_value=True)
 config_path = os.path.join(os.path.dirname(__file__), 'prod_config.ini')
