@@ -30,7 +30,7 @@ To find models on Thangs, type the search term into the 'Search' box in the Than
 
 ### Continue on Thangs.com
 
-Once the Thangs Blender ddon has found some models for you, you can either click on the [Thangs](https://thangs.com?utm_source=blender_github&utm_medium=referral&utm_campaign=blender_github) icon
+Once the Thangs Blender addon has found some models for you, you can either click on the [Thangs](https://thangs.com?utm_source=blender_github&utm_medium=referral&utm_campaign=blender_github) icon
 at the top-right of the addon to explore the same search on the Thangs website, or you can click on any of the models themselves to go to
 the model directly, whether it's on Thangs or one of the sites that Thangs indexes.
 
