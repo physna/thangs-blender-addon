@@ -17,7 +17,6 @@ from bpy.app.handlers import persistent
 import bpy.utils.previews
 from urllib.request import urlopen
 import os
-import requests
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from . import addon_updater_ops
