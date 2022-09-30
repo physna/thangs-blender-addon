@@ -42,12 +42,12 @@ class ThangsLogin(threading.Thread):
                 attempts = attempts + 1
 
     def apiAccessGrantUrl(self, codeChallengeId, attempts):
-        return f"{self.config['apiUrl']}users/access-grant/{codeChallengeId}/check?attempts={attempts}"
+        return f"{self.config['url']}api/users/access-grant/{codeChallengeId}/check?attempts={attempts}"
 
     def authenticate(self):
         codeChallengeId = uuid.uuid4()
 
-        webbrowser.open(f"{self.config['url']}/profile/client-access-grant?verifierCode={codeChallengeId}&version=blender-addon&appName=blender+addon")
+        webbrowser.open(f"{self.config['url']}profile/client-access-grant?verifierCode={codeChallengeId}&version=blender-addon&appName=blender+addon")
 
         return codeChallengeId
 
