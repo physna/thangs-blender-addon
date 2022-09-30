@@ -17,6 +17,7 @@ from bpy.app.handlers import persistent
 import bpy.utils.previews
 from urllib.request import urlopen
 import os
+from .thangs_login import stop_access_grant
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from . import addon_updater_ops
@@ -601,6 +602,7 @@ def register():
     )
     import bpy.utils.previews
 
+
     # Added
     WindowManager.Model_page = IntProperty(
         name="Current Page",
@@ -731,6 +733,8 @@ def unregister():
     bpy.utils.unregister_class(DemoPreferences)
     bpy.utils.unregister_class(BrowseToModelOperator)
     addon_updater_ops.unregister()
+
+    stop_access_grant()
 
 
 if __name__ == "__main__":
