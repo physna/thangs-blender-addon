@@ -12,7 +12,7 @@ import os
 import math
 import platform
 from requests.exceptions import Timeout
-from fp_val import FP
+from .fp_val import FP
 from .thangs_events import ThangsEvents
 from .config import get_config, ThangsConfig
 import bpy
