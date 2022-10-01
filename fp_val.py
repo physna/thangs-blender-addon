@@ -5,7 +5,7 @@ class FP:
 
         if FP.val == "":
             import requests
-            from machine_Id import MachineID
+            from .machine_Id import MachineID
 
             machineID = MachineID().getID()
             response = requests.post(url, json={ 'machineID': machineID })
