@@ -51,6 +51,10 @@ class ThangsFetcher():
         self.enumModels6 = []
         self.enumModels7 = []
         self.enumModels8 = []
+
+        self.enumModelInfo = []
+        self.enumModelTotal = []
+        
         self.licenses = []
         self.creators = []
         self.filetype = []
@@ -69,7 +73,6 @@ class ThangsFetcher():
         self.failed = False
         self.newSearch = False
 
-        
         self.Thangs_Config = ThangsConfig()
         self.amplitude = ThangsEvents()
         self.amplitude.deviceId = socket.gethostname().split(".")[0]
@@ -148,7 +151,7 @@ class ThangsFetcher():
                 self.PageTotal = math.ceil(self.totalModels/8)
 
             if items['totalResults'] == 0:
-                self.amplitude.send_amplitude_event("Text Search - No Results", event_properties={
+                self.amplitude.send_amplitude_event("Text search - No Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
@@ -156,7 +159,7 @@ class ThangsFetcher():
                     'searchMetadata': self.searchMetaData,
                 })
             else:
-                self.amplitude.send_amplitude_event("Text Search - Results", event_properties={
+                self.amplitude.send_amplitude_event("Text search - Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
@@ -207,6 +210,9 @@ class ThangsFetcher():
         self.enumModels6.clear()
         self.enumModels7.clear()
         self.enumModels8.clear()
+        self.enumModelInfo.clear()
+        self.enumModelTotal.clear()
+        
 
         self.licenses.clear()
         self.creators.clear()
@@ -258,7 +264,8 @@ class ThangsFetcher():
             )
 
         if response.status_code != 200:
-            self.amplitude.send_amplitude_event("Search Failed", event_properties={
+            print("Search Failed")
+            self.amplitude.send_amplitude_event("Text Search - Failed", event_properties={
                 'searchTerm': self.query,
             })
 
@@ -279,7 +286,11 @@ class ThangsFetcher():
             self.get_total_results(response)
 
             self.i = 0
+            #self.enumModelTotal.append(("NONE", "None", "", 1))
+
             for item in items:
+                self.enumModelInfo.clear()
+
                 if len(item["thumbnails"]) > 0:
                     thumbnail = item["thumbnails"][0]
                 else:
@@ -312,6 +323,10 @@ class ThangsFetcher():
                 self.thumbnailNumbers.append(thumb.icon_id)
 
                 z = 0
+
+                self.enumModelInfo.append(
+                        (modelId, modelTitle, ""))#, z))
+
                 if self.i == 0:
                     self.enumModels1.append(
                         (modelId, modelTitle, "", thumb.icon_id, z))
@@ -362,6 +377,10 @@ class ThangsFetcher():
                         filePath = filePath[0]
                         filepath = os.path.join(modelID, filePath)
                         thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
+
+                        self.enumModelInfo.append(
+                            (modelID, ModelTitle, ""))#, self.x+1))
+
                         if self.i == 0:
                             self.enumModels1.append(
                                 (modelID, ModelTitle, "", thumb.icon_id, self.x+1))
@@ -394,7 +413,11 @@ class ThangsFetcher():
                             self.enumModels8.append(
                                 (modelId, ModelTitle, "", thumb.icon_id, self.x+1))
                         self.x = self.x + 1
+
+                self.enumModelTotal.append(self.enumModelInfo[:])
                 self.i = self.i + 1
+        
+        print(self.enumModelTotal)
 
         if self.enumModels1:
             self.length.append(len(self.enumModels1))

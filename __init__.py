@@ -16,6 +16,7 @@ from bpy_extras.object_utils import AddObjectHelper, object_data_add
 from bpy.app.handlers import persistent
 import bpy.utils.previews
 from urllib.request import urlopen
+import urllib.parse
 import os
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
@@ -30,7 +31,7 @@ log = logging.getLogger(__name__)
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
-    "version": (0, 1, 6),
+    "version": (0, 1, 8),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
     "description": "Browse and download free 3D models",
@@ -40,6 +41,7 @@ bl_info = {
     "tracker_url": "https://github.com/RandyHucker/thangs-blender-addon/issues/new/choose",
     "category": "Import/Export"
 }
+
 
 @addon_updater_ops.make_annotations
 class DemoPreferences(bpy.types.AddonPreferences):
@@ -117,6 +119,7 @@ def on_complete_search():
     tag_redraw_areas()
     return
 
+
 initialize(bl_info["version"])
 fetcher = ThangsFetcher(callback=on_complete_search)
 amplitude = ThangsEvents()
@@ -131,6 +134,10 @@ pcoll = fetcher.pcoll
 
 PageTotal = fetcher.PageTotal
 fetcher.thangs_ui_mode = 'SEARCH'
+
+modelDropdownIndex = 0
+enumHolder = []
+enumHolder1 = []
 
 
 def setSearch():
@@ -274,6 +281,81 @@ class BrowseToModelOperator(Operator):
         return {'FINISHED'}
 
 
+class BrowseToLicenseOperator(Operator):
+    """Open model license in browser"""
+    bl_idname = "wm.browse_to_license"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="License to open",
+    )
+    modelIndex: IntProperty(
+        name="Index",
+        description="The index of the model license to open"
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(self.modelIndex)
+        return {'FINISHED'}
+
+
+class BrowseToCreatorOperator(Operator):
+    """Open creator's profile in browser"""
+    bl_idname = "wm.browse_to_creator"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Creator profile to open",
+    )
+    modelIndex: IntProperty(
+        name="Index",
+        description="The index of the model creator to open"
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(self.modelIndex)
+        return {'FINISHED'}
+
+
+class DropdownProperties(bpy.types.PropertyGroup):
+    def item_callback(self, context=None):
+        global modelDropdownIndex
+        global enumHolder
+        global enumHolder1
+        if modelDropdownIndex == 0:
+            enumHolder = fetcher.enumModelTotal[0]
+            enumHolder = [
+            ("1", "dog", ""),
+            ("2", "cat", "")
+            ]
+            #print(enumHolder)
+            return enumHolder
+        # elif modelDropdownIndex == 1:
+        #     if fetcher.enumModelTotal[1]:
+        #         enumHolder1 = fetcher.enumModelTotal[1]
+        #         #print(enumHolder1)
+        #         return enumHolder1
+
+    dropdown_Parts: bpy.props.EnumProperty(
+        items=item_callback,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=None,
+        get=None,
+        set=None
+    )
+
+
 class ThangsLink(bpy.types.Operator):
     """Click to continue on Thangs"""
     bl_idname = "link.thangs"
@@ -293,6 +375,7 @@ icon_collections["main"] = icons_dict
 icons_dict = icon_collections["main"]
 icons_dir = os.path.join(os.path.dirname(__file__), "icons")
 icons_dict.load("ThangsT", os.path.join(icons_dir, "T.png"), 'IMAGE')
+icons_dict.load("CreativeC", os.path.join(icons_dir, "CC-Thin.png"), 'IMAGE')
 
 
 class THANGS_OT_search_invoke(Operator):
@@ -345,6 +428,8 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
     def drawView(self, context):
         global pcollModel
+        global modelDropdownIndex
+        global enumHolder
 
         wm = context.window_manager
 
@@ -383,9 +468,10 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
                 grid = layout.grid_flow(
                     columns=1, even_columns=True, even_rows=True)
+                modelDropdownIndex = 0
                 z = 0
                 for model in fetcher.pcoll.Model:
-
+                    modelURL = fetcher.modelInfo[z][1]
                     cell = grid.column().box()
 
                     if fetcher.length[z] > 1:
@@ -397,16 +483,44 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
                     col = cell.box().column(align=True)
                     row = col.row()
-                    row.label(text="{}".format(model[2]), icon='USER')
-                    # row = col.row()
-                    # row.label(text="{}".format(model[3]), icon='TEXT')
+                    row.label(text="", icon='USER')
+                    props = row.operator(
+                        'wm.browse_to_creator', text="%s" % model[2])
+                    props.url = "https://thangs.com/designer/" + urllib.parse.quote(str(
+                        model[2]))+"/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    props.modelIndex = z
+
                     row = col.row()
-                    row.label(text="{}".format(model[4]), icon='FILEBROWSER')
+                    row.label(
+                        text="", icon_value=icons_dict["CreativeC"].icon_id)
+                    props = row.operator(
+                        'wm.browse_to_license', text="{}".format("See License"))
+                    props.url = modelURL + \
+                        "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    props.modelIndex = z
 
-                    modelURL = fetcher.modelInfo[z][1]
+                    row = col.row()
+                    row.label(text="{}".format(""), icon='FILEBROWSER')
 
-                    props = cell.operator('wm.browse_to_model', text="%s" % model[0])
-                    props.url = modelURL + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    scene = context.scene
+                    mytool = scene.my_tool
+
+                    #print(mytool.dropdown_Parts)
+
+                    #mytool.dropdown_Parts = fetcher.enumModelTotal[z]
+
+                    row.prop(mytool, "dropdown_Parts")
+                    modelDropdownIndex = modelDropdownIndex + 1
+                    # print("Fetcher Call")
+                    # print(fetcher.enumModel2[z])
+                    # props.dropdown_Parts = fetcher.enumModel2[z]
+                    # print("Dropdown Items")
+                    # print(dropdown.items)
+
+                    props = cell.operator(
+                        'wm.browse_to_model', text="%s" % model[0])
+                    props.url = modelURL + \
+                        "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                     props.modelIndex = z
 
                     z = z + 1
@@ -468,6 +582,9 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 row = layout.row()
                 o = row.operator("thangs.search_invoke", icon='CANCEL')
                 o.next_mode = self.next_mode('SEARCH')
+
+                print("Holder")
+                print(enumHolder)
         else:
             SearchingLayout = self.layout
             SearchingRow = SearchingLayout.row(align=True)
@@ -574,8 +691,10 @@ def startSearch(self, value):
 
 def heartbeat_timer():
     log.info('sending thangs heartbeat')
-    amplitude.send_amplitude_event("Thangs Blender Addon - Heartbeat", event_properties={})
+    amplitude.send_amplitude_event(
+        "Thangs Blender Addon - Heartbeat", event_properties={})
     return 300
+
 
 def open_timer():
     log.info('sending thangs open')
@@ -587,8 +706,10 @@ def open_timer():
                     # False: n-panel is closed
                     n_panel_is_open = space.show_region_ui
 
-                    amplitude.send_amplitude_event("Thangs Blender Addon - Opened", event_properties={'panel_open': n_panel_is_open})
+                    amplitude.send_amplitude_event(
+                        "Thangs Blender Addon - Opened", event_properties={'panel_open': n_panel_is_open})
                     return 60
+
 
 def register():
     global fetcher
@@ -687,6 +808,12 @@ def register():
     bpy.utils.register_class(FirstPageChange)
     bpy.utils.register_class(DemoPreferences)
     bpy.utils.register_class(BrowseToModelOperator)
+    bpy.utils.register_class(BrowseToLicenseOperator)
+    bpy.utils.register_class(BrowseToCreatorOperator)
+    bpy.utils.register_class(DropdownProperties)
+
+    bpy.types.Scene.my_tool = bpy.props.PointerProperty(
+        type=DropdownProperties)
 
     bpy.types.Scene.thangs_model_search = bpy.props.StringProperty(
         name="",
@@ -730,6 +857,10 @@ def unregister():
     bpy.utils.unregister_class(FirstPageChange)
     bpy.utils.unregister_class(DemoPreferences)
     bpy.utils.unregister_class(BrowseToModelOperator)
+    bpy.utils.unregister_class(BrowseToLicenseOperator)
+    bpy.utils.unregister_class(BrowseToCreatorOperator)
+    bpy.utils.unregister_class(DropdownProperties)
+    del bpy.types.Scene.my_tool
     addon_updater_ops.unregister()
 
 
