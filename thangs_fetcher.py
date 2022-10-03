@@ -12,6 +12,7 @@ import math
 from requests.exceptions import Timeout
 from .thangs_events import ThangsEvents
 import bpy
+import socket
 from bpy.types import WindowManager
 import bpy.utils.previews
 from bpy.types import (Panel,
