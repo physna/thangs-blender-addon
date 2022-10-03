@@ -141,7 +141,7 @@ class ThangsFetcher():
                 self.PageTotal = math.ceil(self.totalModels/8)
 
             if items['totalResults'] == 0:
-                amplitude.send_amplitude_event("Text Search - No Results", event_properties={
+                amplitude.send_amplitude_event("Text search - No Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
@@ -150,7 +150,7 @@ class ThangsFetcher():
                     'source': "blender",
                 })
             else:
-                amplitude.send_amplitude_event("Text Search - Results", event_properties={
+                amplitude.send_amplitude_event("Text search - Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
@@ -252,7 +252,7 @@ class ThangsFetcher():
             )
 
         if response.status_code != 200:
-            amplitude.send_amplitude_event("Search Failed", event_properties={
+            amplitude.send_amplitude_event("Text Search - Failed", event_properties={
                 'device_os': str(self.devideOS),
                 'device_ver': str(self.deviceVer),
                 'searchTerm': self.query,
