@@ -15,6 +15,7 @@ from requests.exceptions import Timeout
 from .thangs_events import ThangsEvents
 from .config import get_config, ThangsConfig
 import bpy
+import socket
 from bpy.types import WindowManager
 import bpy.utils.previews
 from bpy.types import (Panel,
@@ -148,7 +149,7 @@ class ThangsFetcher():
                 self.PageTotal = math.ceil(self.totalModels/8)
 
             if items['totalResults'] == 0:
-                self.amplitude.send_amplitude_event("Text Search - No Results", event_properties={
+                amplitude.send_amplitude_event("Text search - No Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
@@ -156,7 +157,7 @@ class ThangsFetcher():
                     'searchMetadata': self.searchMetaData,
                 })
             else:
-                self.amplitude.send_amplitude_event("Text Search - Results", event_properties={
+                amplitude.send_amplitude_event("Text search - Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
@@ -258,7 +259,7 @@ class ThangsFetcher():
             )
 
         if response.status_code != 200:
-            self.amplitude.send_amplitude_event("Search Failed", event_properties={
+            amplitude.send_amplitude_event("Text Search - Failed", event_properties={
                 'searchTerm': self.query,
             })
 
