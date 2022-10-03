@@ -1,3 +1,4 @@
+import os
 import platform
 
 class MachineID():
@@ -5,6 +6,8 @@ class MachineID():
     def getID(self):
         system = platform.system().lower()
 
+        if "posix" in os.name:
+            return self.getBSDMachineId()
         if "darwin" in system:
             return self.getDarwinMachineId()            
         if "linux" in system:
@@ -12,7 +15,7 @@ class MachineID():
         if "windows" in system:
             return self.getWindowsMachineId()
 
-        return self.getBSDMachineId()
+        return ""
 
     def getDarwinMachineId(self):
         try :
