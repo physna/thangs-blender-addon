@@ -6,7 +6,7 @@ class MachineID():
     def getID(self):
         system = platform.system().lower()
 
-        if "posix" in os.name:
+        if "posix" in os.name.lower():
             return self.getBSDMachineId()
         if "darwin" in system:
             return self.getDarwinMachineId()            
