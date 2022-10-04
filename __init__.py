@@ -18,6 +18,7 @@ import bpy.utils.previews
 from urllib.request import urlopen
 import urllib.parse
 import os
+from .thangs_login import stop_access_grant
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from . import addon_updater_ops
@@ -31,7 +32,7 @@ log = logging.getLogger(__name__)
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
-    "version": (0, 1, 8),
+    "version": (0, 1, 9),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
     "description": "Browse and download free 3D models",
@@ -893,6 +894,7 @@ def register():
     )
     import bpy.utils.previews
 
+
     # Added
     WindowManager.Model_page = IntProperty(
         name="Current Page",
@@ -1033,6 +1035,8 @@ def unregister():
     bpy.utils.unregister_class(DropdownProperties)
     del bpy.types.Scene.my_tool
     addon_updater_ops.unregister()
+
+    stop_access_grant()
 
 
 if __name__ == "__main__":
