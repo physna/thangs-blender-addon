@@ -68,6 +68,14 @@ class ThangsFetcher():
         self.PageTotal = 0
         self.PageNumber = 1
         self.CurrentPage = 1
+        self.result1 = 0
+        self.result2 = 0
+        self.result3 = 0
+        self.result4 = 0
+        self.result5 = 0
+        self.result6 = 0
+        self.result7 = 0
+        self.result8 = 0
 
         self.searching = False
         self.failed = False
@@ -305,12 +313,13 @@ class ThangsFetcher():
                 position = self.i
                 domain = item["domain"]
                 scope = item["scope"]
+                
 
                 # Stateful Model Information
                 self.modelInfo.append(
                     tuple([modelTitle, product_url, modelId, searchIndex, position, domain, scope]))
                 self.enumItems.append(
-                    (modelTitle, modelId, item["ownerUsername"], "LCs Coming Soon!", item["originalFileType"]))
+                    (modelTitle, modelId, item["ownerUsername"], item["license"], item["originalFileType"]))
 
                 thumbnail = thumbnail.replace("https", "http", 1)
 
@@ -416,25 +425,31 @@ class ThangsFetcher():
 
                 self.enumModelTotal.append(self.enumModelInfo[:])
                 self.i = self.i + 1
-        
-        print(self.enumModelTotal)
 
         if self.enumModels1:
             self.length.append(len(self.enumModels1))
+            self.result1 = self.enumModels1[0][3]
         if self.enumModels2:
             self.length.append(len(self.enumModels2))
+            self.result2 = self.enumModels2[0][3]
         if self.enumModels3:
             self.length.append(len(self.enumModels3))
+            self.result3 = self.enumModels3[0][3]
         if self.enumModels4:
             self.length.append(len(self.enumModels4))
+            self.result4 = self.enumModels4[0][3]
         if self.enumModels5:
             self.length.append(len(self.enumModels5))
+            self.result5 = self.enumModels5[0][3]
         if self.enumModels6:
             self.length.append(len(self.enumModels6))
+            self.result6 = self.enumModels6[0][3]
         if self.enumModels7:
             self.length.append(len(self.enumModels7))
+            self.result7 = self.enumModels7[0][3]
         if self.enumModels8:
             self.length.append(len(self.enumModels8))
+            self.result8 = self.enumModels8[0][3]
 
         self.pcoll.Model = self.enumItems
         self.pcoll.ModelView1 = self.enumModels1

@@ -136,8 +136,14 @@ PageTotal = fetcher.PageTotal
 fetcher.thangs_ui_mode = 'SEARCH'
 
 modelDropdownIndex = 0
-enumHolder = []
+enumHolder0 = []
 enumHolder1 = []
+enumHolder2 = []
+enumHolder3 = []
+enumHolder4 = []
+enumHolder5 = []
+enumHolder6 = []
+enumHolder7 = []
 
 
 def setSearch():
@@ -326,31 +332,190 @@ class BrowseToCreatorOperator(Operator):
 
 
 class DropdownProperties(bpy.types.PropertyGroup):
-    def item_callback(self, context=None):
+    def item_callback0(self, context=None):
         global modelDropdownIndex
-        global enumHolder
-        global enumHolder1
-        if modelDropdownIndex == 0:
-            enumHolder = fetcher.enumModelTotal[0]
-            enumHolder = [
-            ("1", "dog", ""),
-            ("2", "cat", "")
-            ]
-            #print(enumHolder)
-            return enumHolder
-        # elif modelDropdownIndex == 1:
-        #     if fetcher.enumModelTotal[1]:
-        #         enumHolder1 = fetcher.enumModelTotal[1]
-        #         #print(enumHolder1)
-        #         return enumHolder1
+        global enumHolder0
+        enumHolder0 = fetcher.enumModelTotal[0]
+        return enumHolder0
 
-    dropdown_Parts: bpy.props.EnumProperty(
-        items=item_callback,
+    def item_callback1(self, context=None):
+        global modelDropdownIndex
+        global enumHolder1
+        enumHolder1 = fetcher.enumModelTotal[1]
+        return enumHolder1
+
+    def item_callback2(self, context=None):
+        global modelDropdownIndex
+        global enumHolder2
+        enumHolder2 = fetcher.enumModelTotal[2]
+        return enumHolder2
+
+    def item_callback3(self, context=None):
+        global modelDropdownIndex
+        global enumHolder3
+        enumHolder3 = fetcher.enumModelTotal[3]
+        return enumHolder3
+
+    def item_callback4(self, context=None):
+        global modelDropdownIndex
+        global enumHolder4
+        enumHolder4 = fetcher.enumModelTotal[4]
+        return enumHolder4
+
+    def item_callback5(self, context=None):
+        global modelDropdownIndex
+        global enumHolder5
+        enumHolder5 = fetcher.enumModelTotal[5]
+        return enumHolder5
+
+    def item_callback6(self, context=None):
+        global modelDropdownIndex
+        global enumHolder6
+        enumHolder6 = fetcher.enumModelTotal[6]
+        return enumHolder6
+
+    def item_callback7(self, context=None):
+        global modelDropdownIndex
+        global enumHolder7
+        enumHolder7 = fetcher.enumModelTotal[7]
+        return enumHolder7
+
+    def item_set0(self, context):
+        global fetcher
+        for item in fetcher.enumModels1:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts0:
+                fetcher.result1 = item[3]
+                break
+
+    def item_set1(self, context):
+        global fetcher
+        for item in fetcher.enumModels2:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts1:
+                fetcher.result2 = item[3]
+                break
+
+    def item_set2(self, context):
+        global fetcher
+        for item in fetcher.enumModels3:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts2:
+                fetcher.result3 = item[3]
+                break
+
+    def item_set3(self, context):
+        global fetcher
+        for item in fetcher.enumModels4:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts3:
+                fetcher.result4 = item[3]
+                break
+    
+    def item_set4(self, context):
+        global fetcher
+        for item in fetcher.enumModels5:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts4:
+                fetcher.result5 = item[3]
+                break
+
+    def item_set5(self, context):
+        global fetcher
+        for item in fetcher.enumModels6:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts5:
+                fetcher.result6 = item[3]
+                break
+
+    def item_set6(self, context):
+        global fetcher
+        for item in fetcher.enumModels7:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts6:
+                fetcher.result7 = item[3]
+                break
+
+    def item_set7(self, context):
+        global fetcher
+        for item in fetcher.enumModels8:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts7:
+                fetcher.result8 = item[3]
+                break
+
+    dropdown_Parts0: bpy.props.EnumProperty(
+        items=item_callback0,
+        name="Parts",
+        description="Model Parts",
+        update=item_set0,
+    )
+
+    dropdown_Parts1: bpy.props.EnumProperty(
+        items=item_callback1,
         name="Parts",
         description="Model Parts",
         default=None,
         options={'ANIMATABLE'},
-        update=None,
+        update=item_set1,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts2: bpy.props.EnumProperty(
+        items=item_callback2,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set2,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts3: bpy.props.EnumProperty(
+        items=item_callback3,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set3,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts4: bpy.props.EnumProperty(
+        items=item_callback4,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set4,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts5: bpy.props.EnumProperty(
+        items=item_callback5,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set5,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts6: bpy.props.EnumProperty(
+        items=item_callback6,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set6,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts7: bpy.props.EnumProperty(
+        items=item_callback7,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set7,
         get=None,
         set=None
     )
@@ -429,7 +594,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
     def drawView(self, context):
         global pcollModel
         global modelDropdownIndex
-        global enumHolder
 
         wm = context.window_manager
 
@@ -468,18 +632,31 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
                 grid = layout.grid_flow(
                     columns=1, even_columns=True, even_rows=True)
-                modelDropdownIndex = 0
                 z = 0
                 for model in fetcher.pcoll.Model:
+                    modelDropdownIndex = z
                     modelURL = fetcher.modelInfo[z][1]
                     cell = grid.column().box()
 
-                    if fetcher.length[z] > 1:
-                        cell.template_icon_view(
-                            wm, "ModelView{}".format((z+1)), scale=7, scale_popup=7, show_labels=True)
-                    else:
-                        cell.template_icon(
-                            icon_value=fetcher.thumbnailNumbers[z], scale=7)
+                    if z == 0:
+                        icon = fetcher.result1
+                    elif z == 1:
+                        icon = fetcher.result2
+                    elif z == 2:
+                        icon = fetcher.result3
+                    elif z == 3:
+                        icon = fetcher.result4
+                    elif z == 4:
+                        icon = fetcher.result5
+                    elif z == 5:
+                        icon = fetcher.result6
+                    elif z == 6:
+                        icon = fetcher.result7
+                    elif z == 7:
+                        icon = fetcher.result8
+
+                    cell.template_icon(
+                        icon_value=icon, scale=7)
 
                     col = cell.box().column(align=True)
                     row = col.row()
@@ -493,36 +670,33 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     row = col.row()
                     row.label(
                         text="", icon_value=icons_dict["CreativeC"].icon_id)
-                    props = row.operator(
-                        'wm.browse_to_license', text="{}".format("See License"))
-                    props.url = modelURL + \
-                        "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    props.modelIndex = z
+                    if model[3] == "":
+                        props = row.operator(
+                            'wm.browse_to_license', text="{}".format("No License"))
+                        props.url = ""
+                        props.enabled = False
+                    else:
+                        props = row.operator(
+                            'wm.browse_to_license', text="{}".format("See License"))
+                        props.url = model[3]
+                        props.modelIndex = z
 
                     row = col.row()
                     row.label(text="{}".format(""), icon='FILEBROWSER')
 
                     scene = context.scene
                     mytool = scene.my_tool
+                    dropdown = row.prop(mytool, "dropdown_Parts{}".format(z))
 
-                    #print(mytool.dropdown_Parts)
-
-                    #mytool.dropdown_Parts = fetcher.enumModelTotal[z]
-
-                    row.prop(mytool, "dropdown_Parts")
-                    modelDropdownIndex = modelDropdownIndex + 1
-                    # print("Fetcher Call")
-                    # print(fetcher.enumModel2[z])
-                    # props.dropdown_Parts = fetcher.enumModel2[z]
-                    # print("Dropdown Items")
-                    # print(dropdown.items)
+                    # if fetcher.length[z] == 1:
+                    #     dropdown.enabled = False
 
                     props = cell.operator(
                         'wm.browse_to_model', text="%s" % model[0])
                     props.url = modelURL + \
                         "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                     props.modelIndex = z
-
+                        
                     z = z + 1
 
                 row = layout.row()
@@ -582,9 +756,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 row = layout.row()
                 o = row.operator("thangs.search_invoke", icon='CANCEL')
                 o.next_mode = self.next_mode('SEARCH')
-
-                print("Holder")
-                print(enumHolder)
         else:
             SearchingLayout = self.layout
             SearchingRow = SearchingLayout.row(align=True)
