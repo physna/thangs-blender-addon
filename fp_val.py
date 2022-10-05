@@ -8,8 +8,11 @@ class FP:
             from .machine_id import MachineID
             
             machineID = MachineID().getID()
-            response = requests.post(url, json={ 'machineID': machineID })
-            FP.val = response.text
-        
-        return FP.val
+            try: 
+                response = requests.post(url, json={ 'machineID': machineID })
+                FP.val = response.text
+                return FP.val
+            except:
+                return FP.val
+    
     
