@@ -22,7 +22,7 @@ from .thangs_login import stop_access_grant
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from . import addon_updater_ops
-from .config import initialize
+from .config import ThangsConfig, initialize
 import socket
 import platform
 import logging
@@ -124,8 +124,8 @@ def on_complete_search():
 initialize(bl_info["version"])
 fetcher = ThangsFetcher(callback=on_complete_search)
 amplitude = ThangsEvents()
+thangs_config = ThangsConfig()
 
-#URLlist = []
 ButtonSearch = "Search"
 # Added
 PageNumber = fetcher.PageNumber
@@ -664,8 +664,8 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     row.label(text="", icon='USER')
                     props = row.operator(
                         'wm.browse_to_creator', text="%s" % model[2])
-                    props.url = "https://thangs.com/designer/" + urllib.parse.quote(str(
-                        model[2]))+"/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    props.url = thangs_config.thangs_config['url'] + "designer/" + urllib.parse.quote(str(
+                        model[2])) + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                     props.modelIndex = z
 
                     row = col.row()
