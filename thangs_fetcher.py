@@ -12,6 +12,7 @@ import os
 import math
 import platform
 from requests.exceptions import Timeout
+from .fp_val import FP
 from .thangs_events import ThangsEvents
 from .config import get_config, ThangsConfig
 import bpy
@@ -84,6 +85,7 @@ class ThangsFetcher():
         self.amplitude.deviceId = socket.gethostname().split(".")[0]
         self.amplitude.deviceOs = platform.system()
         self.amplitude.deviceVer = platform.release()
+        self.FP = FP()
 
         pass
 
@@ -269,14 +271,16 @@ class ThangsFetcher():
 
         if self.newSearch == True:
             response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
-                                    "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs")
+                                    "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
+                                    headers={"x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['fp_url'])})
         else:
             response = requests.get(
                 str(self.Thangs_Config.thangs_config['url'])+"api/models/v2/search-by-text?page=" +
                 str(self.CurrentPage-1)+"&searchTerm="+self.query +
                 "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
                 headers={"x-thangs-searchmetadata": base64.b64encode(
-                    json.dumps(self.searchMetaData).encode()).decode()},
+                    json.dumps(self.searchMetaData).encode()).decode(),
+                    "x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['fp_url'])},
             )
 
         if response.status_code != 200:
