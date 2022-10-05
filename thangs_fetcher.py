@@ -55,10 +55,7 @@ class ThangsFetcher():
 
         self.enumModelInfo = []
         self.enumModelTotal = []
-        
-        self.licenses = []
-        self.creators = []
-        self.filetype = []
+    
         self.length = []
         self.thumbnailNumbers = []
 
@@ -97,6 +94,7 @@ class ThangsFetcher():
         self.Directory = ""
         self.pcoll = ""
         self.query = ""
+        self.uuid = ""
 
         self.modelInfo = []
         self.enumItems = []
@@ -108,21 +106,32 @@ class ThangsFetcher():
         self.enumModels6 = []
         self.enumModels7 = []
         self.enumModels8 = []
-        self.licenses = []
-        self.creators = []
-        self.filetype = []
+
+        self.enumModelInfo = []
+        self.enumModelTotal = []
+    
         self.length = []
         self.thumbnailNumbers = []
 
         self.preview_collections = {}
+        self.searchMetaData = {}
 
         self.totalModels = 0
         self.PageTotal = 0
         self.PageNumber = 1
         self.CurrentPage = 1
+        self.result1 = 0
+        self.result2 = 0
+        self.result3 = 0
+        self.result4 = 0
+        self.result5 = 0
+        self.result6 = 0
+        self.result7 = 0
+        self.result8 = 0
 
         self.searching = False
         self.failed = False
+        self.newSearch = False
 
         pass
 
@@ -141,6 +150,8 @@ class ThangsFetcher():
             self.search_thread.terminate()
             self.search_thread = None
             self.searching = False
+            self.failed = False
+            self.newSearch = False
             self.reset
             return True
         return False
@@ -222,10 +233,6 @@ class ThangsFetcher():
         self.enumModelInfo.clear()
         self.enumModelTotal.clear()
         
-
-        self.licenses.clear()
-        self.creators.clear()
-        self.filetype.clear()
         self.length.clear()
         self.thumbnailNumbers.clear()
 
@@ -307,17 +314,11 @@ class ThangsFetcher():
                     thumbnail = thumbnailURL.headers["Location"]
 
                 modelTitle = item["modelTitle"]
-                product_url = item["attributionUrl"]
-                modelId = item["modelId"]
-                searchIndex = ((self.CurrentPage-1)*8) + self.i
-                position = self.i
-                domain = item["domain"]
-                scope = item["scope"]
-                
+                modelId = item["modelId"]        
 
                 # Stateful Model Information
                 self.modelInfo.append(
-                    tuple([modelTitle, product_url, modelId, searchIndex, position, domain, scope]))
+                    tuple([modelTitle, item["attributionUrl"], modelId, (((self.CurrentPage-1)*8) + self.i), self.i, item["domain"], item["scope"]]))
                 self.enumItems.append(
                     (modelTitle, modelId, item["ownerUsername"], item["license"], item["originalFileType"]))
 
@@ -383,8 +384,7 @@ class ThangsFetcher():
                         thumbnail = thumbnailURL.headers["Location"]
                         thumbnail = thumbnail.replace("https", "http", 1)
                         filePath = urllib.request.urlretrieve(thumbnail)
-                        filePath = filePath[0]
-                        filepath = os.path.join(modelID, filePath)
+                        filepath = os.path.join(modelID, filePath[0])
                         thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
 
                         self.enumModelInfo.append(
@@ -421,6 +421,7 @@ class ThangsFetcher():
                         else:
                             self.enumModels8.append(
                                 (modelId, ModelTitle, "", thumb.icon_id, self.x+1))
+
                         self.x = self.x + 1
 
                 self.enumModelTotal.append(self.enumModelInfo[:])
