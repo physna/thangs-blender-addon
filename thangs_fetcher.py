@@ -52,9 +52,10 @@ class ThangsFetcher():
         self.enumModels6 = []
         self.enumModels7 = []
         self.enumModels8 = []
-        self.licenses = []
-        self.creators = []
-        self.filetype = []
+
+        self.enumModelInfo = []
+        self.enumModelTotal = []
+    
         self.length = []
         self.thumbnailNumbers = []
 
@@ -65,12 +66,19 @@ class ThangsFetcher():
         self.PageTotal = 0
         self.PageNumber = 1
         self.CurrentPage = 1
+        self.result1 = 0
+        self.result2 = 0
+        self.result3 = 0
+        self.result4 = 0
+        self.result5 = 0
+        self.result6 = 0
+        self.result7 = 0
+        self.result8 = 0
 
         self.searching = False
         self.failed = False
         self.newSearch = False
 
-        
         self.Thangs_Config = ThangsConfig()
         self.amplitude = ThangsEvents()
         self.amplitude.deviceId = socket.gethostname().split(".")[0]
@@ -86,6 +94,7 @@ class ThangsFetcher():
         self.Directory = ""
         self.pcoll = ""
         self.query = ""
+        self.uuid = ""
 
         self.modelInfo = []
         self.enumItems = []
@@ -97,21 +106,32 @@ class ThangsFetcher():
         self.enumModels6 = []
         self.enumModels7 = []
         self.enumModels8 = []
-        self.licenses = []
-        self.creators = []
-        self.filetype = []
+
+        self.enumModelInfo = []
+        self.enumModelTotal = []
+    
         self.length = []
         self.thumbnailNumbers = []
 
         self.preview_collections = {}
+        self.searchMetaData = {}
 
         self.totalModels = 0
         self.PageTotal = 0
         self.PageNumber = 1
         self.CurrentPage = 1
+        self.result1 = 0
+        self.result2 = 0
+        self.result3 = 0
+        self.result4 = 0
+        self.result5 = 0
+        self.result6 = 0
+        self.result7 = 0
+        self.result8 = 0
 
         self.searching = False
         self.failed = False
+        self.newSearch = False
 
         pass
 
@@ -130,6 +150,8 @@ class ThangsFetcher():
             self.search_thread.terminate()
             self.search_thread = None
             self.searching = False
+            self.failed = False
+            self.newSearch = False
             self.reset
             return True
         return False
@@ -149,7 +171,7 @@ class ThangsFetcher():
                 self.PageTotal = math.ceil(self.totalModels/8)
 
             if items['totalResults'] == 0:
-                amplitude.send_amplitude_event("Text search - No Results", event_properties={
+                self.amplitude.send_amplitude_event("Text search - No Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
@@ -157,7 +179,7 @@ class ThangsFetcher():
                     'searchMetadata': self.searchMetaData,
                 })
             else:
-                amplitude.send_amplitude_event("Text search - Results", event_properties={
+                self.amplitude.send_amplitude_event("Text search - Results", event_properties={
                     'searchTerm': items['originalQuery'],
                     'searchId': self.uuid,
                     'numOfMatches': items['totalResults'],
@@ -208,10 +230,9 @@ class ThangsFetcher():
         self.enumModels6.clear()
         self.enumModels7.clear()
         self.enumModels8.clear()
-
-        self.licenses.clear()
-        self.creators.clear()
-        self.filetype.clear()
+        self.enumModelInfo.clear()
+        self.enumModelTotal.clear()
+        
         self.length.clear()
         self.thumbnailNumbers.clear()
 
@@ -259,7 +280,7 @@ class ThangsFetcher():
             )
 
         if response.status_code != 200:
-            amplitude.send_amplitude_event("Text Search - Failed", event_properties={
+            self.amplitude.send_amplitude_event("Text Search - Failed", event_properties={
                 'searchTerm': self.query,
             })
 
@@ -280,7 +301,11 @@ class ThangsFetcher():
             self.get_total_results(response)
 
             self.i = 0
+            #self.enumModelTotal.append(("NONE", "None", "", 1))
+
             for item in items:
+                self.enumModelInfo.clear()
+
                 if len(item["thumbnails"]) > 0:
                     thumbnail = item["thumbnails"][0]
                 else:
@@ -289,18 +314,13 @@ class ThangsFetcher():
                     thumbnail = thumbnailURL.headers["Location"]
 
                 modelTitle = item["modelTitle"]
-                product_url = item["attributionUrl"]
-                modelId = item["modelId"]
-                searchIndex = ((self.CurrentPage-1)*8) + self.i
-                position = self.i
-                domain = item["domain"]
-                scope = item["scope"]
+                modelId = item["modelId"]        
 
                 # Stateful Model Information
                 self.modelInfo.append(
-                    tuple([modelTitle, product_url, modelId, searchIndex, position, domain, scope]))
+                    tuple([modelTitle, item["attributionUrl"], modelId, (((self.CurrentPage-1)*8) + self.i), self.i, item["domain"], item["scope"]]))
                 self.enumItems.append(
-                    (modelTitle, modelId, item["ownerUsername"], "LCs Coming Soon!", item["originalFileType"]))
+                    (modelTitle, modelId, item["ownerUsername"], item["license"], item["originalFileType"]))
 
                 thumbnail = thumbnail.replace("https", "http", 1)
 
@@ -313,6 +333,10 @@ class ThangsFetcher():
                 self.thumbnailNumbers.append(thumb.icon_id)
 
                 z = 0
+
+                self.enumModelInfo.append(
+                        (modelId, modelTitle, ""))#, z))
+
                 if self.i == 0:
                     self.enumModels1.append(
                         (modelId, modelTitle, "", thumb.icon_id, z))
@@ -360,9 +384,12 @@ class ThangsFetcher():
                         thumbnail = thumbnailURL.headers["Location"]
                         thumbnail = thumbnail.replace("https", "http", 1)
                         filePath = urllib.request.urlretrieve(thumbnail)
-                        filePath = filePath[0]
-                        filepath = os.path.join(modelID, filePath)
+                        filepath = os.path.join(modelID, filePath[0])
                         thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
+
+                        self.enumModelInfo.append(
+                            (modelID, ModelTitle, ""))#, self.x+1))
+
                         if self.i == 0:
                             self.enumModels1.append(
                                 (modelID, ModelTitle, "", thumb.icon_id, self.x+1))
@@ -394,25 +421,36 @@ class ThangsFetcher():
                         else:
                             self.enumModels8.append(
                                 (modelId, ModelTitle, "", thumb.icon_id, self.x+1))
+
                         self.x = self.x + 1
+
+                self.enumModelTotal.append(self.enumModelInfo[:])
                 self.i = self.i + 1
 
         if self.enumModels1:
             self.length.append(len(self.enumModels1))
+            self.result1 = self.enumModels1[0][3]
         if self.enumModels2:
             self.length.append(len(self.enumModels2))
+            self.result2 = self.enumModels2[0][3]
         if self.enumModels3:
             self.length.append(len(self.enumModels3))
+            self.result3 = self.enumModels3[0][3]
         if self.enumModels4:
             self.length.append(len(self.enumModels4))
+            self.result4 = self.enumModels4[0][3]
         if self.enumModels5:
             self.length.append(len(self.enumModels5))
+            self.result5 = self.enumModels5[0][3]
         if self.enumModels6:
             self.length.append(len(self.enumModels6))
+            self.result6 = self.enumModels6[0][3]
         if self.enumModels7:
             self.length.append(len(self.enumModels7))
+            self.result7 = self.enumModels7[0][3]
         if self.enumModels8:
             self.length.append(len(self.enumModels8))
+            self.result8 = self.enumModels8[0][3]
 
         self.pcoll.Model = self.enumItems
         self.pcoll.ModelView1 = self.enumModels1
