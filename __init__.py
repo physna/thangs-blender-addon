@@ -26,6 +26,9 @@ from .config import ThangsConfig, initialize
 import socket
 import platform
 import logging
+import requests
+from . import ppretty
+import time
 
 log = logging.getLogger(__name__)
 
@@ -54,7 +57,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
     auto_check_update: BoolProperty(
         name="Auto-check for Update",
         description="If enabled, auto-check for updates using an interval",
-        default=True
+        default=False
     )
 
     updater_interval_months: IntProperty(
@@ -287,6 +290,36 @@ class BrowseToModelOperator(Operator):
         Model_Event(self.modelIndex)
         return {'FINISHED'}
 
+class ImportModelOperator(Operator):
+    """Import model"""
+    bl_idname = "wm.import_model"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Download request URL",
+    )
+    #modelId: IntProperty(
+        #name="modelId",
+        #description="The index of the model to open"
+    #)
+
+    def execute(self, _context):
+        #import webbrowser
+        #webbrowser.open('www.google.com')
+        response = requests.get(self.url)
+        responseData = response.json()
+        signedUrl = responseData["signedUrl"]
+        print(self.url)
+        print(response)
+        print(signedUrl)
+        r = requests.get(signedUrl, allow_redirects=True)
+        open('testglb.glb', 'wb').write(r.content)
+        time.sleep(3)
+        #bpy.ops.wm.import_modal(filepath = 'C:\Program Files\Blender Foundation\Blender 3.1\testglb.glb')
+        bpy.ops.import_scene.gltf(filepath='C:\Program Files\Blender Foundation\Blender 3.1\\testglb.glb')
+        return {'FINISHED'}
 
 class BrowseToLicenseOperator(Operator):
     """Open model license in browser"""
@@ -570,7 +603,7 @@ class THANGS_OT_search_invoke(Operator):
 
 
 class THANGS_PT_model_display(bpy.types.Panel):
-    bl_label = "Thangs Model Search"
+    bl_label = "Thangs Model Search1"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Thangs Search"
@@ -637,6 +670,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 for model in fetcher.pcoll.Model:
                     modelDropdownIndex = z
                     modelURL = fetcher.modelInfo[z][1]
+                    modelId = fetcher.modelInfo[z][2]
                     cell = grid.column().box()
 
                     if z == 0:
@@ -697,7 +731,16 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     props.url = modelURL + \
                         "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                     props.modelIndex = z
-                        
+
+                    splitURL = modelURL.split("-")
+                    modelId: str = splitURL[-1]
+                    props = cell.operator(
+                        'wm.import_model', text="%s" %  modelId)
+                    props.url = "https://dev-api.thangs.com/models/" + modelId + "/download-url?targetFormat=android&useV2AR=false"
+                    #props.modelIndex = z
+                    #print('Fetcher: ')
+                    #print(ppretty(fetcher))
+
                     z = z + 1
 
                 row = layout.row()
@@ -981,6 +1024,7 @@ def register():
     bpy.utils.register_class(FirstPageChange)
     bpy.utils.register_class(DemoPreferences)
     bpy.utils.register_class(BrowseToModelOperator)
+    bpy.utils.register_class(ImportModelOperator)
     bpy.utils.register_class(BrowseToLicenseOperator)
     bpy.utils.register_class(BrowseToCreatorOperator)
     bpy.utils.register_class(DropdownProperties)
@@ -1030,6 +1074,7 @@ def unregister():
     bpy.utils.unregister_class(FirstPageChange)
     bpy.utils.unregister_class(DemoPreferences)
     bpy.utils.unregister_class(BrowseToModelOperator)
+    bpy.utils.unregister_class(ImportModelOperator)
     bpy.utils.unregister_class(BrowseToLicenseOperator)
     bpy.utils.unregister_class(BrowseToCreatorOperator)
     bpy.utils.unregister_class(DropdownProperties)
