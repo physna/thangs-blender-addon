@@ -289,17 +289,16 @@ class BrowseToModelOperator(Operator):
         webbrowser.open(self.url)
         Model_Event(self.modelIndex)
         return {'FINISHED'}
-
+"""
 class ImportModelOperator(Operator):
-    """Import model"""
-    bl_idname = "wm.import_model"
+    bl_idname = "wm.import_model_glb"
     bl_label = ""
     bl_options = {'INTERNAL'}
 
-    url: StringProperty(
-        name="URL",
-        description="Download request URL",
-    )
+    #url: StringProperty(
+        #name="URL",
+        #description="Download request URL",
+    #)
     #modelId: IntProperty(
         #name="modelId",
         #description="The index of the model to open"
@@ -308,17 +307,56 @@ class ImportModelOperator(Operator):
     def execute(self, _context):
         #import webbrowser
         #webbrowser.open('www.google.com')
-        response = requests.get(self.url)
-        responseData = response.json()
-        signedUrl = responseData["signedUrl"]
-        print(self.url)
-        print(response)
-        print(signedUrl)
-        r = requests.get(signedUrl, allow_redirects=True)
-        open('testglb.glb', 'wb').write(r.content)
-        time.sleep(3)
+        #response = requests.get(self.url)
+        #responseData = response.json()
+        #signedUrl = responseData["signedUrl"]
+        #print(self.url)
+        #print(response)
+        #print(signedUrl)
+        #r = requests.get(signedUrl, allow_redirects=True)
+        #open('testglb.glb', 'wb').write(r.content)
+        #time.sleep(3)
         #bpy.ops.wm.import_modal(filepath = 'C:\Program Files\Blender Foundation\Blender 3.1\testglb.glb')
-        bpy.ops.import_scene.gltf(filepath='C:\Program Files\Blender Foundation\Blender 3.1\\testglb.glb')
+        bpy.ops.import_scene.gltf(filepath='C:\\Users\\M00ge\\Documents\\blender import tests\\glb\\sunglasses.glb')
+        return {'FINISHED'}
+"""
+"""
+class ImportModelOperator(Operator):
+    bl_idname = "wm.import_model_gltf"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    def execute(self, _context):
+        bpy.ops.import_scene.gltf(filepath='C:\\Users\\M00ge\\Documents\\blender import tests\\gltf\\AnimatedMorphSphere.gltf')
+        return {'FINISHED'}
+"""
+"""
+class ImportModelOperator(Operator):
+    bl_idname = "wm.import_model_usd"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    def execute(self, _context):
+        bpy.ops.wm.usd_import(filepath='C:\\Users\\M00ge\\Documents\\blender import tests\\usd\\cosmic-buddha-laser-scan-150k-150k.usdc')
+        return {'FINISHED'}
+"""
+"""
+class ImportModelOperator(Operator):
+    bl_idname = "wm.import_model_fbx"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    def execute(self, _context):
+        bpy.ops.import_scene.fbx(filepath='C:\\Users\\M00ge\\Documents\\blender import tests\\fbx\\andrea 2.fbx')
+        return {'FINISHED'}
+"""
+class ImportModelOperator(Operator):
+    bl_idname = "wm.import_model_obj"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    def execute(self, _context):
+        bpy.ops.import_scene.obj(filepath='C:\\Users\\M00ge\\Documents\\blender import tests\\obj\\Printer.obj')
         return {'FINISHED'}
 
 class BrowseToLicenseOperator(Operator):
@@ -732,11 +770,19 @@ class THANGS_PT_model_display(bpy.types.Panel):
                         "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                     props.modelIndex = z
 
-                    splitURL = modelURL.split("-")
-                    modelId: str = splitURL[-1]
+                    #splitURL = modelURL.split("-")
+                    #modelId: str = splitURL[-1]
+                    #props = cell.operator(
+                        #'wm.import_model_glb', text="%s" %  "glb")
+                    #props = cell.operator(
+                        #'wm.import_model_gltf', text="%s" %  "gltf")
+                    #props = cell.operator(
+                        #'wm.import_model_usd', text="%s" %  "usd")
+                    #props = cell.operator(
+                        #'wm.import_model_fbx', text="%s" %  "fbx")
                     props = cell.operator(
-                        'wm.import_model', text="%s" %  modelId)
-                    props.url = "https://dev-api.thangs.com/models/" + modelId + "/download-url?targetFormat=android&useV2AR=false"
+                        'wm.import_model_obj', text="%s" %  "obj")
+                    #props.url = "https://dev-api.thangs.com/models/" + modelId + "/download-url?targetFormat=android&useV2AR=false"
                     #props.modelIndex = z
                     #print('Fetcher: ')
                     #print(ppretty(fetcher))
