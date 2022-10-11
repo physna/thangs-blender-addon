@@ -258,7 +258,6 @@ class SearchBySelect(bpy.types.Operator):
         return {'FINISHED'}
 
 def Model_Event(position):
-
     scope = fetcher.modelInfo[position][6]
     event_name = 'Thangs Model Link' if scope == 'thangs' else 'External Model Link'
 
@@ -1075,7 +1074,6 @@ def register():
     bpy.utils.register_class(BrowseToCreatorOperator)
     bpy.utils.register_class(DropdownProperties)
     bpy.utils.register_class(SearchBySelect)
-    
 
     bpy.types.Scene.my_tool = bpy.props.PointerProperty(
         type=DropdownProperties)
