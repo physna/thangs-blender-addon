@@ -16,22 +16,25 @@ from bpy_extras.object_utils import AddObjectHelper, object_data_add
 from bpy.app.handlers import persistent
 import bpy.utils.previews
 from urllib.request import urlopen
+import urllib.parse
 import os
-from .thangs_login import stop_access_grant
+import threading
+from .thangs_login import ThangsLogin, stop_access_grant
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from . import addon_updater_ops
-from .config import initialize
+from .config import ThangsConfig, initialize
 import socket
 import platform
 import logging
+from .thangs_importer import ThangsApi, initialize_thangsAPI, get_thangs_api
 
 log = logging.getLogger(__name__)
 
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
-    "version": (0, 1, 6),
+    "version": (0, 1, 9),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
     "description": "Browse and download free 3D models",
@@ -41,6 +44,7 @@ bl_info = {
     "tracker_url": "https://github.com/RandyHucker/thangs-blender-addon/issues/new/choose",
     "category": "Import/Export"
 }
+
 
 @addon_updater_ops.make_annotations
 class DemoPreferences(bpy.types.AddonPreferences):
@@ -118,11 +122,15 @@ def on_complete_search():
     tag_redraw_areas()
     return
 
+
 initialize(bl_info["version"])
+initialize_thangsAPI(callback=on_complete_search)
 fetcher = ThangsFetcher(callback=on_complete_search)
 amplitude = ThangsEvents()
+thangs_config = ThangsConfig()
+thangs_login = ThangsLogin()
+thangs_api = get_thangs_api()
 
-#URLlist = []
 ButtonSearch = "Search"
 # Added
 PageNumber = fetcher.PageNumber
@@ -132,6 +140,16 @@ pcoll = fetcher.pcoll
 
 PageTotal = fetcher.PageTotal
 fetcher.thangs_ui_mode = 'SEARCH'
+
+modelDropdownIndex = 0
+enumHolder0 = []
+enumHolder1 = []
+enumHolder2 = []
+enumHolder3 = []
+enumHolder4 = []
+enumHolder5 = []
+enumHolder6 = []
+enumHolder7 = []
 
 
 def setSearch():
@@ -229,6 +247,14 @@ class FirstPageChange(bpy.types.Operator):
         FirstPage()
         return {'FINISHED'}
 
+class SearchBySelect(bpy.types.Operator):
+    """Search by Object Selection"""
+    bl_idname = "search.selection"
+    bl_label = "Search By Selection"
+
+    def execute(self, context):
+        fetcher.selectionSearch(context)
+        return {'FINISHED'}
 
 def Model_Event(position):
 
@@ -253,19 +279,63 @@ def Model_Event(position):
     return
 
 
-class BrowseToModelOperator(Operator):
-    """Open model in browser"""
-    bl_idname = "wm.browse_to_model"
+class ImportModelOperator(Operator):
+    """Import Model into Blender"""
+    bl_idname = "wm.import_model"
     bl_label = ""
     bl_options = {'INTERNAL'}
 
     url: StringProperty(
         name="URL",
-        description="Model to open",
+        description="Model to import",
     )
     modelIndex: IntProperty(
         name="Index",
-        description="The index of the model to open"
+        description="The index of the model to import"
+    )
+    # modelID: StringProperty(
+    #     name="ModelID",
+    #     description="The current model ID",
+    #     default="ec0dcfff-6165-4146-96ac-6a01426c9659"
+    # )
+
+    def import_model(self):
+        global thangs_api
+        global fetcher
+        print("Starting Download")
+        thangs_api.handle_download(self.modelIndex)
+
+    def execute(self, _context):
+        print("Starting Import")
+        import webbrowser
+        print("Starting Login")
+        if thangs_api.bearer == "":
+            thangs_login.startLoginFromBrowser()
+            print("Waiting on Login")
+            thangs_login.token_available.wait()
+            fetcher.bearer = str(thangs_login.token["TOKEN"])
+            thangs_api.bearer = str(thangs_login.token["TOKEN"])
+        import_thread = threading.Thread(
+            target=self.import_model).start()
+        print("Import Thread Returned")
+        #webbrowser.open(self.url)
+        Model_Event(self.modelIndex)
+        return {'FINISHED'}
+
+
+class BrowseToLicenseOperator(Operator):
+    """Open model license in browser"""
+    bl_idname = "wm.browse_to_license"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="License to open",
+    )
+    modelIndex: IntProperty(
+        name="Index",
+        description="The index of the model license to open"
     )
 
     def execute(self, _context):
@@ -273,6 +343,247 @@ class BrowseToModelOperator(Operator):
         webbrowser.open(self.url)
         Model_Event(self.modelIndex)
         return {'FINISHED'}
+
+
+class BrowseToCreatorOperator(Operator):
+    """Open creator's profile in browser"""
+    bl_idname = "wm.browse_to_creator"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Creator profile to open",
+    )
+    modelIndex: IntProperty(
+        name="Index",
+        description="The index of the model creator to open"
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(self.modelIndex)
+        return {'FINISHED'}
+
+
+class DropdownProperties(bpy.types.PropertyGroup):
+
+    # def item_callback0(self, context=None):
+    #     global modelDropdownIndex
+    #     global enumHolder0
+    #     if modelDropdownIndex == 0:
+    #         enumHolder0 = fetcher.enumModelTotal[0]
+    #         print(enumHolder0)
+    #         return enumHolder0
+    #     if modelDropdownIndex == 1:
+    #         enumHolder0 = fetcher.enumModelTotal[1]
+    #         print(enumHolder0)
+    #         return enumHolder0
+
+    def item_callback0(self, context=None):
+        global modelDropdownIndex
+        global enumHolder0
+        enumHolder0 = fetcher.enumModelTotal[0]
+        return enumHolder0
+
+    def item_callback1(self, context=None):
+        global modelDropdownIndex
+        global enumHolder1
+        enumHolder1 = fetcher.enumModelTotal[1]
+        return enumHolder1
+
+    def item_callback2(self, context=None):
+        global modelDropdownIndex
+        global enumHolder2
+        enumHolder2 = fetcher.enumModelTotal[2]
+        return enumHolder2
+
+    def item_callback3(self, context=None):
+        global modelDropdownIndex
+        global enumHolder3
+        enumHolder3 = fetcher.enumModelTotal[3]
+        return enumHolder3
+
+    def item_callback4(self, context=None):
+        global modelDropdownIndex
+        global enumHolder4
+        enumHolder4 = fetcher.enumModelTotal[4]
+        return enumHolder4
+
+    def item_callback5(self, context=None):
+        global modelDropdownIndex
+        global enumHolder5
+        enumHolder5 = fetcher.enumModelTotal[5]
+        return enumHolder5
+
+    def item_callback6(self, context=None):
+        global modelDropdownIndex
+        global enumHolder6
+        enumHolder6 = fetcher.enumModelTotal[6]
+        return enumHolder6
+
+    def item_callback7(self, context=None):
+        global modelDropdownIndex
+        global enumHolder7
+        enumHolder7 = fetcher.enumModelTotal[7]
+        return enumHolder7
+
+    def item_set0(self, context):
+        global fetcher
+        for item in fetcher.enumModels1:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts0:
+                fetcher.result1 = item[3]
+                thangs_api.model0 = bpy.context.scene.my_tool.dropdown_Parts0
+                thangs_api.modelTitle0 = item[1]
+                break
+
+    def item_set1(self, context):
+        global fetcher
+        for item in fetcher.enumModels2:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts1:
+                fetcher.result2 = item[3]
+                thangs_api.model1 = bpy.context.scene.my_tool.dropdown_Parts1
+                thangs_api.modelTitle1 = item[1]
+                break
+
+    def item_set2(self, context):
+        global fetcher
+        for item in fetcher.enumModels3:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts2:
+                fetcher.result3 = item[3]
+                thangs_api.model2 = bpy.context.scene.my_tool.dropdown_Parts2
+                thangs_api.modelTitle2 = item[1]
+                break
+
+    def item_set3(self, context):
+        global fetcher
+        for item in fetcher.enumModels4:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts3:
+                fetcher.result4 = item[3]
+                thangs_api.model3 = bpy.context.scene.my_tool.dropdown_Parts3
+                thangs_api.modelTitle3 = item[1]
+                break
+    
+    def item_set4(self, context):
+        global fetcher
+        for item in fetcher.enumModels5:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts4:
+                fetcher.result5 = item[3]
+                thangs_api.model4 = bpy.context.scene.my_tool.dropdown_Parts4
+                thangs_api.modelTitle4 = item[1]
+                break
+
+    def item_set5(self, context):
+        global fetcher
+        for item in fetcher.enumModels6:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts5:
+                fetcher.result6 = item[3]
+                thangs_api.model5 = bpy.context.scene.my_tool.dropdown_Parts5
+                thangs_api.modelTitle5 = item[1]
+                break
+
+    def item_set6(self, context):
+        global fetcher
+        for item in fetcher.enumModels7:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts6:
+                fetcher.result7 = item[3]
+                thangs_api.model6 = bpy.context.scene.my_tool.dropdown_Parts6
+                thangs_api.modelTitle6 = item[1]
+                break
+
+    def item_set7(self, context):
+        global fetcher
+        for item in fetcher.enumModels8:
+            if item[0] == bpy.context.scene.my_tool.dropdown_Parts7:
+                fetcher.result8 = item[3]
+                thangs_api.model7 = bpy.context.scene.my_tool.dropdown_Parts7
+                thangs_api.modelTitle7 = item[1]
+                break
+
+    dropdown_Parts0: bpy.props.EnumProperty(
+        items=item_callback0,
+        name="Parts",
+        description="Model Parts",
+        update=item_set0,
+    )
+
+    dropdown_Parts1: bpy.props.EnumProperty(
+        items=item_callback1,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set1,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts2: bpy.props.EnumProperty(
+        items=item_callback2,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set2,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts3: bpy.props.EnumProperty(
+        items=item_callback3,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set3,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts4: bpy.props.EnumProperty(
+        items=item_callback4,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set4,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts5: bpy.props.EnumProperty(
+        items=item_callback5,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set5,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts6: bpy.props.EnumProperty(
+        items=item_callback6,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set6,
+        get=None,
+        set=None
+    )
+
+    dropdown_Parts7: bpy.props.EnumProperty(
+        items=item_callback7,
+        name="Parts",
+        description="Model Parts",
+        default=None,
+        options={'ANIMATABLE'},
+        update=item_set7,
+        get=None,
+        set=None
+    )
 
 
 class ThangsLink(bpy.types.Operator):
@@ -294,6 +605,7 @@ icon_collections["main"] = icons_dict
 icons_dict = icon_collections["main"]
 icons_dir = os.path.join(os.path.dirname(__file__), "icons")
 icons_dict.load("ThangsT", os.path.join(icons_dir, "T.png"), 'IMAGE')
+icons_dict.load("CreativeC", os.path.join(icons_dir, "CC-Thin.png"), 'IMAGE')
 
 
 class THANGS_OT_search_invoke(Operator):
@@ -346,6 +658,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
     def drawView(self, context):
         global pcollModel
+        global modelDropdownIndex
 
         wm = context.window_manager
 
@@ -385,32 +698,72 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 grid = layout.grid_flow(
                     columns=1, even_columns=True, even_rows=True)
                 z = 0
+                modelDropdownIndex = 0
                 for model in fetcher.pcoll.Model:
-
+                    modelURL = fetcher.modelInfo[z][1]
                     cell = grid.column().box()
 
-                    if fetcher.length[z] > 1:
-                        cell.template_icon_view(
-                            wm, "ModelView{}".format((z+1)), scale=7, scale_popup=7, show_labels=True)
-                    else:
-                        cell.template_icon(
-                            icon_value=fetcher.thumbnailNumbers[z], scale=7)
+                    if z == 0:
+                        icon = fetcher.result1
+                    elif z == 1:
+                        icon = fetcher.result2
+                    elif z == 2:
+                        icon = fetcher.result3
+                    elif z == 3:
+                        icon = fetcher.result4
+                    elif z == 4:
+                        icon = fetcher.result5
+                    elif z == 5:
+                        icon = fetcher.result6
+                    elif z == 6:
+                        icon = fetcher.result7
+                    elif z == 7:
+                        icon = fetcher.result8
+
+                    cell.template_icon(
+                        icon_value=icon, scale=7)
 
                     col = cell.box().column(align=True)
                     row = col.row()
-                    row.label(text="{}".format(model[2]), icon='USER')
-                    # row = col.row()
-                    # row.label(text="{}".format(model[3]), icon='TEXT')
-                    row = col.row()
-                    row.label(text="{}".format(model[4]), icon='FILEBROWSER')
-
-                    modelURL = fetcher.modelInfo[z][1]
-
-                    props = cell.operator('wm.browse_to_model', text="%s" % model[0])
-                    props.url = modelURL + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    row.label(text="", icon='USER')
+                    props = row.operator(
+                        'wm.browse_to_creator', text="%s" % model[2])
+                    props.url = thangs_config.thangs_config['url'] + "designer/" + urllib.parse.quote(str(
+                        model[2])) + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                     props.modelIndex = z
 
+                    row = col.row()
+                    row.label(
+                        text="", icon_value=icons_dict["CreativeC"].icon_id)
+                    if model[3] == "":
+                        props = row.operator(
+                            'wm.browse_to_license', text="{}".format("No License"))
+                        props.url = ""
+                        props.enabled = False
+                    else:
+                        props = row.operator(
+                            'wm.browse_to_license', text="{}".format("See License"))
+                        props.url = model[3]
+                        props.modelIndex = z
+
+                    row = col.row()
+                    row.label(text="{}".format(""), icon='FILEBROWSER')
+
+                    scene = context.scene
+                    mytool = scene.my_tool
+                    dropdown = row.prop(mytool, "dropdown_Parts{}".format(z))
+
+                    # if fetcher.length[z] == 1:
+                    #     dropdown.enabled = False
+
+                    props = cell.operator(
+                        'wm.import_model', text="%s" % model[0])
+                    props.url = modelURL + \
+                        "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                    props.modelIndex = z
+                        
                     z = z + 1
+                    modelDropdownIndex = modelDropdownIndex + 1
 
                 row = layout.row()
                 row.ui_units_y = .9
@@ -516,6 +869,9 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
         row.scale_x = .18
 
+        #row = col.row()
+        #row.operator(SearchBySelect.bl_idname, text="Search By Selection", icon='NONE')
+
     def draw(self, context):
         addon_updater_ops.check_for_update_background()
         if fetcher.thangs_ui_mode == "VIEW":
@@ -575,8 +931,10 @@ def startSearch(self, value):
 
 def heartbeat_timer():
     log.info('sending thangs heartbeat')
-    amplitude.send_amplitude_event("Thangs Blender Addon - Heartbeat", event_properties={})
+    amplitude.send_amplitude_event(
+        "Thangs Blender Addon - Heartbeat", event_properties={})
     return 300
+
 
 def open_timer():
     log.info('sending thangs open')
@@ -588,8 +946,10 @@ def open_timer():
                     # False: n-panel is closed
                     n_panel_is_open = space.show_region_ui
 
-                    amplitude.send_amplitude_event("Thangs Blender Addon - Opened", event_properties={'panel_open': n_panel_is_open})
+                    amplitude.send_amplitude_event(
+                        "Thangs Blender Addon - Opened", event_properties={'panel_open': n_panel_is_open})
                     return 60
+
 
 def register():
     global fetcher
@@ -688,7 +1048,15 @@ def register():
     bpy.utils.register_class(LastPageChange)
     bpy.utils.register_class(FirstPageChange)
     bpy.utils.register_class(DemoPreferences)
-    bpy.utils.register_class(BrowseToModelOperator)
+    bpy.utils.register_class(ImportModelOperator)
+    bpy.utils.register_class(BrowseToLicenseOperator)
+    bpy.utils.register_class(BrowseToCreatorOperator)
+    bpy.utils.register_class(DropdownProperties)
+    bpy.utils.register_class(SearchBySelect)
+    
+
+    bpy.types.Scene.my_tool = bpy.props.PointerProperty(
+        type=DropdownProperties)
 
     bpy.types.Scene.thangs_model_search = bpy.props.StringProperty(
         name="",
@@ -712,6 +1080,7 @@ def register():
 
 def unregister():
     from bpy.types import WindowManager
+    global thangs_login
 
     del WindowManager.Model
     bpy.app.timers.unregister(heartbeat_timer)
@@ -731,7 +1100,13 @@ def unregister():
     bpy.utils.unregister_class(LastPageChange)
     bpy.utils.unregister_class(FirstPageChange)
     bpy.utils.unregister_class(DemoPreferences)
-    bpy.utils.unregister_class(BrowseToModelOperator)
+    bpy.utils.unregister_class(ImportModelOperator)
+    bpy.utils.unregister_class(BrowseToLicenseOperator)
+    bpy.utils.unregister_class(BrowseToCreatorOperator)
+    bpy.utils.unregister_class(DropdownProperties)
+    bpy.utils.unregister_class(SearchBySelect)
+
+    del bpy.types.Scene.my_tool
     addon_updater_ops.unregister()
 
     stop_access_grant()
