@@ -1,10 +1,12 @@
 from time import sleep 
 from .config import get_config, ThangsConfig
+from .thangs_importer import ThangsApi
 import uuid, webbrowser, requests, threading
 
 GRANT_CHECK_INTERVAL_SECONDS=0.5 # 500 milliseconds
 MAX_ATTEMPTS=600 # 5 minutes worth
 BLENDER_IS_CLOSED = False
+
 
 def stop_access_grant():
     global BLENDER_IS_CLOSED
@@ -12,6 +14,8 @@ def stop_access_grant():
 
 class ThangsLogin(threading.Thread):
     token = {}
+    Thangs_Config = get_config()
+    token_available = threading.Event()
 
     def __init__(self):
         super().__init__()
@@ -36,6 +40,7 @@ class ThangsLogin(threading.Thread):
                 done = True
                 token = response
                 self.token = token.json()
+                self.token_available.set()
             elif response.status_code == 401:
                 done = True
             else:
