@@ -310,10 +310,10 @@ class ImportModelOperator(Operator):
         import webbrowser
         print("Starting Login")
 
-        __location__ = os.path.realpath(
-            os.path.join(os.getcwd(), os.path.dirname(__file__)))
+        # __location__ = os.path.realpath(
+        #     os.path.join(os.getcwd(), os.path.dirname(__file__)))
         
-        bearer_DIR = os.path.join(__location__, 'bearer.json')
+        #bearer_DIR = os.path.join(__location__, 'bearer.json')
         if not os.path.exists('bearer.json'):
             print("Creating Bearer.json")
             f = open("bearer.json", "x")
