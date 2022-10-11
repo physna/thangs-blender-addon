@@ -131,6 +131,7 @@ thangs_config = ThangsConfig()
 thangs_login = ThangsLogin()
 thangs_api = get_thangs_api()
 
+
 ButtonSearch = "Search"
 # Added
 PageNumber = fetcher.PageNumber
@@ -366,6 +367,49 @@ class BrowseToCreatorOperator(Operator):
         Model_Event(self.modelIndex)
         return {'FINISHED'}
 
+class BrowseToLicenseOperator(Operator):
+    """Open model license in browser"""
+    bl_idname = "wm.browse_to_license"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="License to open",
+    )
+    modelIndex: IntProperty(
+        name="Index",
+        description="The index of the model license to open"
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(self.modelIndex)
+        return {'FINISHED'}
+
+
+class BrowseToCreatorOperator(Operator):
+    """Open creator's profile in browser"""
+    bl_idname = "wm.browse_to_creator"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Creator profile to open",
+    )
+    modelIndex: IntProperty(
+        name="Index",
+        description="The index of the model creator to open"
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(self.modelIndex)
+        return {'FINISHED'}
+
 
 class DropdownProperties(bpy.types.PropertyGroup):
 
@@ -380,7 +424,7 @@ class DropdownProperties(bpy.types.PropertyGroup):
     #         enumHolder0 = fetcher.enumModelTotal[1]
     #         print(enumHolder0)
     #         return enumHolder0
-
+    
     def item_callback0(self, context=None):
         global modelDropdownIndex
         global enumHolder0
@@ -1053,7 +1097,6 @@ def register():
     bpy.utils.register_class(BrowseToCreatorOperator)
     bpy.utils.register_class(DropdownProperties)
     bpy.utils.register_class(SearchBySelect)
-    
 
     bpy.types.Scene.my_tool = bpy.props.PointerProperty(
         type=DropdownProperties)

@@ -62,7 +62,6 @@ class ThangsFetcher():
 
         self.enumModelInfo = []
         self.enumModelTotal = []
-
         self.length = []
         self.thumbnailNumbers = []
 
@@ -121,7 +120,6 @@ class ThangsFetcher():
 
         self.enumModelInfo = []
         self.enumModelTotal = []
-
         self.length = []
         self.thumbnailNumbers = []
 
@@ -233,7 +231,7 @@ class ThangsFetcher():
             self.search_thread.terminate()
             self.search_thread = None
             self.searching = False
-            self.selectionSearching = False
+            self.selectionSearching = False  
             self.failed = False
             self.newSearch = False
             self.reset
@@ -331,7 +329,6 @@ class ThangsFetcher():
         self.enumModels8.clear()
         self.enumModelInfo.clear()
         self.enumModelTotal.clear()
-
         self.length.clear()
         self.thumbnailNumbers.clear()
 
@@ -437,6 +434,7 @@ class ThangsFetcher():
 
                 self.enumModelInfo.append(
                     (modelId, modelTitle, ""))  # , z))
+
 
                 if self.i == 0:
                     self.enumModels1.append(
