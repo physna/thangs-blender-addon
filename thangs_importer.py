@@ -242,7 +242,6 @@ class ThangsApi:
         else:
             print('Model already downloaded')
 
-        # gltf_path, gltf_zip = unzip_archive(archive_path)
         self.gltf_path = archive_path
         self.import_model()
         return
