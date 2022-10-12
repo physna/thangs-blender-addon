@@ -218,7 +218,6 @@ class ThangsApi:
 
         print("Temp Dir")
         print(temp_dir)
-        # archive_path = os.path.join(temp_dir, '{}.zip'.format(uid))
         archive_path = os.path.join(temp_dir, '{}.stl'.format(self.uid))
         print("Arch Path")
         print(archive_path)
