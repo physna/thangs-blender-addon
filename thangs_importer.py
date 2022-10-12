@@ -249,10 +249,7 @@ class ThangsApi:
         if self.gltf_path:
             try:
                 print("Starting Import Thread")
-                # self.import_thread = threading.Thread(
-                #    target=self.import_model).start()
                 self.import_model()
-                # import_model(gltf_path, uid)
             except Exception as e:
                 import traceback
                 print(traceback.format_exc())
