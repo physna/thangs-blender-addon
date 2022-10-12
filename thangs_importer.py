@@ -39,7 +39,7 @@ def get_thangs_api():
     return _thangs_api
 
 
-def initialize_thangsAPI(callback):
+def initialize_thangs_api(callback):
     global _thangs_api
     _thangs_api = ThangsApi(callback)
 
@@ -134,7 +134,7 @@ class ThangsApi:
         self.import_thread = None
         self.model_thread = None
         self.import_callback = callback
-        self.gltf_path = ""
+        self.model_path = ""
         self.uid = ""
         self.Thangs_Config = get_config()
         self.modelID = ""
@@ -242,13 +242,14 @@ class ThangsApi:
         else:
             print('Model already downloaded')
 
-        self.gltf_path = archive_path
+        self.model_path = archive_path
         self.import_model()
         return
-        if self.gltf_path:
+        if self.model_path:
             try:
                 print("Starting Import Thread")
                 self.import_model()
+                # import_model(model_path, uid)
             except Exception as e:
                 import traceback
                 print(traceback.format_exc())
@@ -280,7 +281,7 @@ class ThangsApi:
     def import_model(self):
         #old_objects = [o.name for o in bpy.data.objects]
         print("Starting File Import")
-        bpy.ops.import_mesh.stl(filepath=self.gltf_path)
+        bpy.ops.import_mesh.stl(filepath=self.model_path)
         print("Imported")
         Utils.clean_downloaded_model_dir(self.uid)
         print("Cleaned")

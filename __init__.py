@@ -28,7 +28,7 @@ from .config import ThangsConfig, initialize
 import socket
 import platform
 import logging
-from .thangs_importer import ThangsApi, initialize_thangsAPI, get_thangs_api
+from .thangs_importer import ThangsApi, initialize_thangs_api, get_thangs_api
 
 log = logging.getLogger(__name__)
 
@@ -125,7 +125,7 @@ def on_complete_search():
 
 
 initialize(bl_info["version"])
-initialize_thangsAPI(callback=on_complete_search)
+initialize_thangs_api(callback=on_complete_search)
 fetcher = ThangsFetcher(callback=on_complete_search)
 amplitude = ThangsEvents()
 thangs_config = ThangsConfig()
@@ -304,13 +304,13 @@ class ImportModelOperator(Operator):
         import webbrowser
         print("Starting Login")
         
-        bearer_DIR = os.path.join(os.path.dirname(__file__), 'bearer.json')
-        if not os.path.exists(bearer_DIR):
+        bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
+        if not os.path.exists(bearer_location):
             print("Creating Bearer.json")
-            f = open(bearer_DIR, "x")
+            f = open(bearer_location, "x")
         
         # check if size of file is 0
-        if os.stat(bearer_DIR).st_size == 0:
+        if os.stat(bearer_location).st_size == 0:
             print("Json was empty")
             thangs_login.startLoginFromBrowser()
             print("Waiting on Login")
@@ -318,13 +318,13 @@ class ImportModelOperator(Operator):
             bearer = {
                 'Bearer': str(thangs_login.token["TOKEN"]),
             }
-            with open(bearer_DIR, 'w') as json_file:
+            with open(bearer_location, 'w') as json_file:
                 json.dump(bearer, json_file)
 
-        f = open(bearer_DIR)
+        f = open(bearer_location)
         data = json.load(f)
-        fetcher.bearer = data["Bearer"]
-        thangs_api.bearer = data["Bearer"]
+        fetcher.bearer = data["bearer"]
+        thangs_api.bearer = data["bearer"]
 
         import_thread = threading.Thread(
             target=self.import_model).start()

@@ -19,7 +19,7 @@ from requests.exceptions import Timeout
 from .fp_val import FP
 from .thangs_events import ThangsEvents
 from .config import get_config, ThangsConfig
-from .thangs_importer import ThangsApi, initialize_thangsAPI, get_thangs_api, Utils, Config
+from .thangs_importer import ThangsApi, initialize_thangs_api, get_thangs_api, Utils, Config
 import bpy
 import socket
 from bpy.types import WindowManager
