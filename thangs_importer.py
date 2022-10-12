@@ -163,7 +163,6 @@ class ThangsApi:
     #        requests.get(download_url, headers=self.headers, hooks={'response': self.handle_download})
 
     def handle_download(self, modelIndex):  # (self, r, *args, **kwargs):
-        # if r.status_code != 200 or 'stl' not in r.json():
         #    return
         self.modelIndex = modelIndex
         print("Before Archive Call")
