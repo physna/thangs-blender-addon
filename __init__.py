@@ -292,11 +292,6 @@ class ImportModelOperator(Operator):
         name="Index",
         description="The index of the model to import"
     )
-    # modelID: StringProperty(
-    #     name="ModelID",
-    #     description="The current model ID",
-    #     default="ec0dcfff-6165-4146-96ac-6a01426c9659"
-    # )
 
     def import_model(self):
         global thangs_api
@@ -308,17 +303,14 @@ class ImportModelOperator(Operator):
         print("Starting Import")
         import webbrowser
         print("Starting Login")
-
-        # __location__ = os.path.realpath(
-        #     os.path.join(os.getcwd(), os.path.dirname(__file__)))
         
-        #bearer_DIR = os.path.join(__location__, 'bearer.json')
-        if not os.path.exists('bearer.json'):
+        bearer_DIR = os.path.join(os.path.dirname(__file__), 'bearer.json')
+        if not os.path.exists(bearer_DIR):
             print("Creating Bearer.json")
-            f = open("bearer.json", "x")
+            f = open(bearer_DIR, "x")
         
         # check if size of file is 0
-        if os.stat('bearer.json').st_size == 0:
+        if os.stat(bearer_DIR).st_size == 0:
             print("Json was empty")
             thangs_login.startLoginFromBrowser()
             print("Waiting on Login")
@@ -326,15 +318,13 @@ class ImportModelOperator(Operator):
             bearer = {
                 'Bearer': str(thangs_login.token["TOKEN"]),
             }
-            with open('bearer.json', 'w') as json_file:
+            with open(bearer_DIR, 'w') as json_file:
                 json.dump(bearer, json_file)
-        
-        f = open('bearer.json')
+
+        f = open(bearer_DIR)
         data = json.load(f)
         fetcher.bearer = data["Bearer"]
         thangs_api.bearer = data["Bearer"]
-        print(fetcher.bearer)
-        print(thangs_api.bearer)
 
         import_thread = threading.Thread(
             target=self.import_model).start()
