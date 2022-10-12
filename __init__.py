@@ -18,6 +18,7 @@ import bpy.utils.previews
 from urllib.request import urlopen
 import urllib.parse
 import os
+import json
 import threading
 from .thangs_login import ThangsLogin, stop_access_grant
 from .thangs_fetcher import ThangsFetcher
@@ -27,7 +28,7 @@ from .config import ThangsConfig, initialize
 import socket
 import platform
 import logging
-from .thangs_importer import ThangsApi, initialize_thangsAPI, get_thangs_api
+from .thangs_importer import ThangsApi, initialize_thangs_api, get_thangs_api
 
 log = logging.getLogger(__name__)
 
@@ -124,13 +125,12 @@ def on_complete_search():
 
 
 initialize(bl_info["version"])
-initialize_thangsAPI(callback=on_complete_search)
+initialize_thangs_api(callback=on_complete_search)
 fetcher = ThangsFetcher(callback=on_complete_search)
 amplitude = ThangsEvents()
 thangs_config = ThangsConfig()
 thangs_login = ThangsLogin()
 thangs_api = get_thangs_api()
-
 
 ButtonSearch = "Search"
 # Added
@@ -258,7 +258,6 @@ class SearchBySelect(bpy.types.Operator):
         return {'FINISHED'}
 
 def Model_Event(position):
-
     scope = fetcher.modelInfo[position][6]
     event_name = 'Thangs Model Link' if scope == 'thangs' else 'External Model Link'
 
@@ -279,7 +278,6 @@ def Model_Event(position):
     amplitude.send_thangs_event("Results", data)
     return
 
-
 class ImportModelOperator(Operator):
     """Import Model into Blender"""
     bl_idname = "wm.import_model"
@@ -294,11 +292,6 @@ class ImportModelOperator(Operator):
         name="Index",
         description="The index of the model to import"
     )
-    # modelID: StringProperty(
-    #     name="ModelID",
-    #     description="The current model ID",
-    #     default="ec0dcfff-6165-4146-96ac-6a01426c9659"
-    # )
 
     def import_model(self):
         global thangs_api
@@ -310,12 +303,29 @@ class ImportModelOperator(Operator):
         print("Starting Import")
         import webbrowser
         print("Starting Login")
-        if thangs_api.bearer == "":
+        
+        bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
+        if not os.path.exists(bearer_location):
+            print("Creating Bearer.json")
+            f = open(bearer_location, "x")
+        
+        # check if size of file is 0
+        if os.stat(bearer_location).st_size == 0:
+            print("Json was empty")
             thangs_login.startLoginFromBrowser()
             print("Waiting on Login")
             thangs_login.token_available.wait()
-            fetcher.bearer = str(thangs_login.token["TOKEN"])
-            thangs_api.bearer = str(thangs_login.token["TOKEN"])
+            bearer = {
+                'bearer': str(thangs_login.token["TOKEN"]),
+            }
+            with open(bearer_location, 'w') as json_file:
+                json.dump(bearer, json_file)
+
+        f = open(bearer_location)
+        data = json.load(f)
+        fetcher.bearer = data["bearer"]
+        thangs_api.bearer = data["bearer"]
+
         import_thread = threading.Thread(
             target=self.import_model).start()
         print("Import Thread Returned")
@@ -323,49 +333,6 @@ class ImportModelOperator(Operator):
         Model_Event(self.modelIndex)
         return {'FINISHED'}
 
-
-class BrowseToLicenseOperator(Operator):
-    """Open model license in browser"""
-    bl_idname = "wm.browse_to_license"
-    bl_label = ""
-    bl_options = {'INTERNAL'}
-
-    url: StringProperty(
-        name="URL",
-        description="License to open",
-    )
-    modelIndex: IntProperty(
-        name="Index",
-        description="The index of the model license to open"
-    )
-
-    def execute(self, _context):
-        import webbrowser
-        webbrowser.open(self.url)
-        Model_Event(self.modelIndex)
-        return {'FINISHED'}
-
-
-class BrowseToCreatorOperator(Operator):
-    """Open creator's profile in browser"""
-    bl_idname = "wm.browse_to_creator"
-    bl_label = ""
-    bl_options = {'INTERNAL'}
-
-    url: StringProperty(
-        name="URL",
-        description="Creator profile to open",
-    )
-    modelIndex: IntProperty(
-        name="Index",
-        description="The index of the model creator to open"
-    )
-
-    def execute(self, _context):
-        import webbrowser
-        webbrowser.open(self.url)
-        Model_Event(self.modelIndex)
-        return {'FINISHED'}
 
 class BrowseToLicenseOperator(Operator):
     """Open model license in browser"""
@@ -424,7 +391,7 @@ class DropdownProperties(bpy.types.PropertyGroup):
     #         enumHolder0 = fetcher.enumModelTotal[1]
     #         print(enumHolder0)
     #         return enumHolder0
-    
+
     def item_callback0(self, context=None):
         global modelDropdownIndex
         global enumHolder0
