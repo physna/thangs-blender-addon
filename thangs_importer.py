@@ -6,6 +6,7 @@ import math
 from urllib.request import urlopen
 import tempfile
 import urllib.request
+import urllib.parse
 import requests
 import os
 import importlib
@@ -44,8 +45,7 @@ def initialize_thangs_api(callback):
     _thangs_api = ThangsApi(callback)
 
 class Config:
-    THANGS_MODEL_DIR = ""
-
+    THANGS_MODEL_DIR = bpy.app.tempdir
 
 class Utils:
     def clean_downloaded_model_dir(modelTitle):
@@ -213,19 +213,35 @@ class ThangsApi:
         r = requests.get(modelURL, stream=True)
         self.uid = str(model_title)
         temp_dir = os.path.join(Config.THANGS_MODEL_DIR, self.uid)
+
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
 
-        print("Temp Dir")
-        print(temp_dir)
-        archive_path = os.path.join(temp_dir, '{}.stl'.format(self.uid))
-        print("Arch Path")
-        print(archive_path)
-        if not os.path.exists(archive_path):
+
+        print("Temp Dir: ", temp_dir)
+
+        urlDecoded = urllib.parse.unquote(modelURL)
+        print('urlDecoded', urlDecoded)
+
+        split_tup_top = os.path.splitext(urlDecoded)
+        file_extension = split_tup_top[1]
+        file_extension = file_extension.replace('"', '')
+        self.file_extension = file_extension.lower()
+        print('file_extension: ', self.file_extension)
+
+        fileindex = urlDecoded.rindex('filename="')
+        filename = urlDecoded[-(len(urlDecoded) - (fileindex + 10)):]
+        filename = filename.replace('"', '')
+        print('filename: ', filename)
+
+        file_path = os.path.join(temp_dir, filename)
+        print("file path: ", file_path)
+
+        if not os.path.exists(file_path):
             print("Starting Count")
             wm = bpy.context.window_manager
             wm.progress_begin(0, 100)
-            with open(archive_path, "wb") as f:
+            with open(file_path, "wb") as f:
                 total_length = r.headers.get('content-length')
                 if total_length is None:  # no content length header
                     f.write(r.content)
@@ -237,55 +253,88 @@ class ThangsApi:
                         f.write(data)
                         done = int(100 * dl / total_length)
                         wm.progress_update(done)
+                        print("filedata: ", done)
 
             wm.progress_end()
         else:
             print('Model already downloaded')
 
-        self.model_path = archive_path
+        self.file_path = file_path
+        self.temp_dir = temp_dir
         self.import_model()
         return
-        if self.model_path:
-            try:
-                print("Starting Import Thread")
-                self.import_model()
-                # import_model(model_path, uid)
-            except Exception as e:
-                import traceback
-                print(traceback.format_exc())
-        else:
-            print("ERROR", "Download error",
-                  "Failed to download model (url might be invalid)")
-        return
 
-    def unzip_archive(self, archive_path):
-        if os.path.exists(archive_path):
+    def unzip_archive(self):
+        if os.path.exists(self.file_path):
             import zipfile
             try:
-                zip_ref = zipfile.ZipFile(archive_path, 'r')
-                extract_dir = os.path.dirname(archive_path)
+                print("zip archive_path: ", self.file_path)
+                zip_ref = zipfile.ZipFile(self.file_path, 'r')
+                extract_dir = os.path.dirname(self.file_path)
+                print("zip extract_dir: ", extract_dir)
                 zip_ref.extractall(extract_dir)
                 zip_ref.close()
             except zipfile.BadZipFile:
                 print('Error when dezipping file')
-                os.remove(archive_path)
+                #os.remove(archive_path)
                 print('Invaild zip. Try again')
                 return None, None
 
-            stl_file = os.path.join(extract_dir, 'scene.gltf')
-            return stl_file, archive_path
+            files = os.listdir(extract_dir)
+            files = [f for f in files if os.path.isfile(extract_dir + '/' + f)]
+            print(*files, sep="\n")
+
+            for file in files:
+                if file.endswith(".gltf") or file.endswith(".usd") or file.endswith(".usda") or file.endswith(".usdc"):
+                    unzipped_file_path = os.path.join(extract_dir, file)
+                    split_tup_top = os.path.splitext(file)
+                    unzipped_file_extension = split_tup_top[1]
+                    break
+
+            print("zip unzipped_file_path: ", unzipped_file_path)
+            print("zip unzipped_file_extension: ", unzipped_file_extension)
+            return unzipped_file_path, unzipped_file_extension
 
         else:
             print('ERROR: archive doesn\'t exist')
 
     def import_model(self):
-        #old_objects = [o.name for o in bpy.data.objects]
         print("Starting File Import")
-        bpy.ops.import_mesh.stl(filepath=self.model_path)
+        print("self.file_path: ", self.file_path)
+
+        try:
+            if self.file_extension == '.zip' or self.file_extension == '.usdz':
+                unzipped_file_path, unzipped_file_extension = self.unzip_archive()
+                self.file_path = unzipped_file_path
+                self.file_extension = unzipped_file_extension
+        except:
+            print('unzip error')
+
+        print("self.file_path: ", self.file_path)
+        print("self.file_extension: ", self.file_extension)
+        
+        try:
+            if self.file_extension == '.fbx':
+                print('fbx')
+                bpy.ops.import_scene.fbx(filepath=self.file_path)
+            elif self.file_extension == '.obj':
+                print('obj')
+                bpy.ops.import_scene.obj(filepath=self.file_path)
+            elif self.file_extension == '.glb' or self.file_extension == '.gltf':
+                print('gltf + glb import')
+                bpy.ops.import_scene.gltf(filepath=self.file_path, import_pack_images=True, merge_vertices=False, import_shading='NORMALS', guess_original_bind_pose=True, bone_heuristic='TEMPERANCE')
+            elif self.file_extension == '.usd' or self.file_extension == '.usda' or self.file_extension == '.usdc':
+                print('usdz import')
+                bpy.ops.wm.usd_import(filepath=self.file_path, relative_path=True)
+            else:
+                print('stl')
+                bpy.ops.import_mesh.stl(filepath=self.file_path)
+        except:
+            print('import error')
+            
         print("Imported")
-        Utils.clean_downloaded_model_dir(self.uid)
+        Utils.clean_downloaded_model_dir(self.temp_dir)
         print("Cleaned")
-        # print("Imported")
         #root_name = modelTitle
         # Utils.clean_node_hierarchy(
         #    [o for o in bpy.data.objects if o.name not in old_objects], root_name)
