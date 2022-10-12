@@ -316,7 +316,7 @@ class ImportModelOperator(Operator):
             print("Waiting on Login")
             thangs_login.token_available.wait()
             bearer = {
-                'Bearer': str(thangs_login.token["TOKEN"]),
+                'bearer': str(thangs_login.token["TOKEN"]),
             }
             with open(bearer_location, 'w') as json_file:
                 json.dump(bearer, json_file)
