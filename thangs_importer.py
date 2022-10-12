@@ -173,8 +173,6 @@ class ThangsApi:
     def get_archive(self):
         print("Top of Archive")
         model_title = ""
-        # COME BACK AND CHANGE
-        #url = self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.modelID)+"download-url"
         modelID = ""
         if self.modelIndex == 0:
             modelID = str(self.model0)
