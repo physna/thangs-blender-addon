@@ -158,9 +158,6 @@ class ThangsApi:
         self.modelTitle7 = ""
         pass
 
-    # def download_model(self):
-    #        download_url = ""
-    #        requests.get(download_url, headers=self.headers, hooks={'response': self.handle_download})
 
     def handle_download(self, modelIndex):  # (self, r, *args, **kwargs):
         #    return
