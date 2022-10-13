@@ -288,6 +288,7 @@ class ThangsFetcher():
         global thangs_config
         print("Started Search")
         self.searching = True
+        self.failed = False
 
         self.Directory = self.query
         # Added
@@ -364,18 +365,26 @@ class ThangsFetcher():
         self.pcoll = self.preview_collections["main"]
 
         if self.newSearch == True:
-            response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
-                                    "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
-                                    headers={"x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")})
+            try:
+                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
+                                        "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
+                                        headers={"x-fp-val": self.FP.getVal("https://dev-fp.thangs.com/fp_m")})
+            except:
+                self.failed = True
+                return
         else:
-            response = requests.get(
-                str(self.Thangs_Config.thangs_config['url'])+"api/models/v2/search-by-text?page=" +
-                str(self.CurrentPage-1)+"&searchTerm="+self.query +
-                "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
-                headers={"x-thangs-searchmetadata": base64.b64encode(
-                    json.dumps(self.searchMetaData).encode()).decode(),
-                    "x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")},
-            )
+            try:
+                response = requests.get(
+                    str(self.Thangs_Config.thangs_config['url'])+"api/models/v2/search-by-text?page=" +
+                    str(self.CurrentPage-1)+"&searchTerm="+self.query +
+                    "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
+                    headers={"x-thangs-searchmetadata": base64.b64encode(
+                        json.dumps(self.searchMetaData).encode()).decode(),
+                        "x-fp-val": self.FP.getVal("https://dev-fp.thangs.com/fp_m")},
+                )
+            except:
+                self.failed = True
+                return
 
         if response.status_code != 200:
             self.amplitude.send_amplitude_event("Text Search - Failed", event_properties={
@@ -421,10 +430,12 @@ class ThangsFetcher():
                     (modelTitle, modelId, item["ownerUsername"], item["license"]))#, item["originalFileType"]))
 
                 thumbnail = thumbnail.replace("https", "http", 1)
-
-                filePath = urllib.request.urlretrieve(thumbnail)
-
-                filepath = os.path.join(modelId, filePath[0])
+                try:
+                    filePath = urllib.request.urlretrieve(thumbnail)
+                    filepath = os.path.join(modelId, filePath[0])
+                except:
+                    filePath = Path(__file__ + "\icons\placeholder.png")
+                    filepath = os.path.join(modelId, filePath)
 
                 thumb = self.pcoll.load(modelId, filepath, 'IMAGE')
 
@@ -496,10 +507,16 @@ class ThangsFetcher():
                                 thumbnailAPIURL, timeout=5)
                         except Timeout:
                             continue
-                        thumbnail = thumbnailURL.headers["Location"]
-                        thumbnail = thumbnail.replace("https", "http", 1)
-                        filePath = urllib.request.urlretrieve(thumbnail)
-                        filepath = os.path.join(modelID, filePath[0])
+                        
+                        try:
+                            thumbnail = thumbnailURL.headers["Location"]
+                            thumbnail = thumbnail.replace("https", "http", 1)
+                            filePath = urllib.request.urlretrieve(thumbnail)
+                            filepath = os.path.join(modelId, filePath[0])
+                        except:
+                            filePath = Path(__file__ + "\icons\placeholder.png")
+                            filepath = os.path.join(modelId, filePath)
+
                         thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
 
                         self.enumModelInfo.append(

@@ -357,6 +357,27 @@ class BrowseToLicenseOperator(Operator):
         Model_Event(self.modelIndex)
         return {'FINISHED'}
 
+class BrowseToModelOperator(Operator):
+    """Open model in browser"""
+    bl_idname = "wm.browse_to_model"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Model page to open",
+    )
+    modelIndex: IntProperty(
+        name="Index",
+        description="The index of the model page to open"
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(self.modelIndex)
+        return {'FINISHED'}
+
 
 class BrowseToCreatorOperator(Operator):
     """Open creator's profile in browser"""
@@ -387,7 +408,7 @@ class ThangsLink(bpy.types.Operator):
 
     def execute(self, context):
         amplitude.send_amplitude_event("nav to thangs", event_properties={})
-        webbrowser.open("https://thangs.com/search/"+fetcher.query +
+        webbrowser.open(thangs_config.thangs_config['url'] + "search/"+fetcher.query +
                         "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs", new=0, autoraise=True)
         return {'FINISHED'}
 
@@ -452,6 +473,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
     def drawView(self, context):
         global pcollModel
         global modelDropdownIndex
+        global thangs_api
 
         wm = context.window_manager
 
@@ -463,10 +485,19 @@ class THANGS_PT_model_display(bpy.types.Panel):
             SearchingRow = SearchingLayout.row(align=True)
             SearchingRow.label(
                 text="Searching...")
+        
+        if thangs_api.importing == True:
+            layout.active = False
+            ImportingLayout = self.layout
+            ImportingRow = ImportingLayout.row(align=True)
+            ImportingRow.label(
+                text="Importing your Model...")
 
         if fetcher.totalModels != 0:
-            if fetcher.searching == False:
+            if fetcher.searching == False and thangs_api.importing == False:
                 row = layout.row()
+                if thangs_api.import_limit == True:
+                    row.label(text="The Daily Import Limit was Reached")
                 if fetcher.totalModels < 100:
                     row.label(text="Found " +
                               str(fetcher.totalModels)+" results for")
@@ -528,11 +559,11 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     row = col.row()
                     row.label(
                         text="", icon_value=icons_dict["CreativeC"].icon_id)
-                    if model[3] == "":
+                    if model[3] == "" or not str(model[3]).endswith("showLicense=true"):
+                        row.enabled = False
                         props = row.operator(
                             'wm.browse_to_license', text="{}".format("No License"))
-                        props.url = ""
-                        props.enabled = False
+                        #props.url = ""
                     else:
                         props = row.operator(
                             'wm.browse_to_license', text="{}".format("See License"))
@@ -548,13 +579,19 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
                     # if fetcher.length[z] == 1:
                     #     dropdown.enabled = False
-
-                    props = cell.operator(
-                        'wm.import_model', text="%s" % model[0])
-                    props.url = modelURL + \
-                        "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    props.modelIndex = z
-                        
+                    if thangs_api.import_limit == True:
+                        props = cell.operator(
+                        'wm.browse_to_model', text="%s" % model[0], icon='URL')
+                        props.url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                        props.modelIndex = z
+                    else:
+                        props = cell.operator(
+                            'wm.import_model', text="Import Model", icon='IMPORT') #text="%s" % model[0]
+                        props.url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                        props.modelIndex = z
+                            
                     z = z + 1
                     modelDropdownIndex = modelDropdownIndex + 1
 
@@ -564,53 +601,34 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 row.ui_units_x = 1
                 row.scale_x = 1
 
-                column1 = row.column(align=True)
+                column = row.column(align=True)
+                column.scale_x = 1
+                column.ui_units_y = .5
+                column.ui_units_x = 5
+                column.scale_y = 1.2
+
                 if fetcher.PageNumber == 1:
-                    column1.active = False
+                    column.active = False
+                column.operator("firstpage.thangs", icon='REW')
 
-                column1.scale_x = 1
-                column1.ui_units_y = .5
-                column1.ui_units_x = 5
-                column1.scale_y = 1.2
-
-                column2 = row.column(align=True)
+                column = row.column(align=True)
                 if fetcher.PageNumber == 1:
-                    column2.active = False
-                column2.scale_x = 1
-                column2.ui_units_y = .1
-                column2.ui_units_x = 5
-                column2.scale_y = 1.2
+                    column.active = False
+                column.operator("decpage.thangs", icon='PLAY_REVERSE')
 
-                column3 = row.column(align=True)
-                column3.scale_x = 1
-                column3.ui_units_y = .1
-                column3.ui_units_x = 5
-                column3.scale_y = 1.2
-
-                column4 = row.column(align=True)
-                if fetcher.PageNumber == fetcher.PageTotal:
-                    column4.active = False
-
-                column4.scale_x = 1
-                column4.ui_units_y = .1
-                column4.ui_units_x = 5
-                column4.scale_y = 1.2
-
-                column5 = row.column(align=True)
-                if fetcher.PageNumber == fetcher.PageTotal:
-                    column5.active = False
-
-                column5.scale_x = 1
-                column5.ui_units_y = .1
-                column5.ui_units_x = 5
-                column5.scale_y = 1.2
-
-                column1.operator("firstpage.thangs", icon='REW')
-                column2.operator("decpage.thangs", icon='PLAY_REVERSE')
-                column3.label(text=""+str(fetcher.PageNumber) +
+                column = row.column(align=True)
+                column.label(text=""+str(fetcher.PageNumber) +
                               "/"+str(fetcher.PageTotal)+"")
-                column4.operator("incpage.thangs", icon='PLAY')
-                column5.operator("lastpage.thangs", icon='FF')
+
+                column = row.column(align=True)
+                if fetcher.PageNumber == fetcher.PageTotal:
+                    column.active = False
+                column.operator("incpage.thangs", icon='PLAY')
+
+                column = row.column(align=True)
+                if fetcher.PageNumber == fetcher.PageTotal:
+                    column.active = False
+                column.operator("lastpage.thangs", icon='FF')
 
                 row = layout.row()
                 o = row.operator("thangs.search_invoke", icon='CANCEL')
@@ -845,6 +863,7 @@ def register():
     bpy.utils.register_class(BrowseToLicenseOperator)
     bpy.utils.register_class(BrowseToCreatorOperator)
     bpy.utils.register_class(SearchBySelect)
+    bpy.utils.register_class(BrowseToModelOperator)
 
     def dropdown_properties_item_set(index):
         def handler(self, context):
@@ -928,8 +947,9 @@ def unregister():
     bpy.utils.unregister_class(ImportModelOperator)
     bpy.utils.unregister_class(BrowseToLicenseOperator)
     bpy.utils.unregister_class(BrowseToCreatorOperator)
-    bpy.utils.unregister_class(DropdownProperties)
+    #bpy.utils.register_class(DropdownProperties)
     bpy.utils.unregister_class(SearchBySelect)
+    bpy.utils.unregister_class(BrowseToModelOperator)
 
     del bpy.types.Scene.my_tool
     addon_updater_ops.unregister()
