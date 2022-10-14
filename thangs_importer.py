@@ -211,8 +211,8 @@ class ThangsApi:
             return
 
         r = requests.get(modelURL, stream=True)
-        self.uid = str(model_title)
-        temp_dir = os.path.join(Config.THANGS_MODEL_DIR, self.uid)
+        self.file_name = str(model_title)
+        temp_dir = os.path.join(Config.THANGS_MODEL_DIR, str(modelID))
 
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
@@ -285,7 +285,7 @@ class ThangsApi:
             print(*files, sep="\n")
 
             for file in files:
-                if file.endswith(".gltf") or file.endswith(".usd") or file.endswith(".usda") or file.endswith(".usdc"):
+                if file.lower() == self.file_name.lower():
                     unzipped_file_path = os.path.join(extract_dir, file)
                     split_tup_top = os.path.splitext(file)
                     unzipped_file_extension = split_tup_top[1]
