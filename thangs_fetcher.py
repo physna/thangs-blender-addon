@@ -428,7 +428,7 @@ class ThangsFetcher():
                 self.modelInfo.append(
                     tuple([modelTitle, item["attributionUrl"], modelId, (((self.CurrentPage-1)*8) + self.i), self.i, item["domain"], item["scope"]]))
                 self.enumItems.append(
-                    (modelTitle, modelId, item["ownerUsername"], item["license"]))#, item["originalFileType"]))
+                    (modelTitle, modelId, item["ownerUsername"], item["license"], item["originalFileType"], item["domain"]))
 
                 print("-----")
                 print("-----")
