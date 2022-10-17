@@ -261,7 +261,7 @@ class ThangsApi:
                 else:
                     dl = 0
                     total_length = int(total_length)
-                    for data in r.iter_content(chunk_size=4096):
+                    for data in r.iter_content(chunk_size=1024*100):
                         dl += len(data)
                         f.write(data)
                         done = int(100 * dl / total_length)
