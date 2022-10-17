@@ -599,7 +599,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     row = col.row()
                     row.label(
                         text="", icon_value=icons_dict["CreativeC"].icon_id)
-                    #if model[3] == "" or not str(model[3]).endswith("showLicense=true"):
                     if model[3] == None:
                         row.enabled = False
                         props = row.operator(
