@@ -711,8 +711,8 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
 
         # TODO ENABLE SEARCH BY SELECTION
-        row = col.row()
-        row.operator(SearchBySelect.bl_idname, text="Search By Selection", icon='NONE')
+        # row = col.row()
+        # row.operator(SearchBySelect.bl_idname, text="Search By Selection", icon='NONE')
 
     def draw(self, context):
         addon_updater_ops.check_for_update_background()
