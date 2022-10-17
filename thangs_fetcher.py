@@ -365,13 +365,13 @@ class ThangsFetcher():
 
         if self.newSearch == True:
             response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
-                                    "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
+                                    "&pageSize=8&narrow=false&collapse=true",
                                     headers={"x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")})
         else:
             response = requests.get(
                 str(self.Thangs_Config.thangs_config['url'])+"api/models/v2/search-by-text?page=" +
                 str(self.CurrentPage-1)+"&searchTerm="+self.query +
-                "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
+                "&pageSize=8&narrow=false&collapse=true",
                 headers={"x-thangs-searchmetadata": base64.b64encode(
                     json.dumps(self.searchMetaData).encode()).decode(),
                     "x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")},
