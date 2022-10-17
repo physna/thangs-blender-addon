@@ -21,6 +21,7 @@ from .thangs_events import ThangsEvents
 from .config import get_config, ThangsConfig
 from .thangs_importer import ThangsApi, initialize_thangs_api, get_thangs_api, Utils, Config
 import bpy
+import ssl
 import socket
 from bpy.types import WindowManager
 import bpy.utils.previews
@@ -287,6 +288,8 @@ class ThangsFetcher():
 
     def get_http_search(self):
         global thangs_config
+        # Clean up temporary files from previous attempts
+        urllib.request.urlcleanup()
         print("Started Search")
         self.searching = True
         self.failed = False
@@ -360,8 +363,8 @@ class ThangsFetcher():
         if self.newSearch == True:
             try:
                 response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
-                                        "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
-                                        headers={"x-fp-val": self.FP.getVal("https://dev-fp.thangs.com/fp_m")})
+                                    "&pageSize=8&collapse=true",
+                                    headers={"x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")})
             except:
                 self.failed = True
                 self.newSearch = False
@@ -372,10 +375,10 @@ class ThangsFetcher():
                 response = requests.get(
                     str(self.Thangs_Config.thangs_config['url'])+"api/models/v2/search-by-text?page=" +
                     str(self.CurrentPage-1)+"&searchTerm="+self.query +
-                    "&pageSize=8&narrow=false&collapse=true&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs",
+                    "&pageSize=8&collapse=true",
                     headers={"x-thangs-searchmetadata": base64.b64encode(
                         json.dumps(self.searchMetaData).encode()).decode(),
-                        "x-fp-val": self.FP.getVal("https://dev-fp.thangs.com/fp_m")},
+                        "x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")},
                 )
             except:
                 self.failed = True
@@ -406,15 +409,17 @@ class ThangsFetcher():
 
             self.i = 0
 
+            # ugh
+            old_context = ssl._create_default_https_context
+            ssl._create_default_https_context = ssl._create_unverified_context
+
             for item in items:
                 self.enumModelInfo.clear()
 
                 if len(item["thumbnails"]) > 0:
                     thumbnail = item["thumbnails"][0]
                 else:
-                    thumbnailAPIURL = item["thumbnailUrl"]
-                    thumbnailURL = requests.head(thumbnailAPIURL)
-                    thumbnail = thumbnailURL.headers["Location"]
+                    thumbnail = item["thumbnailUrl"]
 
                 modelTitle = item["modelTitle"]
                 modelId = item["modelId"]
@@ -427,6 +432,7 @@ class ThangsFetcher():
 
                 thumbnail = thumbnail.replace("https", "http", 1)
                 try:
+                    print(f'Fetching {thumbnail}')
                     filePath = urllib.request.urlretrieve(thumbnail)
                     filepath = os.path.join(modelId, filePath[0])
                 except:
@@ -497,18 +503,12 @@ class ThangsFetcher():
                     for part in parts:
                         ModelTitle = part["modelFileName"]
                         modelID = part["modelId"]
-                        thumbnailAPIURL = part["thumbnailUrl"]
-                        try:
-                            thumbnailURL = requests.head(
-                                thumbnailAPIURL, timeout=5)
-                        except Timeout:
-                            continue
+                        thumbnail = part["thumbnailUrl"]
                         
                         try:
-                            thumbnail = thumbnailURL.headers["Location"]
-                            thumbnail = thumbnail.replace("https", "http", 1)
+                            print(f'Fetching part {thumbnail}')
                             filePath = urllib.request.urlretrieve(thumbnail)
-                            filepath = os.path.join(modelId, filePath[0])
+                            filepath = os.path.join(modelID, filePath[0])
                         except:
                             filePath = Path(__file__ + "\icons\placeholder.png")
                             filepath = os.path.join(modelId, filePath)
@@ -555,6 +555,7 @@ class ThangsFetcher():
                 self.enumModelTotal.append(self.enumModelInfo[:])
                 self.i = self.i + 1
 
+        ssl._create_default_https_context = old_context
         if self.enumModels1:
             self.length.append(len(self.enumModels1))
             self.result1 = self.enumModels1[0][3]
