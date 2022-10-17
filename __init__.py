@@ -256,6 +256,28 @@ class SearchBySelect(bpy.types.Operator):
     bl_label = "Search By Selection"
 
     def execute(self, context):
+        bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
+        if not os.path.exists(bearer_location):
+            print("Creating Bearer.json")
+            f = open(bearer_location, "x")
+        
+        # check if size of file is 0
+        if os.stat(bearer_location).st_size == 0:
+            print("Json was empty")
+            thangs_login.startLoginFromBrowser()
+            print("Waiting on Login")
+            thangs_login.token_available.wait()
+            bearer = {
+                'bearer': str(thangs_login.token["TOKEN"]),
+            }
+            with open(bearer_location, 'w') as json_file:
+                json.dump(bearer, json_file)
+
+        f = open(bearer_location)
+        data = json.load(f)
+        fetcher.bearer = data["bearer"]
+        thangs_api.bearer = data["bearer"]
+
         fetcher.selectionSearch(context)
         return {'FINISHED'}
 
@@ -403,7 +425,6 @@ class BrowseToCreatorOperator(Operator):
 class ThangsLink(bpy.types.Operator):
     """Click to continue on Thangs"""
     bl_idname = "link.thangs"
-    #bl_label = "Search"
     bl_label = "Redirect to Thangs"
 
     def execute(self, context):
@@ -471,7 +492,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
         return nm
 
     def drawView(self, context):
-        global pcollModel
         global modelDropdownIndex
         global thangs_api
 
@@ -645,6 +665,15 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 SearchingRow = layout.row()
                 SearchingRow.label(
                     text="Please try again!")
+            elif fetcher.SelectionFailed == True:
+                SearchingRow.label(
+                    text="Unable to search for")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="your selection on Thangs")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="Please try again!") 
             else:
                 SearchingRow.label(
                     text="Found 0 Models for:")
@@ -680,8 +709,10 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
         row.scale_x = .18
 
-        #row = col.row()
-        #row.operator(SearchBySelect.bl_idname, text="Search By Selection", icon='NONE')
+
+        # TODO ENABLE SEARCH BY SELECTION
+        row = col.row()
+        row.operator(SearchBySelect.bl_idname, text="Search By Selection", icon='NONE')
 
     def draw(self, context):
         addon_updater_ops.check_for_update_background()
@@ -690,47 +721,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
         else:
             self.drawSearch(context)
         addon_updater_ops.update_notice_box_ui(self, context)
-
-
-def enum_previews_from_thangs_api1(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView1
-
-
-def enum_previews_from_thangs_api2(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView2
-
-
-def enum_previews_from_thangs_api3(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView3
-
-
-def enum_previews_from_thangs_api4(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView4
-
-
-def enum_previews_from_thangs_api5(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView5
-
-
-def enum_previews_from_thangs_api6(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView6
-
-
-def enum_previews_from_thangs_api7(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView7
-
-
-def enum_previews_from_thangs_api8(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView8
-
 
 preview_collections = fetcher.preview_collections
 
@@ -790,54 +780,6 @@ def register():
         name="",
         description="Click to view all results",
         items=fetcher.enumItems,
-    )
-
-    WindowManager.ModelView1 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api1,
-    )
-
-    WindowManager.ModelView2 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api2,
-    )
-
-    WindowManager.ModelView3 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api3,
-    )
-
-    WindowManager.ModelView4 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api4,
-    )
-
-    WindowManager.ModelView5 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api5,
-    )
-
-    WindowManager.ModelView6 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api6,
-    )
-
-    WindowManager.ModelView7 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api7,
-    )
-
-    WindowManager.ModelView8 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api8,
     )
 
     fetcher.pcoll = bpy.utils.previews.new()

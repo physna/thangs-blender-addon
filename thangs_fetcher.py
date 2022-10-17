@@ -85,6 +85,7 @@ class ThangsFetcher():
         self.selectionSearching = False
         self.failed = False
         self.newSearch = False
+        self.SelectionFailed = False
 
         self.Thangs_Config = ThangsConfig()
         self.Thangs_Utils = Utils()
@@ -350,14 +351,6 @@ class ThangsFetcher():
         self.pcoll = bpy.utils.previews.new()
         self.pcoll.Model_dir = ""
         self.pcoll.Model = ()
-        self.pcoll.ModelView1 = ()
-        self.pcoll.ModelView2 = ()
-        self.pcoll.ModelView3 = ()
-        self.pcoll.ModelView4 = ()
-        self.pcoll.ModelView5 = ()
-        self.pcoll.ModelView6 = ()
-        self.pcoll.ModelView7 = ()
-        self.pcoll.ModelView8 = ()
         self.pcoll.Model_page = self.CurrentPage
 
         self.preview_collections["main"] = self.pcoll
@@ -371,6 +364,8 @@ class ThangsFetcher():
                                         headers={"x-fp-val": self.FP.getVal("https://dev-fp.thangs.com/fp_m")})
             except:
                 self.failed = True
+                self.newSearch = False
+                self.searching = False
                 return
         else:
             try:
@@ -384,6 +379,8 @@ class ThangsFetcher():
                 )
             except:
                 self.failed = True
+                self.newSearch = False
+                self.searching = False
                 return
 
         if response.status_code != 200:
@@ -408,7 +405,6 @@ class ThangsFetcher():
             self.get_total_results(response)
 
             self.i = 0
-            #self.enumModelTotal.append(("NONE", "None", "", 1))
 
             for item in items:
                 self.enumModelInfo.clear()
@@ -585,14 +581,6 @@ class ThangsFetcher():
             self.result8 = self.enumModels8[0][3]
 
         self.pcoll.Model = self.enumItems
-        self.pcoll.ModelView1 = self.enumModels1
-        self.pcoll.ModelView2 = self.enumModels2
-        self.pcoll.ModelView3 = self.enumModels3
-        self.pcoll.ModelView4 = self.enumModels4
-        self.pcoll.ModelView5 = self.enumModels5
-        self.pcoll.ModelView6 = self.enumModels6
-        self.pcoll.ModelView7 = self.enumModels7
-        self.pcoll.ModelView8 = self.enumModels8
         self.pcoll.Model_dir = self.Directory
         # Added
 
@@ -612,6 +600,7 @@ class ThangsFetcher():
         return
 
     def get_stl_search(self, stl_path):
+        import re
         global thangs_config
         print("Started STL Search")
         self.selectionSearching = True
@@ -687,13 +676,23 @@ class ThangsFetcher():
 
         self.pcoll = self.preview_collections["main"]
 
-        url = "https://py-image-and-mesh-search-nprcfqgvfq-uc.a.run.app/search/bytes/extraInfo/mesh"
-        
-        # TODO
         headers = {
-            "Authorization": "Bearer {0}".format(""),
+            "Authorization": "Bearer "+self.bearer,
         }
-        #data = open(f'D:/Github/blender_selection.stl', 'rb').read()
+
+        try:
+            response = requests.get(str(self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl", headers=headers)
+            responseData = response.json()
+
+            print(responseData)
+        except:
+            print("URL BROKEN")
+        
+        signedUrl = responseData["signedUrl"]
+        new_Filename = responseData["newFileName"]
+
+        #url = "https://py-image-and-mesh-search-nprcfqgvfq-uc.a.run.app/search/bytes/extraInfo/mesh"
+
         data = open(stl_path, 'rb').read()
         
         print("Starting to Clean")
@@ -703,21 +702,47 @@ class ThangsFetcher():
         s = requests.Session()
 
         retries = Retry(total=10,
-                        backoff_factor=3,
+                        backoff_factor=1,
                         status_forcelist=[500, 502, 503, 504, 521],
-                        allowed_methods=frozenset(['GET', 'POST']),)
+                        allowed_methods=frozenset(['GET', 'POST', 'PUT']),)
         s.mount('https://', HTTPAdapter(max_retries=retries))
-        response = s.post(url, headers=headers, data=data)
-        response.raise_for_status()
+
+        try:
+            s.put(url=signedUrl, data=data) # params={'data': data}, args=(), 
+            #response = s.post(url, headers=headers, data=data)
+        except:
+            print("API Failed")
+            self.selectionSearching = False
+            self.searching = False
+            self.newSearch = False
+            self.SelectionFailed = True
+            return
 
         print("Select Search Returned")
+
+        try:
+            url_filepath = urllib.parse.quote(new_Filename, safe='')
+            url_filepath = re.sub(r'-', '%2D', url_filepath)
+            url = str(self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath="+url_filepath)
+            #url = base64.b64encode(json.dumps(url).encode()).decode()
+            #url = urllib.parse.quote(url)
+            print(url)
+            response = requests.get(url=url, headers=headers)
+            print(response.status_code())
+            responseData = response.json()
+
+            print(responseData)
+        except:
+            print("It BROKE")
+            self.selectionSearching = False
+            self.searching = False
+            self.newSearch = False
+            self.SelectionFailed = True
+            return
 
         # if os.path.isfile(stl_path):
         #    os.remove(stl_path)
         #self.Thangs_Utils.clean_downloaded_model_dir("ThangsSelectionSearch")
-
-        print(response)
-        responseData = response.json()
 
         items = responseData
 
@@ -758,10 +783,12 @@ class ThangsFetcher():
                 (modelTitle, modelId, "Test Selection", "Test License", "STL"))
 
             thumbnail = thumbnail.replace("https", "http", 1)
-
-            filePath = urllib.request.urlretrieve(thumbnail)
-
-            filepath = os.path.join(modelId, filePath[0])
+            try:
+                filePath = urllib.request.urlretrieve(thumbnail)
+                filepath = os.path.join(modelId, filePath[0])
+            except:
+                filePath = Path(__file__ + "\icons\placeholder.png")
+                filepath = os.path.join(modelId, filePath)
 
             thumb = self.pcoll.load(modelId, filepath, 'IMAGE')
 
