@@ -452,14 +452,13 @@ class ThangsFetcher():
                 z = 0
 
                 self.enumModelInfo.append(
-                    (modelId, modelTitle, ""))  # , z))
-
+                    (modelId, item["modelFileName"], ""))  # , z))
 
                 if self.i == 0:
                     self.enumModels1.append(
-                        (modelId, modelTitle, "", thumb.icon_id, z))
+                        (modelId, item["modelFileName"], "", thumb.icon_id, z))
                     self.thangs_api.model0 = modelId
-                    self.thangs_api.modelTitle0 = modelTitle
+                    self.thangs_api.modelTitle0 = item["modelFileName"]
 
                 elif self.i == 1:
                     self.enumModels2.append(

@@ -352,7 +352,7 @@ class ImportModelOperator(Operator):
                 print("Dumping")
                 with open(bearer_location, 'w') as json_file:
                     json.dump(bearer, json_file)
-                
+               
             print("After Dump")
             f = open(bearer_location)
             data = json.load(f)
@@ -369,11 +369,8 @@ class ImportModelOperator(Operator):
 
     def execute(self, _context):
         print("Starting Login and Import")
-
-
         login_thread = threading.Thread(
             target=self.login_user, args=(_context, self.modelIndex, self.license_url)).start()
-    
         return {'FINISHED'}
 
 

@@ -172,8 +172,6 @@ class ThangsApi:
 
     def get_archive(self):
         self.importing = True
-        print("License URL")
-        print(self.LicenseURL)
 
         if self.LicenseURL != "":
             webbrowser.open(self.LicenseURL, new=0, autoraise=True)
@@ -235,7 +233,7 @@ class ThangsApi:
         self.uid = str(model_title)
         self.uid = '_'.join(self.uid.split())
         temp_dir = os.path.join(Config.THANGS_MODEL_DIR, self.uid)
-
+        
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
 
@@ -269,7 +267,7 @@ class ThangsApi:
                 else:
                     dl = 0
                     total_length = int(total_length)
-                    for data in r.iter_content(chunk_size=4096):
+                    for data in r.iter_content(chunk_size=1024*100):
                         dl += len(data)
                         f.write(data)
                         done = int(100 * dl / total_length)
@@ -306,7 +304,7 @@ class ThangsApi:
             print(*files, sep="\n")
 
             for file in files:
-                if file.endswith(".gltf") or file.endswith(".usd") or file.endswith(".usda") or file.endswith(".usdc"):
+                if file.lower() == self.file_name.lower():
                     unzipped_file_path = os.path.join(extract_dir, file)
                     split_tup_top = os.path.splitext(file)
                     unzipped_file_extension = split_tup_top[1]

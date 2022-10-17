@@ -50,6 +50,7 @@ class ThangsLogin(threading.Thread):
                 self.token_available.set()
                 self.token_available.clear()
                 return
+
             else:
                 attempts = attempts + 1
         if self.token == {}:
