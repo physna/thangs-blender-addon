@@ -128,6 +128,8 @@ class ThangsApi:
         self.CurrentPage = 1
         self.searching = False
         self.failed = False
+        self.importing = False
+        self.import_limit = False
         self.query = ""
         self.deviceId = ""
         self.ampURL = ''
@@ -167,6 +169,7 @@ class ThangsApi:
         return True
 
     def get_archive(self):
+        self.importing = True
         print("Top of Archive")
         model_title = ""
         modelID = ""
@@ -195,33 +198,43 @@ class ThangsApi:
             modelID = str(self.model7)
             model_title = self.modelTitle7
     
-        print(self.bearer)
+        #print(self.bearer)
         headers = {"Authorization": "Bearer "+self.bearer,}
 
-        print(headers)
-        print(self.Thangs_Config.thangs_config['url'])
-        response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url", headers=headers)
-        print(response)
-        print(response.status_code)
+        #print(headers)
+        #print(self.Thangs_Config.thangs_config['url'])
+        # TODO 
+        # Add in rate limit after this following request (Will error 429)
+        try:
+            response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url", headers=headers)
+        except:
+            if response.status_code == 429:
+                self.import_limit = True
+            self.importing = False
+            return
+
+        self.import_limit = False
+        #print(response)
+        #print(response.status_code)
         responseData = response.json()
         modelURL = responseData["downloadUrl"]
-        print(modelURL)
+        #print(modelURL)
         if modelURL is None:
             print('Url is None')
             return
 
         r = requests.get(modelURL, stream=True)
         self.uid = str(model_title)
+        self.uid = '_'.join(self.uid.split())
         temp_dir = os.path.join(Config.THANGS_MODEL_DIR, self.uid)
 
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
 
-
         print("Temp Dir: ", temp_dir)
 
         urlDecoded = urllib.parse.unquote(modelURL)
-        print('urlDecoded', urlDecoded)
+        #print('urlDecoded', urlDecoded)
 
         split_tup_top = os.path.splitext(urlDecoded)
         file_extension = split_tup_top[1]
@@ -257,7 +270,7 @@ class ThangsApi:
 
             wm.progress_end()
         else:
-            print('Model already downloaded')
+            print('Model Already Downloaded')
 
         self.file_path = file_path
         self.temp_dir = temp_dir
@@ -300,7 +313,7 @@ class ThangsApi:
 
     def import_model(self):
         print("Starting File Import")
-        print("self.file_path: ", self.file_path)
+        #print("self.file_path: ", self.file_path)
 
         try:
             if self.file_extension == '.zip' or self.file_extension == '.usdz':
@@ -309,9 +322,11 @@ class ThangsApi:
                 self.file_extension = unzipped_file_extension
         except:
             print('unzip error')
+            self.importing = False
+            return
 
-        print("self.file_path: ", self.file_path)
-        print("self.file_extension: ", self.file_extension)
+        #print("self.file_path: ", self.file_path)
+        #print("self.file_extension: ", self.file_extension)
         
         try:
             if self.file_extension == '.fbx':
@@ -330,13 +345,17 @@ class ThangsApi:
                 print('stl')
                 bpy.ops.import_mesh.stl(filepath=self.file_path)
         except:
-            print('import error')
+            print('Failed to Import')
             
-        print("Imported")
-        Utils.clean_downloaded_model_dir(self.temp_dir)
-        print("Cleaned")
+        #print("Imported")
+        try:
+            Utils.clean_downloaded_model_dir(self.temp_dir)
+            print("Cleaned")
+        except:
+            print("Failed to Clean Model")
         #root_name = modelTitle
         # Utils.clean_node_hierarchy(
         #    [o for o in bpy.data.objects if o.name not in old_objects], root_name)
         #print("Cleaned Nodes")
+        self.importing = False
         return

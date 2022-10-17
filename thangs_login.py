@@ -43,6 +43,7 @@ class ThangsLogin(threading.Thread):
                 self.token_available.set()
             elif response.status_code == 401:
                 done = True
+                self.token_available.set()
             else:
                 attempts = attempts + 1
 
