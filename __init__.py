@@ -256,6 +256,28 @@ class SearchBySelect(bpy.types.Operator):
     bl_label = "Search By Selection"
 
     def execute(self, context):
+        bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
+        if not os.path.exists(bearer_location):
+            print("Creating Bearer.json")
+            f = open(bearer_location, "x")
+        
+        # check if size of file is 0
+        if os.stat(bearer_location).st_size == 0:
+            print("Json was empty")
+            thangs_login.startLoginFromBrowser()
+            print("Waiting on Login")
+            thangs_login.token_available.wait()
+            bearer = {
+                'bearer': str(thangs_login.token["TOKEN"]),
+            }
+            with open(bearer_location, 'w') as json_file:
+                json.dump(bearer, json_file)
+
+        f = open(bearer_location)
+        data = json.load(f)
+        fetcher.bearer = data["bearer"]
+        thangs_api.bearer = data["bearer"]
+
         fetcher.selectionSearch(context)
         return {'FINISHED'}
 
@@ -301,7 +323,9 @@ class ImportModelOperator(Operator):
         print("Starting Download")
         thangs_api.handle_download(self.modelIndex)
 
-    def execute(self, _context):
+    def login_user(self, _context, modelIndex):
+        global thangs_api
+        global fetcher
         print("Starting Import")
         import webbrowser
         print("Starting Login")
@@ -312,27 +336,40 @@ class ImportModelOperator(Operator):
             f = open(bearer_location, "x")
         
         # check if size of file is 0
-        if os.stat(bearer_location).st_size == 0:
-            print("Json was empty")
-            thangs_login.startLoginFromBrowser()
-            print("Waiting on Login")
-            thangs_login.token_available.wait()
-            bearer = {
-                'bearer': str(thangs_login.token["TOKEN"]),
-            }
-            with open(bearer_location, 'w') as json_file:
-                json.dump(bearer, json_file)
+        try:
+            print("Top of Try")
+            if os.stat(bearer_location).st_size == 0:
+                print("Json was empty")
+                thangs_login.startLoginFromBrowser()
+                print("Waiting on Login")
+                thangs_login.token_available.wait()
+                bearer = {
+                    'bearer': str(thangs_login.token["TOKEN"]),
+                }
+                with open(bearer_location, 'w') as json_file:
+                    json.dump(bearer, json_file)
+            print("After Dump")
+            f = open(bearer_location)
+            data = json.load(f)
+            fetcher.bearer = data["bearer"]
+            thangs_api.bearer = data["bearer"]
+            print("Before Import")
+            print("Starting Download")
+            print("Import Thread Returned")
+            thangs_api.handle_download(modelIndex)
+            Model_Event(modelIndex)
+        except:
+            print("Error with Logging In")
 
-        f = open(bearer_location)
-        data = json.load(f)
-        fetcher.bearer = data["bearer"]
-        thangs_api.bearer = data["bearer"]
+        return
 
-        import_thread = threading.Thread(
-            target=self.import_model).start()
-        print("Import Thread Returned")
-        #webbrowser.open(self.url)
-        Model_Event(self.modelIndex)
+    def execute(self, _context):
+        print("Starting Login and Import")
+
+
+        login_thread = threading.Thread(
+            target=self.login_user, args=(_context, self.modelIndex)).start()
+    
         return {'FINISHED'}
 
 
@@ -349,6 +386,27 @@ class BrowseToLicenseOperator(Operator):
     modelIndex: IntProperty(
         name="Index",
         description="The index of the model license to open"
+    )
+
+    def execute(self, _context):
+        import webbrowser
+        webbrowser.open(self.url)
+        Model_Event(self.modelIndex)
+        return {'FINISHED'}
+
+class BrowseToModelOperator(Operator):
+    """Open model in browser"""
+    bl_idname = "wm.browse_to_model"
+    bl_label = ""
+    bl_options = {'INTERNAL'}
+
+    url: StringProperty(
+        name="URL",
+        description="Model page to open",
+    )
+    modelIndex: IntProperty(
+        name="Index",
+        description="The index of the model page to open"
     )
 
     def execute(self, _context):
@@ -382,13 +440,12 @@ class BrowseToCreatorOperator(Operator):
 class ThangsLink(bpy.types.Operator):
     """Click to continue on Thangs"""
     bl_idname = "link.thangs"
-    #bl_label = "Search"
     bl_label = "Redirect to Thangs"
 
     def execute(self, context):
         amplitude.send_amplitude_event("nav to thangs", event_properties={})
-        webbrowser.open("https://thangs.com/search/"+fetcher.query +
-                        "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender&fileTypes=stl%2Cgltf%2Cobj%2Cfbx%2Cglb%2Csldprt%2Cstep%2Cmtl%2Cdxf%2Cstp&scope=thangs", new=0, autoraise=True)
+        webbrowser.open(thangs_config.thangs_config["url"] + "search/" + fetcher.query +
+                        "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
         return {'FINISHED'}
 
 
@@ -450,8 +507,8 @@ class THANGS_PT_model_display(bpy.types.Panel):
         return nm
 
     def drawView(self, context):
-        global pcollModel
         global modelDropdownIndex
+        global thangs_api
 
         wm = context.window_manager
 
@@ -463,10 +520,19 @@ class THANGS_PT_model_display(bpy.types.Panel):
             SearchingRow = SearchingLayout.row(align=True)
             SearchingRow.label(
                 text="Searching...")
+        
+        if thangs_api.importing == True:
+            layout.active = False
+            ImportingLayout = self.layout
+            ImportingRow = ImportingLayout.row(align=True)
+            ImportingRow.label(
+                text="Importing your Model...")
 
         if fetcher.totalModels != 0:
-            if fetcher.searching == False:
+            if fetcher.searching == False and thangs_api.importing == False:
                 row = layout.row()
+                if thangs_api.import_limit == True:
+                    row.label(text="The Daily Import Limit was Reached")
                 if fetcher.totalModels < 100:
                     row.label(text="Found " +
                               str(fetcher.totalModels)+" results for")
@@ -519,20 +585,25 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     col = cell.box().column(align=True)
                     row = col.row()
                     row.label(text="", icon='USER')
-                    props = row.operator(
-                        'wm.browse_to_creator', text="%s" % model[2])
-                    props.url = thangs_config.thangs_config['url'] + "designer/" + urllib.parse.quote(str(
-                        model[2])) + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    props.modelIndex = z
+                    if model[2] == "" or model[2] == None:
+                        row.enabled = False
+                        props = row.operator(
+                            'wm.browse_to_license', text="{}".format("Non-Thangs Creator"))
+                    else:
+                        props = row.operator(
+                            'wm.browse_to_creator', text="%s" % model[2])
+                        props.url = thangs_config.thangs_config['url'] + "designer/" + urllib.parse.quote(str(
+                            model[2])) + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                        props.modelIndex = z
 
                     row = col.row()
                     row.label(
                         text="", icon_value=icons_dict["CreativeC"].icon_id)
-                    if model[3] == "":
+                    if model[3] == None:
+                        row.enabled = False
                         props = row.operator(
                             'wm.browse_to_license', text="{}".format("No License"))
-                        props.url = ""
-                        props.enabled = False
+                        #props.url = ""
                     else:
                         props = row.operator(
                             'wm.browse_to_license', text="{}".format("See License"))
@@ -548,13 +619,19 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
                     # if fetcher.length[z] == 1:
                     #     dropdown.enabled = False
-
-                    props = cell.operator(
-                        'wm.import_model', text="%s" % model[0])
-                    props.url = modelURL + \
-                        "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    props.modelIndex = z
-                        
+                    if thangs_api.import_limit == True:
+                        props = cell.operator(
+                        'wm.browse_to_model', text="%s" % model[0], icon='URL')
+                        props.url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                        props.modelIndex = z
+                    else:
+                        props = cell.operator(
+                            'wm.import_model', text="Import Model", icon='IMPORT') #text="%s" % model[0]
+                        props.url = modelURL + \
+                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                        props.modelIndex = z
+                            
                     z = z + 1
                     modelDropdownIndex = modelDropdownIndex + 1
 
@@ -564,53 +641,34 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 row.ui_units_x = 1
                 row.scale_x = 1
 
-                column1 = row.column(align=True)
+                column = row.column(align=True)
+                column.scale_x = 1
+                column.ui_units_y = .5
+                column.ui_units_x = 5
+                column.scale_y = 1.2
+
                 if fetcher.PageNumber == 1:
-                    column1.active = False
+                    column.active = False
+                column.operator("firstpage.thangs", icon='REW')
 
-                column1.scale_x = 1
-                column1.ui_units_y = .5
-                column1.ui_units_x = 5
-                column1.scale_y = 1.2
-
-                column2 = row.column(align=True)
+                column = row.column(align=True)
                 if fetcher.PageNumber == 1:
-                    column2.active = False
-                column2.scale_x = 1
-                column2.ui_units_y = .1
-                column2.ui_units_x = 5
-                column2.scale_y = 1.2
+                    column.active = False
+                column.operator("decpage.thangs", icon='PLAY_REVERSE')
 
-                column3 = row.column(align=True)
-                column3.scale_x = 1
-                column3.ui_units_y = .1
-                column3.ui_units_x = 5
-                column3.scale_y = 1.2
-
-                column4 = row.column(align=True)
-                if fetcher.PageNumber == fetcher.PageTotal:
-                    column4.active = False
-
-                column4.scale_x = 1
-                column4.ui_units_y = .1
-                column4.ui_units_x = 5
-                column4.scale_y = 1.2
-
-                column5 = row.column(align=True)
-                if fetcher.PageNumber == fetcher.PageTotal:
-                    column5.active = False
-
-                column5.scale_x = 1
-                column5.ui_units_y = .1
-                column5.ui_units_x = 5
-                column5.scale_y = 1.2
-
-                column1.operator("firstpage.thangs", icon='REW')
-                column2.operator("decpage.thangs", icon='PLAY_REVERSE')
-                column3.label(text=""+str(fetcher.PageNumber) +
+                column = row.column(align=True)
+                column.label(text=""+str(fetcher.PageNumber) +
                               "/"+str(fetcher.PageTotal)+"")
-                column4.operator("incpage.thangs", icon='PLAY')
-                column5.operator("lastpage.thangs", icon='FF')
+
+                column = row.column(align=True)
+                if fetcher.PageNumber == fetcher.PageTotal:
+                    column.active = False
+                column.operator("incpage.thangs", icon='PLAY')
+
+                column = row.column(align=True)
+                if fetcher.PageNumber == fetcher.PageTotal:
+                    column.active = False
+                column.operator("lastpage.thangs", icon='FF')
 
                 row = layout.row()
                 o = row.operator("thangs.search_invoke", icon='CANCEL')
@@ -627,6 +685,15 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 SearchingRow = layout.row()
                 SearchingRow.label(
                     text="Please try again!")
+            elif fetcher.SelectionFailed == True:
+                SearchingRow.label(
+                    text="Unable to search for")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="your selection on Thangs")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="Please try again!") 
             else:
                 SearchingRow.label(
                     text="Found 0 Models for:")
@@ -662,8 +729,10 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
         row.scale_x = .18
 
-        #row = col.row()
-        #row.operator(SearchBySelect.bl_idname, text="Search By Selection", icon='NONE')
+
+        # TODO ENABLE SEARCH BY SELECTION
+        # row = col.row()
+        # row.operator(SearchBySelect.bl_idname, text="Search By Selection", icon='NONE')
 
     def draw(self, context):
         addon_updater_ops.check_for_update_background()
@@ -672,47 +741,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
         else:
             self.drawSearch(context)
         addon_updater_ops.update_notice_box_ui(self, context)
-
-
-def enum_previews_from_thangs_api1(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView1
-
-
-def enum_previews_from_thangs_api2(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView2
-
-
-def enum_previews_from_thangs_api3(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView3
-
-
-def enum_previews_from_thangs_api4(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView4
-
-
-def enum_previews_from_thangs_api5(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView5
-
-
-def enum_previews_from_thangs_api6(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView6
-
-
-def enum_previews_from_thangs_api7(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView7
-
-
-def enum_previews_from_thangs_api8(self, context):
-    global fetcher
-    return fetcher.pcoll.ModelView8
-
 
 preview_collections = fetcher.preview_collections
 
@@ -774,54 +802,6 @@ def register():
         items=fetcher.enumItems,
     )
 
-    WindowManager.ModelView1 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api1,
-    )
-
-    WindowManager.ModelView2 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api2,
-    )
-
-    WindowManager.ModelView3 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api3,
-    )
-
-    WindowManager.ModelView4 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api4,
-    )
-
-    WindowManager.ModelView5 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api5,
-    )
-
-    WindowManager.ModelView6 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api6,
-    )
-
-    WindowManager.ModelView7 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api7,
-    )
-
-    WindowManager.ModelView8 = EnumProperty(
-        name="",
-        description="Click to view all results",
-        items=enum_previews_from_thangs_api8,
-    )
-
     fetcher.pcoll = bpy.utils.previews.new()
     fetcher.icons_dict = bpy.utils.previews.new()
     fetcher.pcoll.Model_dir = ""
@@ -845,6 +825,7 @@ def register():
     bpy.utils.register_class(BrowseToLicenseOperator)
     bpy.utils.register_class(BrowseToCreatorOperator)
     bpy.utils.register_class(SearchBySelect)
+    bpy.utils.register_class(BrowseToModelOperator)
 
     def dropdown_properties_item_set(index):
         def handler(self, context):
@@ -928,13 +909,15 @@ def unregister():
     bpy.utils.unregister_class(ImportModelOperator)
     bpy.utils.unregister_class(BrowseToLicenseOperator)
     bpy.utils.unregister_class(BrowseToCreatorOperator)
-    bpy.utils.unregister_class(DropdownProperties)
+    #bpy.utils.register_class(DropdownProperties)
     bpy.utils.unregister_class(SearchBySelect)
+    bpy.utils.unregister_class(BrowseToModelOperator)
 
     del bpy.types.Scene.my_tool
     addon_updater_ops.unregister()
 
     stop_access_grant()
+    urllib.request.urlcleanup()
 
 
 if __name__ == "__main__":

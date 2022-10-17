@@ -43,6 +43,7 @@ class ThangsLogin(threading.Thread):
                 self.token_available.set()
             elif response.status_code == 401:
                 done = True
+                self.token_available.set()
             else:
                 attempts = attempts + 1
 
@@ -52,7 +53,7 @@ class ThangsLogin(threading.Thread):
     def authenticate(self):
         codeChallengeId = uuid.uuid4()
 
-        webbrowser.open(f"{self.config['url']}profile/client-access-grant?verifierCode={codeChallengeId}&version=blender-addon&appName=Thangs+blender+add+on")
+        webbrowser.open(f"{self.config['url']}profile/client-access-grant?verifierCode={codeChallengeId}&version=blender-addon&appName=Thangs+Blender+addon")
 
         return codeChallengeId
 
