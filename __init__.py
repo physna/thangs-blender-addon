@@ -363,7 +363,8 @@ class ImportModelOperator(Operator):
         return
 
     def execute(self, _context):
-        print("Starting Loggin and Import")
+        print("Starting Login and Import")
+
 
         login_thread = threading.Thread(
             target=self.login_user, args=(_context, self.modelIndex)).start()
