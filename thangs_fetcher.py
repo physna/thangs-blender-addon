@@ -442,7 +442,10 @@ class ThangsFetcher():
                     filePath = Path(__file__ + "\icons\placeholder.png")
                     filepath = os.path.join(modelId, filePath)
 
-                thumb = self.pcoll.load(modelId, filepath, 'IMAGE')
+                try:
+                    thumb = self.pcoll.load(modelId, filepath, 'IMAGE')
+                except:
+                    thumb = self.pcoll.load(modelId+str(self.i), filepath, 'IMAGE')
 
                 self.thumbnailNumbers.append(thumb.icon_id)
 
@@ -515,7 +518,10 @@ class ThangsFetcher():
                             filePath = Path(__file__ + "\icons\placeholder.png")
                             filepath = os.path.join(modelId, filePath)
 
-                        thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
+                        try:
+                            thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
+                        except:
+                            thumb = self.pcoll.load(modelID+str(self.x), filepath, 'IMAGE')
 
                         self.enumModelInfo.append(
                             (modelID, ModelTitle, ""))  # , self.x+1))

@@ -35,17 +35,28 @@ class ThangsLogin(threading.Thread):
 
         while done == False and BLENDER_IS_CLOSED == False and attempts < MAX_ATTEMPTS:
             response = self.checkAccessGrant(codeChallengeId, attempts)
-
+            print(attempts)
             if response.status_code == 200:
+                print("Successful Login")
                 done = True
                 token = response
                 self.token = token.json()
                 self.token_available.set()
+                self.token_available.clear()
+                return
             elif response.status_code == 401:
+                print("Unsuccessful Login")
                 done = True
                 self.token_available.set()
+                self.token_available.clear()
+                return
+
             else:
                 attempts = attempts + 1
+        if self.token == {}:
+            print("Unsuccessful Login")
+            self.token_available.set()
+            self.token_available.clear()
 
     def apiAccessGrantUrl(self, codeChallengeId, attempts):
         return f"{self.config['url']}api/users/access-grant/{codeChallengeId}/check?attempts={attempts}"

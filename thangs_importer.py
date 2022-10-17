@@ -141,6 +141,7 @@ class ThangsApi:
         self.Thangs_Config = get_config()
         self.modelID = ""
         self.modelIndex = 0
+        self.LicenseURL = ""
         self.bearer = ""
         self.model0 = ""
         self.model1 = ""
@@ -161,15 +162,20 @@ class ThangsApi:
         pass
 
 
-    def handle_download(self, modelIndex):  # (self, r, *args, **kwargs):
+    def handle_download(self, modelIndex, LicenseURL):  # (self, r, *args, **kwargs):
         #    return
         self.modelIndex = modelIndex
+        self.LicenseURL = LicenseURL
         print("Before Archive Call")
         self.import_thread = threading.Thread(target=self.get_archive).start()
         return True
 
     def get_archive(self):
         self.importing = True
+
+        if self.LicenseURL != "":
+            webbrowser.open(self.LicenseURL, new=0, autoraise=True)
+
         print("Top of Archive")
         model_title = ""
         modelID = ""
@@ -224,9 +230,9 @@ class ThangsApi:
             return
 
         r = requests.get(modelURL, stream=True)
-        
-        self.file_name = str(model_title)
-        temp_dir = os.path.join(Config.THANGS_MODEL_DIR, str(modelID))
+        self.uid = str(model_title)
+        self.uid = '_'.join(self.uid.split())
+        temp_dir = os.path.join(Config.THANGS_MODEL_DIR, self.uid)
         
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
