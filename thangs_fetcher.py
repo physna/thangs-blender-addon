@@ -691,8 +691,6 @@ class ThangsFetcher():
         signedUrl = responseData["signedUrl"]
         new_Filename = responseData["newFileName"]
 
-        #url = "https://py-image-and-mesh-search-nprcfqgvfq-uc.a.run.app/search/bytes/extraInfo/mesh"
-
         data = open(stl_path, 'rb').read()
         
         print("Starting to Clean")
@@ -724,8 +722,6 @@ class ThangsFetcher():
             url_filepath = urllib.parse.quote(new_Filename, safe='')
             url_filepath = re.sub(r'-', '%2D', url_filepath)
             url = str(self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath="+url_filepath)
-            #url = base64.b64encode(json.dumps(url).encode()).decode()
-            #url = urllib.parse.quote(url)
             print(url)
             response = requests.get(url=url, headers=headers)
             print(response.status_code())
