@@ -316,20 +316,22 @@ class ImportModelOperator(Operator):
         name="Index",
         description="The index of the model to import"
     )
+    license_url: StringProperty(
+        name="License URL",
+        description="Model License",
+    )
 
     def import_model(self):
         global thangs_api
         global fetcher
         print("Starting Download")
-        thangs_api.handle_download(self.modelIndex)
+        thangs_api.handle_download(self.modelIndex, )
 
-    def login_user(self, _context, modelIndex):
+    def login_user(self, _context, modelIndex, LicenseUrl):
         global thangs_api
         global fetcher
-        print("Starting Import")
-        import webbrowser
         print("Starting Login")
-        
+        thangs_login_import = ThangsLogin()
         bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
         if not os.path.exists(bearer_location):
             print("Creating Bearer.json")
@@ -340,27 +342,29 @@ class ImportModelOperator(Operator):
             print("Top of Try")
             if os.stat(bearer_location).st_size == 0:
                 print("Json was empty")
-                thangs_login.startLoginFromBrowser()
+                thangs_login_import.startLoginFromBrowser()
                 print("Waiting on Login")
-                thangs_login.token_available.wait()
+                thangs_login_import.token_available.wait()
+                print("Setting Bearer")
                 bearer = {
-                    'bearer': str(thangs_login.token["TOKEN"]),
+                    'bearer': str(thangs_login_import.token["TOKEN"]),
                 }
+                print("Dumping")
                 with open(bearer_location, 'w') as json_file:
                     json.dump(bearer, json_file)
+                
             print("After Dump")
             f = open(bearer_location)
             data = json.load(f)
             fetcher.bearer = data["bearer"]
             thangs_api.bearer = data["bearer"]
             print("Before Import")
-            print("Starting Download")
-            print("Import Thread Returned")
-            thangs_api.handle_download(modelIndex)
+            thangs_api.handle_download(modelIndex, LicenseUrl)
             Model_Event(modelIndex)
         except:
             print("Error with Logging In")
-
+            f.close()
+            os.remove(bearer_location)
         return
 
     def execute(self, _context):
@@ -368,7 +372,7 @@ class ImportModelOperator(Operator):
 
 
         login_thread = threading.Thread(
-            target=self.login_user, args=(_context, self.modelIndex)).start()
+            target=self.login_user, args=(_context, self.modelIndex, self.license_url)).start()
     
         return {'FINISHED'}
 
@@ -631,6 +635,8 @@ class THANGS_PT_model_display(bpy.types.Panel):
                         props.url = modelURL + \
                             "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                         props.modelIndex = z
+                        if model[3] != None:
+                            props.license_url = str(model[3])
                             
                     z = z + 1
                     modelDropdownIndex = modelDropdownIndex + 1
