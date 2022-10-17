@@ -430,7 +430,11 @@ class ThangsFetcher():
                 self.enumItems.append(
                     (modelTitle, modelId, item["ownerUsername"], item["license"]))#, item["originalFileType"]))
 
-                thumbnail = thumbnail.replace("https", "http", 1)
+                print("-----")
+                print("-----")
+                print(self.enumItems)
+
+                #thumbnail = thumbnail.replace("https", "http", 1)
                 try:
                     print(f'Fetching {thumbnail}')
                     filePath = urllib.request.urlretrieve(thumbnail)

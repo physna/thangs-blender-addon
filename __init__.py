@@ -323,7 +323,9 @@ class ImportModelOperator(Operator):
         print("Starting Download")
         thangs_api.handle_download(self.modelIndex)
 
-    def execute(self, _context):
+    def login_user(self, _context, modelIndex):
+        global thangs_api
+        global fetcher
         print("Starting Import")
         import webbrowser
         print("Starting Login")
@@ -334,27 +336,38 @@ class ImportModelOperator(Operator):
             f = open(bearer_location, "x")
         
         # check if size of file is 0
-        if os.stat(bearer_location).st_size == 0:
-            print("Json was empty")
-            thangs_login.startLoginFromBrowser()
-            print("Waiting on Login")
-            thangs_login.token_available.wait()
-            bearer = {
-                'bearer': str(thangs_login.token["TOKEN"]),
-            }
-            with open(bearer_location, 'w') as json_file:
-                json.dump(bearer, json_file)
+        try:
+            print("Top of Try")
+            if os.stat(bearer_location).st_size == 0:
+                print("Json was empty")
+                thangs_login.startLoginFromBrowser()
+                print("Waiting on Login")
+                thangs_login.token_available.wait()
+                bearer = {
+                    'bearer': str(thangs_login.token["TOKEN"]),
+                }
+                with open(bearer_location, 'w') as json_file:
+                    json.dump(bearer, json_file)
+            print("After Dump")
+            f = open(bearer_location)
+            data = json.load(f)
+            fetcher.bearer = data["bearer"]
+            thangs_api.bearer = data["bearer"]
+            print("Before Import")
+            print("Starting Download")
+            print("Import Thread Returned")
+            thangs_api.handle_download(modelIndex)
+            Model_Event(modelIndex)
+        except:
+            print("Error with Loging In")
+        return
 
-        f = open(bearer_location)
-        data = json.load(f)
-        fetcher.bearer = data["bearer"]
-        thangs_api.bearer = data["bearer"]
+    def execute(self, _context):
+        print("Starting Loggin and Import")
 
-        import_thread = threading.Thread(
-            target=self.import_model).start()
-        print("Import Thread Returned")
-        #webbrowser.open(self.url)
-        Model_Event(self.modelIndex)
+        login_thread = threading.Thread(
+            target=self.login_user, args=(_context, self.modelIndex)).start()
+    
         return {'FINISHED'}
 
 
@@ -570,16 +583,22 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     col = cell.box().column(align=True)
                     row = col.row()
                     row.label(text="", icon='USER')
-                    props = row.operator(
-                        'wm.browse_to_creator', text="%s" % model[2])
-                    props.url = thangs_config.thangs_config['url'] + "designer/" + urllib.parse.quote(str(
-                        model[2])) + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                    props.modelIndex = z
+                    if model[2] == "" or model[2] == None:
+                        row.enabled = False
+                        props = row.operator(
+                            'wm.browse_to_license', text="{}".format("Non-Thangs Creator"))
+                    else:
+                        props = row.operator(
+                            'wm.browse_to_creator', text="%s" % model[2])
+                        props.url = thangs_config.thangs_config['url'] + "designer/" + urllib.parse.quote(str(
+                            model[2])) + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                        props.modelIndex = z
 
                     row = col.row()
                     row.label(
                         text="", icon_value=icons_dict["CreativeC"].icon_id)
-                    if model[3] == "" or not str(model[3]).endswith("showLicense=true"):
+                    #if model[3] == "" or not str(model[3]).endswith("showLicense=true"):
+                    if model[3] == None:
                         row.enabled = False
                         props = row.operator(
                             'wm.browse_to_license', text="{}".format("No License"))
