@@ -287,6 +287,8 @@ class ThangsFetcher():
 
     def get_http_search(self):
         global thangs_config
+        # Clean up temporary files from previous attempts
+        urllib.request.urlcleanup()
         print("Started Search")
         self.searching = True
 

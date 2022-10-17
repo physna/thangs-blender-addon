@@ -52,7 +52,7 @@ class ThangsLogin(threading.Thread):
     def authenticate(self):
         codeChallengeId = uuid.uuid4()
 
-        webbrowser.open(f"{self.config['url']}profile/client-access-grant?verifierCode={codeChallengeId}&version=blender-addon&appName=Thangs+blender+add+on")
+        webbrowser.open(f"{self.config['url']}profile/client-access-grant?verifierCode={codeChallengeId}&version=blender-addon&appName=Thangs+Blender+addon")
 
         return codeChallengeId
 
