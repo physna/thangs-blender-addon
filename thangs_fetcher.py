@@ -434,7 +434,6 @@ class ThangsFetcher():
                 print("-----")
                 print(self.enumItems)
 
-                #thumbnail = thumbnail.replace("https", "http", 1)
                 try:
                     print(f'Fetching {thumbnail}')
                     filePath = urllib.request.urlretrieve(thumbnail)
