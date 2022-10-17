@@ -359,7 +359,8 @@ class ImportModelOperator(Operator):
             thangs_api.handle_download(modelIndex)
             Model_Event(modelIndex)
         except:
-            print("Error with Loging In")
+            print("Error with Logging In")
+
         return
 
     def execute(self, _context):
