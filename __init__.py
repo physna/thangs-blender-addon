@@ -935,6 +935,7 @@ def unregister():
     addon_updater_ops.unregister()
 
     stop_access_grant()
+    urllib.request.urlcleanup()
 
 
 if __name__ == "__main__":
