@@ -277,8 +277,7 @@ class ThangsFetcher():
         else:
             print("Started Counting Results")
             responseData = response.json()
-            items = responseData
-            self.totalModels = len(items)
+            self.totalModels = responseData["numMatches"]
             if math.ceil(self.totalModels/8) > 99:
                 self.PageTotal = 99
             else:
@@ -723,7 +722,6 @@ class ThangsFetcher():
 
         try:
             url_filepath = urllib.parse.quote(new_Filename, safe='')
-            url_filepath = re.sub(r'-', '%2D', url_filepath)
             url = str(self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath="+url_filepath)
             print(url)
             response = requests.get(url=url, headers=headers)
@@ -742,8 +740,8 @@ class ThangsFetcher():
         # if os.path.isfile(stl_path):
         #    os.remove(stl_path)
         #self.Thangs_Utils.clean_downloaded_model_dir("ThangsSelectionSearch")
-
-        items = responseData
+        numMatches = responseData["numMatches"]
+        items = responseData["matches"]
 
         # if self.newSearch == True:
         #     self.uuid = str(uuid.uuid4())
