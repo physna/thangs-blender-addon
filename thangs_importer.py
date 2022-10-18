@@ -1,25 +1,13 @@
-import webbrowser
-import urllib.parse
 import os
-import time
-import math
-from urllib.request import urlopen
-import tempfile
-import urllib.request
-import urllib.parse
+import urllib
 import requests
-import os
-import importlib
 import threading
-import asyncio
-# from . import addon_updater_ops
-import socket
-import json
 import shutil
-from .config import ThangsConfig, get_config
-from uuid import UUID
+from .config import get_config
 from .thangs_events import ThangsEvents
 import platform
+import socket
+import webbrowser
 
 import bpy
 from bpy.types import WindowManager
@@ -36,6 +24,7 @@ from bpy_extras.object_utils import AddObjectHelper, object_data_add
 from bpy.app.handlers import persistent
 
 _thangs_api = None
+_files_list = []
 
 def get_thangs_api():
     global _thangs_api
@@ -169,24 +158,22 @@ class ThangsApi:
         self.modelTitle7 = ""
         pass
 
-
-    def handle_download(self, modelIndex, LicenseURL, fileType, domain):  # (self, r, *args, **kwargs):
-        #    return
+    def handle_download(self, modelIndex, LicenseURL, fileType, domain):
         self.modelIndex = modelIndex
         self.LicenseURL = LicenseURL
         self.fileType = fileType
         self.domain = domain
-        print("Before Archive Call")
-        self.import_thread = threading.Thread(target=self.get_archive).start()
+        self.import_thread = threading.Thread(target=self.download_file).start()
         return True
 
-    def get_archive(self):
+    def download_file(self):
         self.importing = True
 
         if self.LicenseURL != "":
             webbrowser.open(self.LicenseURL, new=0, autoraise=True)
 
-        print("Top of Archive")
+        print("Downloading...")
+
         model_title = ""
         modelID = ""
         if self.modelIndex == 0:
@@ -214,63 +201,57 @@ class ThangsApi:
             modelID = str(self.model7)
             model_title = self.modelTitle7
     
-        #print(self.bearer)
-        headers = {"Authorization": "Bearer "+self.bearer,}
+        self.modelID = modelID
+        self.modelTitle = str(model_title)
+        self.temp_dir = os.path.join(Config.THANGS_MODEL_DIR)
+        print("Temp Directory: ", self.temp_dir)
+        print("Model ID: ", self.modelID)
+        print("Model Title: ", self.modelTitle)
+        fileDownloaded = [item for item in _files_list if item[0] == self.modelID and item[1] == self.modelTitle]
 
-        #print(headers)
-        #print(self.Thangs_Config.thangs_config['url'])
-        # TODO 
-        # Add in rate limit after this following request (Will error 429)
-        try:
-            response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url", headers=headers)
-        except:
-            if response.status_code == 429:
-                self.import_limit = True
-            self.importing = False
-            return
+        if len(fileDownloaded) < 1:
+            headers = {"Authorization": "Bearer "+self.bearer,}
+            print("URL: ", self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url")
+            # TODO: Add in rate limit after this following request (Will error 429)
+            try:
+                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url", headers=headers)
+            except:
+                if response.status_code == 429:
+                    self.import_limit = True
+                self.importing = False
+                return
 
-        self.import_limit = False
-        #print(response)
-        #print(response.status_code)
-        responseData = response.json()
-        modelURL = responseData["downloadUrl"]
-        #print(modelURL)
-        if modelURL is None:
-            print('Url is None')
-            return
+            self.import_limit = False
+            responseData = response.json()
+            modelURL = responseData["downloadUrl"]
 
-        r = requests.get(modelURL, stream=True)
-        self.uid = str(model_title)
-        self.uid = '_'.join(self.uid.split())
-        temp_dir = os.path.join(Config.THANGS_MODEL_DIR, self.uid)
-        
-        if not os.path.exists(temp_dir):
-            os.makedirs(temp_dir)
+            if modelURL is None:
+                print('Url is None')
+                return
 
-        print("Temp Dir: ", temp_dir)
+            r = requests.get(modelURL, stream=True)
+                    
+            urlDecoded = urllib.parse.unquote(modelURL)
 
-        urlDecoded = urllib.parse.unquote(modelURL)
-        #print('urlDecoded', urlDecoded)
+            split_tup_top = os.path.splitext(urlDecoded)
+            file_extension = split_tup_top[1]
+            file_extension = file_extension.replace('"', '')
+            self.file_extension = file_extension.lower()
+            
+            fileindex = urlDecoded.rfind('/', urlDecoded.rfind('filename="'))
+            if fileindex == -1:
+                fileindex = urlDecoded.rfind('filename="')
+                filename = urlDecoded[-(len(urlDecoded) - (fileindex + 10)):]
+            else:
+                filename = urlDecoded[-(len(urlDecoded) - (fileindex + 1)):]
 
-        split_tup_top = os.path.splitext(urlDecoded)
-        file_extension = split_tup_top[1]
-        file_extension = file_extension.replace('"', '')
-        self.file_extension = file_extension.lower()
-        print('file_extension: ', self.file_extension)
+            filename = filename.replace('"', '')
+            self.file_path = os.path.join(self.temp_dir, filename)
 
-        fileindex = urlDecoded.rindex('filename="')
-        filename = urlDecoded[-(len(urlDecoded) - (fileindex + 10)):]
-        filename = filename.replace('"', '')
-        print('filename: ', filename)
-
-        file_path = os.path.join(temp_dir, filename)
-        print("file path: ", file_path)
-
-        if not os.path.exists(file_path):
-            print("Starting Count")
+            print("Starting Download")
             wm = bpy.context.window_manager
             wm.progress_begin(0, 100)
-            with open(file_path, "wb") as f:
+            with open(self.file_path, "wb") as f:
                 total_length = r.headers.get('content-length')
                 if total_length is None:  # no content length header
                     f.write(r.content)
@@ -284,48 +265,22 @@ class ThangsApi:
                         wm.progress_update(done)
                         print("filedata: ", done)
 
+            _files_list.append(tuple((self.modelID, self.modelTitle, filename)))
             wm.progress_end()
         else:
+            fileDownloaded = [item for item in _files_list if item[0] == self.modelID and item[1] ==  item[2]]
+
+            if len(fileDownloaded) > 0:
+                self.file_path = os.path.join(Config.THANGS_MODEL_DIR, self.modelTitle)
+            else:
+                fileDownloadedStl = [item for item in _files_list if item[0] == self.modelID and item[1] == self.modelTitle]
+                self.file_path = os.path.join(Config.THANGS_MODEL_DIR, str(fileDownloadedStl[0][2]))
+
+            split_tup_top = os.path.splitext(self.file_path)
+            self.file_extension = split_tup_top[1]    
             print('Model Already Downloaded')
 
-        self.file_path = file_path
-        self.temp_dir = temp_dir
         self.import_model()
-        return
-
-    def unzip_archive(self):
-        if os.path.exists(self.file_path):
-            import zipfile
-            try:
-                print("zip archive_path: ", self.file_path)
-                zip_ref = zipfile.ZipFile(self.file_path, 'r')
-                extract_dir = os.path.dirname(self.file_path)
-                print("zip extract_dir: ", extract_dir)
-                zip_ref.extractall(extract_dir)
-                zip_ref.close()
-            except zipfile.BadZipFile:
-                print('Error when dezipping file')
-                #os.remove(archive_path)
-                print('Invaild zip. Try again')
-                return None, None
-
-            files = os.listdir(extract_dir)
-            files = [f for f in files if os.path.isfile(extract_dir + '/' + f)]
-            print(*files, sep="\n")
-
-            for file in files:
-                if file.lower() == self.file_name.lower():
-                    unzipped_file_path = os.path.join(extract_dir, file)
-                    split_tup_top = os.path.splitext(file)
-                    unzipped_file_extension = split_tup_top[1]
-                    break
-
-            print("zip unzipped_file_path: ", unzipped_file_path)
-            print("zip unzipped_file_extension: ", unzipped_file_extension)
-            return unzipped_file_path, unzipped_file_extension
-
-        else:
-            print('ERROR: archive doesn\'t exist')
 
     def import_model(self):
         print("Starting File Import")
@@ -334,27 +289,30 @@ class ThangsApi:
                     'extension': self.fileType,
                     'domain': self.domain,
                 })
-        #print("self.file_path: ", self.file_path)
 
         try:
             if self.file_extension == '.zip' or self.file_extension == '.usdz':
-                unzipped_file_path, unzipped_file_extension = self.unzip_archive()
-                self.file_path = unzipped_file_path
-                self.file_extension = unzipped_file_extension
+                self.zipped_file_path = self.file_path
+                if self.unzip_archive():
+                    split_tup_top = os.path.splitext(self.modelTitle)
+                    self.file_extension = split_tup_top[1]
+                    self.file_path = os.path.join(self.temp_dir, self.modelTitle)
+                else:
+                    raise Exception("Unzipping didn't complete")
         except:
-            print('unzip error')
+            print('Unzip error')
             self.importing = False
             return
-
-        #print("self.file_path: ", self.file_path)
-        #print("self.file_extension: ", self.file_extension)
         
+        print("File Path: ", self.file_path)
+        print("File Extension: ", self.file_extension)
+
         try:
             if self.file_extension == '.fbx':
-                print('fbx')
+                print('fbx import')
                 bpy.ops.import_scene.fbx(filepath=self.file_path)
             elif self.file_extension == '.obj':
-                print('obj')
+                print('obj import')
                 bpy.ops.import_scene.obj(filepath=self.file_path)
             elif self.file_extension == '.glb' or self.file_extension == '.gltf':
                 print('gltf + glb import')
@@ -363,20 +321,43 @@ class ThangsApi:
                 print('usdz import')
                 bpy.ops.wm.usd_import(filepath=self.file_path, relative_path=True)
             else:
-                print('stl')
+                print('stl import')
                 bpy.ops.import_mesh.stl(filepath=self.file_path)
         except:
             print('Failed to Import')
+            return
             
-        #print("Imported")
-        try:
-            Utils.clean_downloaded_model_dir(self.temp_dir)
-            print("Cleaned")
-        except:
-            print("Failed to Clean Model")
-        #root_name = modelTitle
-        # Utils.clean_node_hierarchy(
-        #    [o for o in bpy.data.objects if o.name not in old_objects], root_name)
-        #print("Cleaned Nodes")
+        print("Imported")
+
         self.importing = False
         return
+
+    def unzip_archive(self):
+        if os.path.exists(self.zipped_file_path):
+            import zipfile
+            try:
+                zip_ref = zipfile.ZipFile(self.zipped_file_path, 'r')
+                extract_dir = os.path.dirname(self.zipped_file_path)
+
+                zip_ref.extractall(extract_dir)
+                zip_ref.close()
+            except zipfile.BadZipFile:
+                print('Error when unzipping file')
+                os.remove(self.zipped_file_path)
+                return False
+
+            files = os.listdir(extract_dir)
+            files = [f for f in files if os.path.isfile(extract_dir + '/' + f)]
+            print(*files, sep="\n")
+
+            for file in files:
+                fileUnarchived = [item for item in _files_list if item[2] == file]
+
+                if len(fileUnarchived) < 1:
+                    _files_list.append(tuple((self.modelID, self.modelTitle, file)))
+            
+            return True
+
+        else:
+            print('Archive doesn\'t exist')
+            return False
