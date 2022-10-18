@@ -208,7 +208,6 @@ class ThangsFetcher():
                     context.view_layer.objects.active = new_object
                     path = Path(temp_dir)
                     stl_path = path / f"blender_selection.stl"
-                    print(stl_path)
                     bpy.ops.export_mesh.stl(
                         filepath=str(stl_path),
                         use_selection=True)
@@ -430,10 +429,6 @@ class ThangsFetcher():
                 self.enumItems.append(
                     (modelTitle, modelId, item["ownerUsername"], item["license"], item["originalFileType"], item["domain"]))
 
-                print("-----")
-                print("-----")
-                print(self.enumItems)
-
                 try:
                     print(f'Fetching {thumbnail}')
                     filePath = urllib.request.urlretrieve(thumbnail)
@@ -600,7 +595,6 @@ class ThangsFetcher():
 
         self.thangs_ui_mode = 'VIEW'
 
-        print("Callback")
         if self.search_callback is not None:
             self.search_callback()
 

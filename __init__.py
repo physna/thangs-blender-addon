@@ -366,6 +366,7 @@ class ImportModelOperator(Operator):
             data = json.load(f)
             fetcher.bearer = data["bearer"]
             thangs_api.bearer = data["bearer"]
+            f.close()
             print("Before Import")
             thangs_api.handle_download(modelIndex, LicenseUrl, fileType, domain)
             Model_Event(modelIndex)
