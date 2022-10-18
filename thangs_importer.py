@@ -5,10 +5,11 @@ import threading
 import shutil
 from .config import get_config
 from .thangs_events import ThangsEvents
+from .thangs_login import ThangsLogin
 import platform
 import socket
 import webbrowser
-
+import json
 import bpy
 from bpy.types import WindowManager
 import bpy.utils.previews
@@ -157,6 +158,29 @@ class ThangsApi:
         self.modelTitle6 = ""
         self.modelTitle7 = ""
         pass
+    
+    def refresh_bearer(self):
+        thangs_login_import = ThangsLogin()
+        bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
+        os.remove(bearer_location)
+        f = open(bearer_location, "x")
+
+        thangs_login_import.startLoginFromBrowser()
+        print("Waiting on Login")
+        thangs_login_import.token_available.wait()
+        print("Setting Bearer")
+        bearer = {
+            'bearer': str(thangs_login_import.token["TOKEN"]),
+        }
+        print("Dumping")
+        with open(bearer_location, 'w') as json_file:
+            json.dump(bearer, json_file)
+        
+        f = open(bearer_location)
+        data = json.load(f)
+        self.bearer = data["bearer"]
+        f.close()
+        return
 
     def handle_download(self, modelIndex, LicenseURL, fileType, domain):
         self.modelIndex = modelIndex
@@ -218,9 +242,18 @@ class ThangsApi:
             except:
                 if response.status_code == 429:
                     self.import_limit = True
+                    self.importing = False
+                    return
+                elif response.status_code == 403:
+                    self.refresh_bearer()
+                    headers = {"Authorization": "Bearer "+self.bearer,}
+                    try:
+                        response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url", headers=headers) 
+                    except:
+                        self.importing = False
+                        return
                 self.importing = False
                 return
-
             self.import_limit = False
             responseData = response.json()
             modelURL = responseData["downloadUrl"]
