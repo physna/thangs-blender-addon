@@ -170,7 +170,8 @@ class ThangsApi:
         thangs_login_import.token_available.wait()
         print("Setting Bearer")
         bearer = {
-            'bearer': str(thangs_login_import.token["TOKEN"]),
+            #'bearer': str(thangs_login_import.token["TOKEN"]),
+            'bearer': 'cf8cca50b189c6e36a3fee2d9eb1a3bec8494add4c4a320a9599c5edde66346c3126147662e9f056200872bd352f5dfed667f51948b6260b87365e0599bc3539bdc79032de105644b326e278f338a2f3d679cad8276a149dfc0e46864b4e02b9d3d400b359822f3f7ddb050a5762897b290475a637eeaba9fbd5898f472341031bd6a7e63cf949e66d4f913688d0d86f7eec2ae65f94fde2d81cd9d0bc9faec231588b4855abd697221d4f86db5c9b78020858016f3fc18f3fb4e22d11b5796585af56cc2d7aad5e8e6c0f9f59ac301bc71733a3f7d7a6802b273009392098925cbbc9b8946b4210f4b6f22b6df91ef1b6a4e55a8d1294cee5df51c6d89c2e570899cd98b05f14561aac973a1de02cae649a70a93c2cabb575bbe9dae07af7887723233cc7d89cd47019948733864e284e6b273ad95c0c6b928ab2cb94a2040dcfd4dd653ba75b3215a3eb4a6bc0cd47',
         }
         print("Dumping")
         with open(bearer_location, 'w') as json_file:
@@ -187,7 +188,8 @@ class ThangsApi:
         self.LicenseURL = LicenseURL
         self.fileType = fileType
         self.domain = domain
-        self.import_thread = threading.Thread(target=self.download_file).start()
+        #self.import_thread = threading.Thread(target=self.download_file).start()
+        self.download_file()
         return True
 
     def download_file(self):
