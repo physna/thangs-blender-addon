@@ -18,6 +18,8 @@ import json
 import shutil
 from .config import ThangsConfig, get_config
 from uuid import UUID
+from .thangs_events import ThangsEvents
+import platform
 
 import bpy
 from bpy.types import WindowManager
@@ -102,6 +104,10 @@ class Utils:
 
 class ThangsApi:
     def __init__(self, callback=None):
+        self.amplitude = ThangsEvents()
+        self.amplitude.deviceId = socket.gethostname().split(".")[0]
+        self.amplitude.deviceOs = platform.system()
+        self.amplitude.deviceVer = platform.release()
         self.access_token = ''
         self.api_token = ''
         self.headers = {}
@@ -142,6 +148,8 @@ class ThangsApi:
         self.modelID = ""
         self.modelIndex = 0
         self.LicenseURL = ""
+        self.fileType = ""
+        self.domain = ""
         self.bearer = ""
         self.model0 = ""
         self.model1 = ""
@@ -162,10 +170,12 @@ class ThangsApi:
         pass
 
 
-    def handle_download(self, modelIndex, LicenseURL):  # (self, r, *args, **kwargs):
+    def handle_download(self, modelIndex, LicenseURL, fileType, domain):  # (self, r, *args, **kwargs):
         #    return
         self.modelIndex = modelIndex
         self.LicenseURL = LicenseURL
+        self.fileType = fileType
+        self.domain = domain
         print("Before Archive Call")
         self.import_thread = threading.Thread(target=self.get_archive).start()
         return True
@@ -319,6 +329,11 @@ class ThangsApi:
 
     def import_model(self):
         print("Starting File Import")
+
+        self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
+                    'extension': self.fileType,
+                    'domain': self.domain,
+                })
         #print("self.file_path: ", self.file_path)
 
         try:

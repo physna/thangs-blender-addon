@@ -320,6 +320,14 @@ class ImportModelOperator(Operator):
         name="License URL",
         description="Model License",
     )
+    fileType: StringProperty(
+        name="Filetype",
+        description="Original Filetype",
+    )
+    domain: StringProperty(
+        name="Domain",
+        description="Model's Domain",
+    )
 
     def import_model(self):
         global thangs_api
@@ -327,7 +335,7 @@ class ImportModelOperator(Operator):
         print("Starting Download")
         thangs_api.handle_download(self.modelIndex, )
 
-    def login_user(self, _context, modelIndex, LicenseUrl):
+    def login_user(self, _context, modelIndex, LicenseUrl, fileType, domain):
         global thangs_api
         global fetcher
         print("Starting Login")
@@ -359,7 +367,7 @@ class ImportModelOperator(Operator):
             fetcher.bearer = data["bearer"]
             thangs_api.bearer = data["bearer"]
             print("Before Import")
-            thangs_api.handle_download(modelIndex, LicenseUrl)
+            thangs_api.handle_download(modelIndex, LicenseUrl, fileType, domain)
             Model_Event(modelIndex)
         except:
             print("Error with Logging In")
@@ -370,7 +378,8 @@ class ImportModelOperator(Operator):
     def execute(self, _context):
         print("Starting Login and Import")
         login_thread = threading.Thread(
-            target=self.login_user, args=(_context, self.modelIndex, self.license_url)).start()
+            target=self.login_user, args=(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)).start()
+    
         return {'FINISHED'}
 
 
@@ -634,6 +643,8 @@ class THANGS_PT_model_display(bpy.types.Panel):
                         props.modelIndex = z
                         if model[3] != None:
                             props.license_url = str(model[3])
+                        props.fileType = model[4]
+                        props.domain = model[5]
                             
                     z = z + 1
                     modelDropdownIndex = modelDropdownIndex + 1
