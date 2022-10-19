@@ -63,7 +63,6 @@ class ThangsFetcher():
 
         self.enumModelInfo = []
         self.enumModelTotal = []
-        self.length = []
         self.thumbnailNumbers = []
 
         self.preview_collections = {}
@@ -122,7 +121,6 @@ class ThangsFetcher():
 
         self.enumModelInfo = []
         self.enumModelTotal = []
-        self.length = []
         self.thumbnailNumbers = []
 
         self.preview_collections = {}
@@ -285,6 +283,56 @@ class ThangsFetcher():
                 self.PageTotal = math.ceil(self.totalModels/8)
         # Add in event Code
 
+    def get_lazy_thumbs(self, I, X, thumbnail, modelID, modelId, ModelTitle):
+        print("Getting Thumbnail for {0}".format(modelID))
+        try:
+            print(f'Fetching part {thumbnail}')
+            filePath = urllib.request.urlretrieve(thumbnail)
+            filepath = os.path.join(modelID, filePath[0])
+        except:
+            filePath = Path(__file__ + "\icons\placeholder.png")
+            filepath = os.path.join(modelId, filePath)
+
+        try:
+            thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
+        except:
+            thumb = self.pcoll.load(modelID+str(self.x), filepath, 'IMAGE')
+
+        if I == 0:
+            self.enumModels1.append(
+                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+
+        elif I == 1:
+            self.enumModels2.append(
+                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+
+        elif I == 2:
+            self.enumModels3.append(
+                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+
+        elif I == 3:
+            self.enumModels4.append(
+                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+
+        elif I == 4:
+            self.enumModels5.append(
+                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+
+        elif I == 5:
+            self.enumModels6.append(
+                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+
+        elif I == 6:
+            self.enumModels7.append(
+                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+
+        else:
+            self.enumModels8.append(
+                (modelId, ModelTitle, "", thumb.icon_id, os.X_OK+1))
+
+        X = X + 1
+
+
     def get_http_search(self):
         global thangs_config
         # Clean up temporary files from previous attempts
@@ -333,7 +381,6 @@ class ThangsFetcher():
         self.enumModels8.clear()
         self.enumModelInfo.clear()
         self.enumModelTotal.clear()
-        self.length.clear()
         self.thumbnailNumbers.clear()
 
         self.Directory = self.query
@@ -504,84 +551,37 @@ class ThangsFetcher():
                         ModelTitle = part["modelFileName"]
                         modelID = part["modelId"]
                         thumbnail = part["thumbnailUrl"]
-                        
-                        try:
-                            print(f'Fetching part {thumbnail}')
-                            filePath = urllib.request.urlretrieve(thumbnail)
-                            filepath = os.path.join(modelID, filePath[0])
-                        except:
-                            filePath = Path(__file__ + "\icons\placeholder.png")
-                            filepath = os.path.join(modelId, filePath)
-
-                        try:
-                            thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
-                        except:
-                            thumb = self.pcoll.load(modelID+str(self.x), filepath, 'IMAGE')
-
                         self.enumModelInfo.append(
-                            (modelID, ModelTitle, ""))  # , self.x+1))
+                            (modelID, ModelTitle, ""))
 
-                        if self.i == 0:
-                            self.enumModels1.append(
-                                (modelID, ModelTitle, "", thumb.icon_id, self.x+1))
-
-                        elif self.i == 1:
-                            self.enumModels2.append(
-                                (modelID, ModelTitle, "", thumb.icon_id, self.x+1))
-
-                        elif self.i == 2:
-                            self.enumModels3.append(
-                                (modelID, ModelTitle, "", thumb.icon_id, self.x+1))
-
-                        elif self.i == 3:
-                            self.enumModels4.append(
-                                (modelID, ModelTitle, "", thumb.icon_id, self.x+1))
-
-                        elif self.i == 4:
-                            self.enumModels5.append(
-                                (modelID, ModelTitle, "", thumb.icon_id, self.x+1))
-
-                        elif self.i == 5:
-                            self.enumModels6.append(
-                                (modelID, ModelTitle, "", thumb.icon_id, self.x+1))
-
-                        elif self.i == 6:
-                            self.enumModels7.append(
-                                (modelID, ModelTitle, "", thumb.icon_id, self.x+1))
-
-                        else:
-                            self.enumModels8.append(
-                                (modelId, ModelTitle, "", thumb.icon_id, self.x+1))
-
-                        self.x = self.x + 1
+                        thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(self.i, self.x, thumbnail, modelID, modelId, ModelTitle,)).start()
 
                 self.enumModelTotal.append(self.enumModelInfo[:])
                 self.i = self.i + 1
 
-        ssl._create_default_https_context = old_context
+        try:
+            ssl._create_default_https_context = old_context
+        except:
+            self.failed = True
+            self.newSearch = False
+            self.searching = False
+            return
+
         if self.enumModels1:
-            self.length.append(len(self.enumModels1))
             self.result1 = self.enumModels1[0][3]
         if self.enumModels2:
-            self.length.append(len(self.enumModels2))
             self.result2 = self.enumModels2[0][3]
         if self.enumModels3:
-            self.length.append(len(self.enumModels3))
             self.result3 = self.enumModels3[0][3]
         if self.enumModels4:
-            self.length.append(len(self.enumModels4))
             self.result4 = self.enumModels4[0][3]
         if self.enumModels5:
-            self.length.append(len(self.enumModels5))
             self.result5 = self.enumModels5[0][3]
         if self.enumModels6:
-            self.length.append(len(self.enumModels6))
             self.result6 = self.enumModels6[0][3]
         if self.enumModels7:
-            self.length.append(len(self.enumModels7))
             self.result7 = self.enumModels7[0][3]
         if self.enumModels8:
-            self.length.append(len(self.enumModels8))
             self.result8 = self.enumModels8[0][3]
 
         self.pcoll.Model = self.enumItems
@@ -645,7 +645,6 @@ class ThangsFetcher():
         self.enumModelInfo.clear()
         self.enumModelTotal.clear()
 
-        self.length.clear()
         self.thumbnailNumbers.clear()
 
         self.Directory = self.query
@@ -850,28 +849,20 @@ class ThangsFetcher():
             self.i = self.i + 1
 
         if self.enumModels1:
-            self.length.append(len(self.enumModels1))
             self.result1 = self.enumModels1[0][3]
         if self.enumModels2:
-            self.length.append(len(self.enumModels2))
             self.result2 = self.enumModels2[0][3]
         if self.enumModels3:
-            self.length.append(len(self.enumModels3))
             self.result3 = self.enumModels3[0][3]
         if self.enumModels4:
-            self.length.append(len(self.enumModels4))
             self.result4 = self.enumModels4[0][3]
         if self.enumModels5:
-            self.length.append(len(self.enumModels5))
             self.result5 = self.enumModels5[0][3]
         if self.enumModels6:
-            self.length.append(len(self.enumModels6))
             self.result6 = self.enumModels6[0][3]
         if self.enumModels7:
-            self.length.append(len(self.enumModels7))
             self.result7 = self.enumModels7[0][3]
         if self.enumModels8:
-            self.length.append(len(self.enumModels8))
             self.result8 = self.enumModels8[0][3]
 
         self.pcoll.Model = self.enumItems
