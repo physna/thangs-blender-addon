@@ -374,8 +374,8 @@ class ImportModelOperator(Operator):
             print("Before Import")
             thangs_api.handle_download(modelIndex, LicenseUrl, fileType, domain)
             Model_Event(modelIndex)
-        except:
-            print("Error with Logging In")
+        except Exception as e:
+            print("Error with Logging In: %s", e)
             f.close()
             os.remove(bearer_location)
         return
@@ -572,7 +572,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 z = 0
                 modelDropdownIndex = 0
                 for model in fetcher.pcoll.Model:
-                    modelURL = fetcher.modelInfo[z][1]
+                    modelURL = model.attribution_url
                     cell = grid.column().box()
 
                     if z == 0:
@@ -598,21 +598,23 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     col = cell.box().column(align=True)
                     row = col.row()
                     row.label(text="", icon='USER')
-                    if model[2] == "" or model[2] == None:
+
+                    if model.owner_username == "" or model.owner_username is None:
                         row.enabled = False
                         props = row.operator(
                             'wm.browse_to_license', text="{}".format("Non-Thangs Creator"))
                     else:
                         props = row.operator(
-                            'wm.browse_to_creator', text="%s" % model[2])
+                            'wm.browse_to_creator', text="%s" % model.owner_username)
                         props.url = thangs_config.thangs_config['url'] + "designer/" + urllib.parse.quote(str(
-                            model[2])) + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                            model.owner_username)) + "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                         props.modelIndex = z
 
                     row = col.row()
                     row.label(
                         text="", icon_value=icons_dict["CreativeC"].icon_id)
-                    if model[3] == None:
+
+                    if model.license_url == None:
                         row.enabled = False
                         props = row.operator(
                             'wm.browse_to_license', text="{}".format("No License"))
@@ -620,7 +622,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     else:
                         props = row.operator(
                             'wm.browse_to_license', text="{}".format("See License"))
-                        props.url = model[3]
+                        props.url = model.license_url
                         props.modelIndex = z
 
                     row = col.row()
@@ -630,24 +632,27 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     mytool = scene.my_tool
                     dropdown = row.prop(mytool, "dropdown_Parts{}".format(z))
 
+
                     # if fetcher.length[z] == 1:
                     #     dropdown.enabled = False
                     if thangs_api.import_limit == True:
                         props = cell.operator(
-                        'wm.browse_to_model', text="%s" % model[0], icon='URL')
+                        'wm.browse_to_model', text="%s" % model.title, icon='URL')
                         props.url = modelURL + \
                             "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                         props.modelIndex = z
                     else:
                         props = cell.operator(
-                            'wm.import_model', text="Import Model", icon='IMPORT') #text="%s" % model[0]
+                            'wm.import_model', text="Import Model", icon='IMPORT')
                         props.url = modelURL + \
                             "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                         props.modelIndex = z
-                        if model[3] != None:
-                            props.license_url = str(model[3])
-                        props.fileType = model[4]
-                        props.domain = model[5]
+                        if model.license_url is not None:
+                            props.license_url = str(model.license_url)
+                        else:
+                            props.license_url = ""
+                        props.fileType = model.file_type
+                        props.domain = model.domain
                             
                     z = z + 1
                     modelDropdownIndex = modelDropdownIndex + 1
@@ -816,13 +821,13 @@ def register():
     WindowManager.Model = EnumProperty(
         name="",
         description="Click to view all results",
-        items=fetcher.enumItems,
+        items=fetcher.models,
     )
 
     fetcher.pcoll = bpy.utils.previews.new()
     fetcher.icons_dict = bpy.utils.previews.new()
     fetcher.pcoll.Model_dir = ""
-    fetcher.pcoll.Model = ()
+    fetcher.pcoll.Model = []
     # Added
     fetcher.pcoll.Model_page = 1
 

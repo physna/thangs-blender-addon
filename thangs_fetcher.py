@@ -16,6 +16,8 @@ import shutil
 import math
 import platform
 from requests.exceptions import Timeout
+
+from .model_info import ModelInfo
 from .fp_val import FP
 from .thangs_events import ThangsEvents
 from .config import get_config, ThangsConfig
@@ -50,8 +52,8 @@ class ThangsFetcher():
         self.uuid = ""
         self.bearer = ""
 
+        self.models = []
         self.modelInfo = []
-        self.enumItems = []
         self.enumModels1 = []
         self.enumModels2 = []
         self.enumModels3 = []
@@ -109,7 +111,6 @@ class ThangsFetcher():
         self.uuid = ""
 
         self.modelInfo = []
-        self.enumItems = []
         self.enumModels1 = []
         self.enumModels2 = []
         self.enumModels3 = []
@@ -368,9 +369,9 @@ class ThangsFetcher():
             self.search_callback()
             return
 
+        self.models.clear()
         self.modelInfo.clear()
 
-        self.enumItems.clear()
         self.enumModels1.clear()
         self.enumModels2.clear()
         self.enumModels3.clear()
@@ -470,11 +471,19 @@ class ThangsFetcher():
                 modelTitle = item["modelTitle"]
                 modelId = item["modelId"]
 
+                self.models.append(ModelInfo(
+                    modelId,
+                    modelTitle,
+                    item['attributionUrl'],
+                    item["ownerUsername"],
+                    item["license"],
+                    item["domain"],
+                    item["scope"],
+                    item["originalFileType"]
+                ))
                 # Stateful Model Information
                 self.modelInfo.append(
                     tuple([modelTitle, item["attributionUrl"], modelId, (((self.CurrentPage-1)*8) + self.i), self.i, item["domain"], item["scope"]]))
-                self.enumItems.append(
-                    (modelTitle, modelId, item["ownerUsername"], item["license"], item["originalFileType"], item["domain"]))
 
                 try:
                     print(f'Fetching {thumbnail}')
@@ -584,7 +593,7 @@ class ThangsFetcher():
         if self.enumModels8:
             self.result8 = self.enumModels8[0][3]
 
-        self.pcoll.Model = self.enumItems
+        self.pcoll.Model = self.models
         self.pcoll.Model_dir = self.Directory
         # Added
 
@@ -631,9 +640,8 @@ class ThangsFetcher():
         #     self.search_callback()
         #     return
 
+        self.models.clear()
         self.modelInfo.clear()
-
-        self.enumItems.clear()
         self.enumModels1.clear()
         self.enumModels2.clear()
         self.enumModels3.clear()
@@ -865,7 +873,7 @@ class ThangsFetcher():
         if self.enumModels8:
             self.result8 = self.enumModels8[0][3]
 
-        self.pcoll.Model = self.enumItems
+        self.pcoll.Model = self.models
         self.pcoll.ModelView1 = self.enumModels1
         self.pcoll.ModelView2 = self.enumModels2
         self.pcoll.ModelView3 = self.enumModels3
