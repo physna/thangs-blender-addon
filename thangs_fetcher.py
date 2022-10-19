@@ -53,7 +53,6 @@ class ThangsFetcher():
         self.bearer = ""
 
         self.models = []
-        self.modelInfo = []
         self.enumModels1 = []
         self.enumModels2 = []
         self.enumModels3 = []
@@ -110,7 +109,7 @@ class ThangsFetcher():
         self.query = ""
         self.uuid = ""
 
-        self.modelInfo = []
+        self.models = []
         self.enumModels1 = []
         self.enumModels2 = []
         self.enumModels3 = []
@@ -369,7 +368,6 @@ class ThangsFetcher():
             return
 
         self.models.clear()
-        self.modelInfo.clear()
 
         self.enumModels1.clear()
         self.enumModels2.clear()
@@ -478,11 +476,9 @@ class ThangsFetcher():
                     item["license"],
                     item["domain"],
                     item["scope"],
-                    item["originalFileType"]
+                    item["originalFileType"],
+                    (((self.CurrentPage - 1) * 8) + self.i)
                 ))
-                # Stateful Model Information
-                self.modelInfo.append(
-                    tuple([modelTitle, item["attributionUrl"], modelId, (((self.CurrentPage-1)*8) + self.i), self.i, item["domain"], item["scope"]]))
 
                 try:
                     print(f'Fetching {thumbnail}')
@@ -640,7 +636,6 @@ class ThangsFetcher():
         #     return
 
         self.models.clear()
-        self.modelInfo.clear()
         self.enumModels1.clear()
         self.enumModels2.clear()
         self.enumModels3.clear()
@@ -780,11 +775,19 @@ class ThangsFetcher():
             modelTitle = item["title"]
             modelId = item["model_id"]
 
-            # Stateful Model Information
-            self.modelInfo.append(
-                tuple([modelTitle, str("https://thangs.com/m/")+item["external_id"], modelId, (((self.CurrentPage-1)*8) + self.i), self.i]))
-            self.enumItems.append(
-                (modelTitle, modelId, "Test Selection", "Test License", "STL"))
+            self.models.append(
+                ModelInfo(
+                    modelId,
+                    modelTitle,
+                    str("https://thangs.com/m/") + item["external_id"],
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    (((self.CurrentPage - 1) * 8) + self.i)
+                )
+            )
 
             thumbnail = thumbnail.replace("https", "http", 1)
             try:
