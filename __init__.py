@@ -19,7 +19,6 @@ from urllib.request import urlopen
 import urllib.parse
 import os
 import json
-import threading
 from .thangs_login import ThangsLogin, stop_access_grant
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
@@ -383,9 +382,7 @@ class ImportModelOperator(Operator):
 
     def execute(self, _context):
         print("Starting Login and Import")
-        login_thread = threading.Thread(
-            target=self.login_user, args=(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)).start()
-    
+        self.login_user(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)
         return {'FINISHED'}
 
 
