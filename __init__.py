@@ -87,6 +87,11 @@ class DemoPreferences(bpy.types.AddonPreferences):
         min=0,
         max=59)
 
+    fp_val: StringProperty(
+        name='fp_val',
+        description="Api Protection Identifier",
+        default="")        
+
     def draw(self, context):
         layout = self.layout
 
