@@ -602,7 +602,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     if model.owner_username == "" or model.owner_username is None:
                         row.enabled = False
                         props = row.operator(
-                            'wm.browse_to_license', text="{}".format("Non-Thangs Creator"))
+                            'wm.browse_to_creator', text="{}".format(model.domain))
                     else:
                         props = row.operator(
                             'wm.browse_to_creator', text="%s" % model.owner_username)
