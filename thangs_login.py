@@ -1,6 +1,5 @@
 from time import sleep 
 from .config import get_config, ThangsConfig
-from .thangs_importer import ThangsApi
 import uuid, webbrowser, requests, threading
 
 GRANT_CHECK_INTERVAL_SECONDS=0.5 # 500 milliseconds
