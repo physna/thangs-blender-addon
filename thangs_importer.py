@@ -1,7 +1,6 @@
 import os
 import urllib
 import requests
-import threading
 import shutil
 from .config import get_config
 from .thangs_events import ThangsEvents
@@ -187,7 +186,7 @@ class ThangsApi:
         self.LicenseURL = LicenseURL
         self.fileType = fileType
         self.domain = domain
-        self.import_thread = threading.Thread(target=self.download_file).start()
+        self.download_file()
         return True
 
     def download_file(self):
