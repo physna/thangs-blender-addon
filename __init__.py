@@ -286,22 +286,22 @@ class SearchBySelect(bpy.types.Operator):
         return {'FINISHED'}
 
 def Model_Event(position):
-    scope = fetcher.modelInfo[position][6]
+    model = fetcher.models[position]
+    scope = model.scope
     event_name = 'Thangs Model Link' if scope == 'thangs' else 'External Model Link'
-
     amplitude.send_amplitude_event(event_name, event_properties={
-        'path': fetcher.modelInfo[position][1],
+        'path': model.attribution_url,
         'type': "text",
-        'domain': fetcher.modelInfo[position][5],
-        'scope': fetcher.modelInfo[position][6],
-        'searchIndex': fetcher.modelInfo[position][3],
-        'phyndexerID': fetcher.modelInfo[position][2],
+        'domain': model.domain,
+        'scope': model.scope,
+        'searchIndex': model.search_index,
+        'phyndexerID': model.model_id,
         'searchMetadata': fetcher.searchMetaData,
     })
     data = {
-        "modelId": fetcher.modelInfo[position][2],
+        "modelId": model.model_id,
         "searchId": fetcher.uuid,
-        "searchResultIndex": fetcher.modelInfo[position][3],
+        "searchResultIndex": model.search_index,
     }
     amplitude.send_thangs_event("Results", data)
     return
