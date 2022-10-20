@@ -1,6 +1,8 @@
 # <pep8 compliant>
+from concurrent.futures import thread
 import webbrowser
 import bpy
+import queue
 from bpy.types import (Panel,
                        PropertyGroup,
                        Operator,
@@ -27,6 +29,7 @@ from .config import ThangsConfig, initialize
 import socket
 import platform
 import logging
+import threading
 from .thangs_importer import ThangsApi, initialize_thangs_api, get_thangs_api
 
 log = logging.getLogger(__name__)
@@ -127,14 +130,67 @@ def on_complete_search():
     tag_redraw_areas()
     return
 
+def import_model():
+        print("Starting File Import")
+
+        thangs_api.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
+                    'extension': thangs_api.fileType,
+                    'domain': thangs_api.domain,
+                })
+
+        try:
+            if thangs_api.file_extension == '.zip' or thangs_api.file_extension == '.usdz':
+                thangs_api.zipped_file_path = thangs_api.file_path
+                if thangs_api.unzip_archive():
+                    split_tup_top = os.path.splitext(thangs_api.modelTitle)
+                    thangs_api.file_extension = split_tup_top[1]
+                    thangs_api.file_path = os.path.join(thangs_api.temp_dir, thangs_api.modelTitle)
+                else:
+                    raise Exception("Unzipping didn't complete")
+        except:
+            print('Unzip error')
+            thangs_api.importing = False
+            return
+        
+        print("File Path: ", thangs_api.file_path)
+        print("File Extension: ", thangs_api.file_extension)
+
+        try:
+            if thangs_api.file_extension == '.fbx':
+                print('fbx import')
+                bpy.ops.import_scene.fbx(filepath=thangs_api.file_path)
+            elif thangs_api.file_extension == '.obj':
+                print('obj import')
+                bpy.ops.import_scene.obj(filepath=thangs_api.file_path)
+            elif thangs_api.file_extension == '.glb' or thangs_api.file_extension == '.gltf':
+                print('gltf + glb import')
+                bpy.ops.import_scene.gltf(filepath=thangs_api.file_path, import_pack_images=True, merge_vertices=False, import_shading='NORMALS', guess_original_bind_pose=True, bone_heuristic='TEMPERANCE')
+            elif thangs_api.file_extension == '.usd' or thangs_api.file_extension == '.usda' or thangs_api.file_extension == '.usdc':
+                print('usdz import')
+                bpy.ops.wm.usd_import(filepath=thangs_api.file_path, relative_path=True)
+            else:
+                print('stl import')
+                bpy.ops.import_mesh.stl(filepath=thangs_api.file_path)
+        except:
+            print('Failed to Import')
+            return
+            
+        print("Imported")
+
+        thangs_api.importing = False
+
+        tag_redraw_areas()
+        return
+
 
 initialize(bl_info["version"])
-initialize_thangs_api(callback=on_complete_search)
+initialize_thangs_api(callback=import_model)
 fetcher = ThangsFetcher(callback=on_complete_search)
 amplitude = ThangsEvents()
 thangs_config = ThangsConfig()
 thangs_login = ThangsLogin()
 thangs_api = get_thangs_api()
+execution_queue = thangs_api.execution_queue
 
 ButtonSearch = "Search"
 # Added
@@ -376,13 +432,17 @@ class ImportModelOperator(Operator):
             Model_Event(modelIndex)
         except Exception as e:
             print("Error with Logging In: %s", e)
-            f.close()
+            thangs_api.importing = False
+            thangs_api.searching = False
+            thangs_api.failed = True
+            #f.close()
             os.remove(bearer_location)
         return
 
     def execute(self, _context):
         print("Starting Login and Import")
-        self.login_user(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)
+        login_thread = threading.Thread(target=self.login_user, args=(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)).start()
+        #self.login_user(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)
         return {'FINISHED'}
 
 
@@ -793,6 +853,12 @@ def open_timer():
                         "Thangs Blender Addon - Opened", event_properties={'panel_open': n_panel_is_open})
                     return 60
 
+def execute_queued_functions():
+    while not execution_queue.empty():
+        function = execution_queue.get()
+        function()
+    return 1.0
+
 
 def register():
     global fetcher
@@ -902,6 +968,7 @@ def register():
 
     bpy.app.timers.register(heartbeat_timer)
     bpy.app.timers.register(open_timer)
+    bpy.app.timers.register(execute_queued_functions)
 
     log.info("Finished Register")
 
@@ -913,6 +980,7 @@ def unregister():
     del WindowManager.Model
     bpy.app.timers.unregister(heartbeat_timer)
     bpy.app.timers.unregister(open_timer)
+    bpy.app.timers.unregister(execute_queued_functions)
 
     for pcoll in fetcher.preview_collections.values():
         bpy.utils.previews.remove(pcoll)

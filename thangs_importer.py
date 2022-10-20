@@ -9,6 +9,7 @@ import platform
 import socket
 import webbrowser
 import json
+import queue
 import bpy
 from bpy.types import WindowManager
 import bpy.utils.previews
@@ -128,6 +129,7 @@ class ThangsApi:
         self.query = ""
         self.deviceId = ""
         self.ampURL = ''
+        self.execution_queue = queue.Queue()
         self.import_thread = None
         self.model_thread = None
         self.import_callback = callback
@@ -157,7 +159,10 @@ class ThangsApi:
         self.modelTitle6 = ""
         self.modelTitle7 = ""
         pass
-    
+
+    def run_in_main_thread(self, function):
+        self.execution_queue.put(function)
+
     def refresh_bearer(self):
         thangs_login_import = ThangsLogin()
         bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
@@ -191,6 +196,7 @@ class ThangsApi:
 
     def download_file(self):
         self.importing = True
+        self.failed = False
 
         if self.LicenseURL != "":
             webbrowser.open(self.LicenseURL, new=0, autoraise=True)
@@ -312,7 +318,13 @@ class ThangsApi:
             self.file_extension = split_tup_top[1]    
             print('Model Already Downloaded')
 
-        self.import_model()
+        #print("Callback")
+        #if self.import_callback is not None:
+        #    self.import_callback()
+        
+        self.run_in_main_thread(self.import_callback)
+
+        # self.import_model()
 
     def import_model(self):
         print("Starting File Import")
