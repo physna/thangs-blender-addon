@@ -389,11 +389,11 @@ class ImportModelOperator(Operator):
         description="Model's Domain",
     )
 
-    def import_model(self):
-        global thangs_api
-        global fetcher
-        print("Starting Download")
-        thangs_api.handle_download(self.modelIndex, )
+    # def import_model(self):
+    #     global thangs_api
+    #     global fetcher
+    #     print("Starting Download")
+    #     thangs_api.handle_download(self.modelIndex, )
 
     def login_user(self, _context, modelIndex, LicenseUrl, fileType, domain):
         global thangs_api
@@ -433,7 +433,6 @@ class ImportModelOperator(Operator):
         except Exception as e:
             print("Error with Logging In: %s", e)
             thangs_api.importing = False
-            thangs_api.searching = False
             thangs_api.failed = True
             #f.close()
             os.remove(bearer_location)

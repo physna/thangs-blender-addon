@@ -94,13 +94,54 @@ class Utils:
 
 class ThangsApi:
     def __init__(self, callback=None):
+        self.import_callback = callback
+        self.Thangs_Config = get_config()
         self.amplitude = ThangsEvents()
+
         self.amplitude.deviceId = socket.gethostname().split(".")[0]
         self.amplitude.deviceOs = platform.system()
         self.amplitude.deviceVer = platform.release()
+        self.execution_queue = queue.Queue()
+        
+        self.headers = {}
+
+        self.failed = False
+        self.importing = False
+        self.import_limit = False
+
+        self.modelIndex = 0
+        
+        self.deviceId = ""
+        self.LicenseURL = ""
+        self.fileType = ""
+        self.domain = ""
+        self.bearer = ""
+
+        self.modelId = ""
+        self.modelTitle = ""
+
+        self.model0 = ""
+        self.model1 = ""
+        self.model2 = ""
+        self.model3 = ""
+        self.model4 = ""
+        self.model5 = ""
+        self.model6 = ""
+        self.model7 = ""
+        self.modelTitle0 = ""
+        self.modelTitle1 = ""
+        self.modelTitle2 = ""
+        self.modelTitle3 = ""
+        self.modelTitle4 = ""
+        self.modelTitle5 = ""
+        self.modelTitle6 = ""
+        self.modelTitle7 = ""
+
+        #self.modelIDTest = ""
+        #self.modelTitleTest = ""
+
         #self.access_token = ''
         #self.api_token = ''
-        self.headers = {}
         #self.username = ''
         #self.thumbnails = []
         #self.context = ""
@@ -123,42 +164,12 @@ class ThangsApi:
         #self.eventCall = ""
         #self.CurrentPage = 1
         #self.searching = False
-        #self.failed = False
-        self.importing = False
-        self.import_limit = False
-        self.query = ""
-        self.deviceId = ""
-        self.ampURL = ''
-        self.execution_queue = queue.Queue()
-        self.import_thread = None
-        self.model_thread = None
-
-        self.import_callback = callback
+        #self.import_thread = None
+        #self.model_thread = None
+        #self.query = ""
+        #self.ampURL = ''
         #self.model_path = ""
         #self.uid = ""
-        self.Thangs_Config = get_config()
-        self.modelID = ""
-        self.modelIndex = 0
-        self.LicenseURL = ""
-        self.fileType = ""
-        self.domain = ""
-        self.bearer = ""
-        self.model0 = ""
-        self.model1 = ""
-        self.model2 = ""
-        self.model3 = ""
-        self.model4 = ""
-        self.model5 = ""
-        self.model6 = ""
-        self.model7 = ""
-        self.modelTitle0 = ""
-        self.modelTitle1 = ""
-        self.modelTitle2 = ""
-        self.modelTitle3 = ""
-        self.modelTitle4 = ""
-        self.modelTitle5 = ""
-        self.modelTitle6 = ""
-        self.modelTitle7 = ""
         pass
 
     def run_in_main_thread(self, function):
@@ -203,9 +214,9 @@ class ThangsApi:
             webbrowser.open(self.LicenseURL, new=0, autoraise=True)
 
         print("Downloading...")
-
-        model_title = ""
-        modelID = ""
+        """
+        model_title = str(self.modelTitleTest)
+        modelID = str(self.modelIDTest)
         if self.modelIndex == 0:
             modelID = str(self.model0)
             model_title = self.modelTitle0
@@ -230,21 +241,23 @@ class ThangsApi:
         elif self.modelIndex == 7:
             modelID = str(self.model7)
             model_title = self.modelTitle7
+        """
+
     
-        self.modelID = modelID
-        self.modelTitle = str(model_title)
+        #self.modelID = str(self.modelIDTest)
+        #self.modelTitle = str(self.modelTitleTest)
         self.temp_dir = os.path.join(Config.THANGS_MODEL_DIR)
         print("Temp Directory: ", self.temp_dir)
-        print("Model ID: ", self.modelID)
+        print("Model ID: ", self.modelId)
         print("Model Title: ", self.modelTitle)
-        fileDownloaded = [item for item in _files_list if item[0] == self.modelID and item[1] == self.modelTitle]
+        fileDownloaded = [item for item in _files_list if item[0] == self.modelId and item[1] == self.modelTitle]
 
         if len(fileDownloaded) < 1:
             headers = {"Authorization": "Bearer "+self.bearer,}
-            print("URL: ", self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url")
+            print("URL: ", self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.modelId)+"/download-url")
             # TODO: Add in rate limit after this following request (Will error 429)
             try:
-                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url", headers=headers)
+                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.modelId)+"/download-url", headers=headers)
             except:
                 if response.status_code == 429:
                     self.import_limit = True
@@ -254,7 +267,7 @@ class ThangsApi:
                     self.refresh_bearer()
                     headers = {"Authorization": "Bearer "+self.bearer,}
                     try:
-                        response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url", headers=headers) 
+                        response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.modelId)+"/download-url", headers=headers) 
                     except:
                         self.importing = False
                         return
@@ -307,12 +320,12 @@ class ThangsApi:
             _files_list.append(tuple((self.modelID, self.modelTitle, filename)))
             wm.progress_end()
         else:
-            fileDownloaded = [item for item in _files_list if item[0] == self.modelID and item[1] ==  item[2]]
+            fileDownloaded = [item for item in _files_list if item[0] == self.modelId and item[1] ==  item[2]]
 
             if len(fileDownloaded) > 0:
                 self.file_path = os.path.join(Config.THANGS_MODEL_DIR, self.modelTitle)
             else:
-                fileDownloadedStl = [item for item in _files_list if item[0] == self.modelID and item[1] == self.modelTitle]
+                fileDownloadedStl = [item for item in _files_list if item[0] == self.modelId and item[1] == self.modelTitle]
                 self.file_path = os.path.join(Config.THANGS_MODEL_DIR, str(fileDownloadedStl[0][2]))
 
             split_tup_top = os.path.splitext(self.file_path)
@@ -399,7 +412,7 @@ class ThangsApi:
                 fileUnarchived = [item for item in _files_list if item[2] == file]
 
                 if len(fileUnarchived) < 1:
-                    _files_list.append(tuple((self.modelID, self.modelTitle, file)))
+                    _files_list.append(tuple((self.modelId, self.modelTitle, file)))
             
             return True
 
