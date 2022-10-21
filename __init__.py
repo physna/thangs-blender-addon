@@ -918,12 +918,20 @@ def register():
         def handler(self, context):
             global fetcher
             enum_models = getattr(fetcher, "enumModels" + str(index + 1))
-            for item in enum_models:
+            #for item in enum_models:
+            for i, item in enumerate(enum_models):
                 if item[0] == getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)):
                     setattr(fetcher, "result" + str(index + 1), item[3])
-                    setattr(thangs_api, "model" + str(index), getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)))
-                    setattr(thangs_api, "modelTitle" + str(index), item[1])
+                    #setattr(thangs_api, "model" + str(index), getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)))
+                    #setattr(thangs_api, "modelTitle" + str(index), item[1])
+                    setattr(thangs_api, "modelId", getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)))
+                    setattr(thangs_api, "modelTitle", item[1])
+                    #setattr(fetcher.modelsCopy[i], "partSelected", str(index))
                     break
+
+            #for i, item in enumerate(fetcher.modelsCopy):
+                #if getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)) == fetcher.modelsCopy[i]
+                #fetcher.modelsCopy[index].partSelected = 
         return handler
 
     def dropdown_properties_item_callback(index):

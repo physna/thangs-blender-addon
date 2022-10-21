@@ -199,6 +199,13 @@ class ThangsApi:
         return
 
     def handle_download(self, modelIndex, LicenseURL, fileType, domain):
+        print("self.modelId", self.modelId)
+        print("self.modelTitle", self.modelTitle)
+        self.modelId = str(self.modelId)
+        self.modelTitle = str(self.modelTitle)
+        print("self.modelId", self.modelId)
+        print("self.modelTitle", self.modelTitle)
+        
         self.modelIndex = modelIndex
         self.LicenseURL = LicenseURL
         self.fileType = fileType
@@ -207,6 +214,7 @@ class ThangsApi:
         return True
 
     def download_file(self):
+
         self.importing = True
         self.failed = False
 
@@ -243,7 +251,7 @@ class ThangsApi:
             model_title = self.modelTitle7
         """
 
-    
+        #self.modelId = str(self.modelId)
         #self.modelID = str(self.modelIDTest)
         #self.modelTitle = str(self.modelTitleTest)
         self.temp_dir = os.path.join(Config.THANGS_MODEL_DIR)
@@ -317,7 +325,7 @@ class ThangsApi:
                         wm.progress_update(done)
                         print("filedata: ", done)
 
-            _files_list.append(tuple((self.modelID, self.modelTitle, filename)))
+            _files_list.append(tuple((self.modelId, self.modelTitle, filename)))
             wm.progress_end()
         else:
             fileDownloaded = [item for item in _files_list if item[0] == self.modelId and item[1] ==  item[2]]

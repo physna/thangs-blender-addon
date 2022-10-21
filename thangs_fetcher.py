@@ -97,8 +97,25 @@ class ThangsFetcher():
         self.amplitude.deviceVer = platform.release()
         self.FP = FP()
         self.thangs_api = get_thangs_api()
+        self.modelsCopy = []
 
         pass
+
+    class Part():
+        def __init__(self, partId, partFileName, description, iconId, index):
+            self.partId = partId
+            self.partFileName = partFileName
+            self.description = description
+            self.iconId = iconId
+            self.index = index
+            pass
+
+    class Model():
+        def __init__(self, parts):
+            #modelTitle = ""
+            self.partSelected = 0
+            self.parts = [parts]
+            pass
 
     def reset(self):
         self.search_thread = None
@@ -497,6 +514,10 @@ class ThangsFetcher():
 
                 z = 0
 
+               #for i, item in items:
+
+                #self.model.parts[self.i] = self.PartStruct(modelId, item["modelFileName"], "", thumb.icon_id, z)
+
                 self.enumModelInfo.append(
                     (modelId, item["modelFileName"], ""))  # , z))
 
@@ -551,7 +572,10 @@ class ThangsFetcher():
                 if len(item["parts"]) > 0:
                     parts = item["parts"]
                     self.x = z
+                    partsCopy = []
                     for part in parts:
+                        partsCopy.append(self.Part(part["modelId"], part["modelFileName"], part["modelDescription"], part["thumbnailUrl"], 0))
+
                         ModelTitle = part["modelFileName"]
                         modelID = part["modelId"]
                         thumbnail = part["thumbnailUrl"]
@@ -560,6 +584,7 @@ class ThangsFetcher():
 
                         thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(self.i, self.x, thumbnail, modelID, modelId, ModelTitle,)).start()
 
+                    self.modelsCopy.append(partsCopy)
                 self.enumModelTotal.append(self.enumModelInfo[:])
                 self.i = self.i + 1
 
