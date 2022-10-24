@@ -398,6 +398,7 @@ class ImportModelOperator(Operator):
     def login_user(self, _context, modelIndex, LicenseUrl, fileType, domain):
         global thangs_api
         global fetcher
+        global tag_redraw_areas
         print("Starting Login")
         thangs_login_import = ThangsLogin()
         bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
@@ -431,18 +432,27 @@ class ImportModelOperator(Operator):
             thangs_api.handle_download(modelIndex, LicenseUrl, fileType, domain)
             Model_Event(modelIndex)
         except Exception as e:
-            print("Error with Logging In: %s", e)
+            print("Error with Logging In:", e)
             thangs_api.importing = False
             thangs_api.searching = False
             thangs_api.failed = True
-            #f.close()
-            os.remove(bearer_location)
+            tag_redraw_areas()
+            try:
+                f.close()
+                os.remove(bearer_location)
+            except:
+                print("File couldn't be removed.")
         return
 
     def execute(self, _context):
-        print("Starting Login and Import")
-        login_thread = threading.Thread(target=self.login_user, args=(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)).start()
-        #self.login_user(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)
+        if thangs_api.importing == False:
+            print("Starting Login and Import")
+            try:
+                login_thread = threading.Thread(target=self.login_user, args=(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)).start()
+                thangs_api.importing = True
+            except:
+                print("Thread Failed")
+                thangs_api.importing = False
         return {'FINISHED'}
 
 
