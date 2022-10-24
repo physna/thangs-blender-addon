@@ -684,34 +684,58 @@ class THANGS_PT_model_display(bpy.types.Panel):
                         props.url = model.license_url
                         props.modelIndex = z
 
-                    row = col.row()
-                    row.label(text="{}".format(""), icon='FILEBROWSER')
-
-                    scene = context.scene
-                    mytool = scene.my_tool
-                    dropdown = row.prop(mytool, "dropdown_Parts{}".format(z))
-
-
-                    # if fetcher.length[z] == 1:
-                    #     dropdown.enabled = False
-                    if thangs_api.import_limit == True:
-                        props = cell.operator(
-                        'wm.browse_to_model', text="%s" % model.title, icon='URL')
-                        props.url = modelURL + \
-                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                        props.modelIndex = z
-                    else:
-                        props = cell.operator(
-                            'wm.import_model', text="Import Model", icon='IMPORT')
-                        props.url = modelURL + \
-                            "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                        props.modelIndex = z
-                        if model.license_url is not None:
-                            props.license_url = str(model.license_url)
+                    if model.file_type == ".blend":
+                        row = col.row()
+                        row.label(text="{}".format(""), icon='APPEND_BLEND')
+                        
+                        if thangs_api.import_limit == True:
+                            props = cell.operator(
+                            'wm.browse_to_model', text="%s" % model.title, icon='URL')
+                            props.url = modelURL + \
+                                "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                            props.modelIndex = z
                         else:
-                            props.license_url = ""
-                        props.fileType = model.file_type
-                        props.domain = model.domain
+                            props = cell.operator(
+                                'wm.import_model', text="Import Model", icon='IMPORT')
+                            props.url = modelURL + \
+                                "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                            props.modelIndex = z
+                            if model.license_url is not None:
+                                props.license_url = str(model.license_url)
+                            else:
+                                props.license_url = ""
+                            props.fileType = model.file_type
+                            props.domain = model.domain
+
+                    else:
+                        row = col.row()
+                        row.label(text="{}".format(""), icon='FILEBROWSER')
+
+                        scene = context.scene
+                        mytool = scene.my_tool
+                        dropdown = row.prop(mytool, "dropdown_Parts{}".format(z))
+
+
+                        # if fetcher.length[z] == 1:
+                        #     dropdown.enabled = False
+                        if thangs_api.import_limit == True:
+                            props = cell.operator(
+                            'wm.browse_to_model', text="%s" % model.title, icon='URL')
+                            props.url = modelURL + \
+                                "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                            props.modelIndex = z
+                        else:
+                            props = cell.operator(
+                                'wm.import_model', text="Import Model", icon='IMPORT')
+                            props.url = modelURL + \
+                                "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                            props.modelIndex = z
+                            if model.license_url is not None:
+                                props.license_url = str(model.license_url)
+                            else:
+                                props.license_url = ""
+                            props.fileType = model.file_type
+                            props.domain = model.domain
                             
                     z = z + 1
                     modelDropdownIndex = modelDropdownIndex + 1

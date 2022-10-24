@@ -98,10 +98,11 @@ class ThangsFetcher():
         self.FP = FP()
         self.thangs_api = get_thangs_api()
         self.modelsCopy = []
+        self.modelList = []
 
         pass
 
-    class Part():
+    class PartStruct():
         def __init__(self, partId, partFileName, description, iconId, index):
             self.partId = partId
             self.partFileName = partFileName
@@ -110,11 +111,14 @@ class ThangsFetcher():
             self.index = index
             pass
 
-    class Model():
-        def __init__(self, parts):
+        def getID(self):
+            return str(self.partId)
+
+    class ModelStruct():
+        def __init__(self, partList):
             #modelTitle = ""
             self.partSelected = 0
-            self.parts = [parts]
+            self.parts = [partList]
             pass
 
     def reset(self):
@@ -230,7 +234,7 @@ class ThangsFetcher():
                     print(stl_path)
                     print(bpy.context.active_object)
                     context.view_layer.objects.active = new_object
-                
+
                 bpy.ops.object.delete()
 
                 self.search_thread = threading.Thread(
@@ -239,7 +243,7 @@ class ThangsFetcher():
             except:
                 bpy.ops.object.mode_set(mode=previous_mode)
                 pass
-        
+
         return True
 
     def cancel(self):
@@ -247,7 +251,7 @@ class ThangsFetcher():
             self.search_thread.terminate()
             self.search_thread = None
             self.searching = False
-            self.selectionSearching = False  
+            self.selectionSearching = False
             self.failed = False
             self.newSearch = False
             self.reset
@@ -348,7 +352,6 @@ class ThangsFetcher():
 
         X = X + 1
 
-
     def get_http_search(self):
         global thangs_config
         # Clean up temporary files from previous attempts
@@ -424,8 +427,8 @@ class ThangsFetcher():
         if self.newSearch == True:
             try:
                 response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
-                                    "&pageSize=8&collapse=true",
-                                    headers={"x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")})
+                                        "&pageSize=8&collapse=true",
+                                        headers={"x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")})
             except:
                 self.failed = True
                 self.newSearch = False
@@ -474,7 +477,10 @@ class ThangsFetcher():
             old_context = ssl._create_default_https_context
             ssl._create_default_https_context = ssl._create_unverified_context
 
+            self.modelList.clear()
+
             for item in items:
+                self.modelsCopy.clear()
                 self.enumModelInfo.clear()
 
                 if len(item["thumbnails"]) > 0:
@@ -508,15 +514,21 @@ class ThangsFetcher():
                 try:
                     thumb = self.pcoll.load(modelId, filepath, 'IMAGE')
                 except:
-                    thumb = self.pcoll.load(modelId+str(self.i), filepath, 'IMAGE')
+                    thumb = self.pcoll.load(
+                        modelId+str(self.i), filepath, 'IMAGE')
 
                 self.thumbnailNumbers.append(thumb.icon_id)
 
                 z = 0
 
-               #for i, item in items:
+                test = self.PartStruct(
+                    modelId, modelTitle, "", thumb.icon_id, 0)
 
-                #self.model.parts[self.i] = self.PartStruct(modelId, item["modelFileName"], "", thumb.icon_id, z)
+                print(test.partId)
+
+                self.modelsCopy.append(test)
+
+               # for i, item in items:
 
                 self.enumModelInfo.append(
                     (modelId, item["modelFileName"], ""))  # , z))
@@ -572,9 +584,9 @@ class ThangsFetcher():
                 if len(item["parts"]) > 0:
                     parts = item["parts"]
                     self.x = z
-                    partsCopy = []
+                    #partsCopy = []
                     for part in parts:
-                        partsCopy.append(self.Part(part["modelId"], part["modelFileName"], part["modelDescription"], part["thumbnailUrl"], 0))
+                        #partsCopy.append(self.Part(part["modelId"], part["modelFileName"], part["modelDescription"], part["thumbnailUrl"], 0))
 
                         ModelTitle = part["modelFileName"]
                         modelID = part["modelId"]
@@ -582,10 +594,14 @@ class ThangsFetcher():
                         self.enumModelInfo.append(
                             (modelID, ModelTitle, ""))
 
-                        thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(self.i, self.x, thumbnail, modelID, modelId, ModelTitle,)).start()
+                        thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
+                            self.i, self.x, thumbnail, modelID, modelId, ModelTitle,)).start()
 
-                    self.modelsCopy.append(partsCopy)
+                    # self.modelsCopy.append(partsCopy)
                 self.enumModelTotal.append(self.enumModelInfo[:])
+                testModel = self.ModelStruct(partList=self.modelsCopy)
+                print(testModel)
+                self.modelList.append(testModel)
                 self.i = self.i + 1
 
         try:
@@ -628,6 +644,18 @@ class ThangsFetcher():
             self.search_callback()
 
         print("Search Completed!")
+        print(self.modelList[0].parts.getID())
+        # for model in self.modelList:
+        #     print(model)
+        #     for part in model.parts:
+        #         print(part)
+        #         print(part.getID())
+                #dog = part
+                # print(dog.__dir__)
+                # print(dog.getID())
+                # print(part.__dict__.keys())
+        #     print(model.parts)
+        # print(self.modelList)
 
         return
 
@@ -710,20 +738,22 @@ class ThangsFetcher():
         }
 
         try:
-            response = requests.get(str(self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl", headers=headers)
+            response = requests.get(str(
+                self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl", headers=headers)
             responseData = response.json()
 
             print(responseData)
         except:
             print("URL BROKEN")
-        
+
         signedUrl = responseData["signedUrl"]
         new_Filename = responseData["newFileName"]
 
         data = open(stl_path, 'rb').read()
-        
+
         print("Starting to Clean")
-        shutil.rmtree(os.path.join(self.Config.THANGS_MODEL_DIR, "ThangsSelectionSearch"))
+        shutil.rmtree(os.path.join(
+            self.Config.THANGS_MODEL_DIR, "ThangsSelectionSearch"))
         print("Cleaned STL")
 
         s = requests.Session()
@@ -735,7 +765,7 @@ class ThangsFetcher():
         s.mount('https://', HTTPAdapter(max_retries=retries))
 
         try:
-            s.put(url=signedUrl, data=data) # params={'data': data}, args=(), 
+            s.put(url=signedUrl, data=data)  # params={'data': data}, args=(),
             #response = s.post(url, headers=headers, data=data)
         except:
             print("API Failed")
@@ -749,7 +779,8 @@ class ThangsFetcher():
 
         try:
             url_filepath = urllib.parse.quote(new_Filename, safe='')
-            url = str(self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath="+url_filepath)
+            url = str(
+                self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath="+url_filepath)
             print(url)
             response = requests.get(url=url, headers=headers)
             print(response.status_code())
@@ -766,7 +797,7 @@ class ThangsFetcher():
 
         # if os.path.isfile(stl_path):
         #    os.remove(stl_path)
-        #self.Thangs_Utils.clean_downloaded_model_dir("ThangsSelectionSearch")
+        # self.Thangs_Utils.clean_downloaded_model_dir("ThangsSelectionSearch")
         numMatches = responseData["numMatches"]
         items = responseData["matches"]
 
