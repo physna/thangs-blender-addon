@@ -103,11 +103,12 @@ class ThangsFetcher():
         pass
 
     class PartStruct():
-        def __init__(self, partId, partFileName, description, iconId, index):
+        def __init__(self, partId, partFileName, description, iconId, fileType, index):
             self.partId = partId
             self.partFileName = partFileName
             self.description = description
             self.iconId = iconId
+            self.fileType= fileType
             self.index = index
             pass
 
@@ -118,7 +119,7 @@ class ThangsFetcher():
         def __init__(self, partList):
             #modelTitle = ""
             self.partSelected = 0
-            self.parts = [partList]
+            self.parts = partList
             pass
 
     def reset(self):
@@ -320,7 +321,7 @@ class ThangsFetcher():
 
 
         try:
-            self.modelList[I].parts[0][X].iconId = thumb.icon_id
+            self.modelList[I].parts[X].iconId = thumb.icon_id
         except:
             print("Doesn't exist")
 
@@ -496,8 +497,8 @@ class ThangsFetcher():
                 modelId = item["modelId"]
 
                 self.models.append(ModelInfo(
-                    modelId,
-                    modelTitle,
+                    item["modelId"],
+                    item["modelTitle"],
                     item['attributionUrl'],
                     item["ownerUsername"],
                     item["license"],
@@ -526,7 +527,7 @@ class ThangsFetcher():
                 z = 0
 
                 test = self.PartStruct(
-                    modelId, modelTitle, "", thumb.icon_id, 0)
+                    item["modelId"], item["modelTitle"], "", thumb.icon_id, item["originalFileType"], 0)
 
                 self.modelsCopy.append(test)
 
@@ -595,7 +596,7 @@ class ThangsFetcher():
                             (modelID, ModelTitle, ""))
 
                         test = self.PartStruct(
-                                    modelID, ModelTitle, "", "", 0)
+                                    modelID, ModelTitle, "", "", part["originalFileType"], self.x)
 
                         self.modelsCopy.append(test)
 
@@ -658,7 +659,7 @@ class ThangsFetcher():
             # print(model.partSelected)
             # model.partSelected = 1
             # print(model.partSelected)
-            for part in model.parts[0]:
+            for part in model.parts:
                 print(part.partFileName + ": " + str(part.iconId))
 
         return
