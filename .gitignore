@@ -160,3 +160,5 @@ cython_debug/
 .idea/
 .build/
 thangs-blender-addon.zip
+.vscode/launch.json
+.vscode/settings.json

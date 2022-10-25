@@ -524,11 +524,7 @@ class ThangsFetcher():
                 test = self.PartStruct(
                     modelId, modelTitle, "", thumb.icon_id, 0)
 
-                print(test.partId)
-
                 self.modelsCopy.append(test)
-
-               # for i, item in items:
 
                 self.enumModelInfo.append(
                     (modelId, item["modelFileName"], ""))  # , z))
@@ -594,12 +590,19 @@ class ThangsFetcher():
                         self.enumModelInfo.append(
                             (modelID, ModelTitle, ""))
 
+                        test = self.PartStruct(
+                                    modelID, ModelTitle, "", "", 0)
+
+                        self.modelsCopy.append(test)
+
                         thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
                             self.i, self.x, thumbnail, modelID, modelId, ModelTitle,)).start()
 
                     # self.modelsCopy.append(partsCopy)
                 self.enumModelTotal.append(self.enumModelInfo[:])
-                testModel = self.ModelStruct(partList=self.modelsCopy)
+
+                testModel = self.ModelStruct(partList=self.modelsCopy[:])
+
                 print(testModel)
                 self.modelList.append(testModel)
                 self.i = self.i + 1
@@ -644,18 +647,10 @@ class ThangsFetcher():
             self.search_callback()
 
         print("Search Completed!")
-        print(self.modelList[0].parts.getID())
-        # for model in self.modelList:
-        #     print(model)
-        #     for part in model.parts:
-        #         print(part)
-        #         print(part.getID())
-                #dog = part
-                # print(dog.__dir__)
-                # print(dog.getID())
-                # print(part.__dict__.keys())
-        #     print(model.parts)
-        # print(self.modelList)
+
+        for model in self.modelList:
+            for part in model.parts[0]:
+                print(part.partFileName)
 
         return
 
