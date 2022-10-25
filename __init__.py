@@ -431,11 +431,16 @@ class ImportModelOperator(Operator):
             thangs_api.handle_download(modelIndex, LicenseUrl, fileType, domain)
             Model_Event(modelIndex)
         except Exception as e:
-            print("Error with Logging In: %s", e)
+            print("Error with Logging In:", e)
             thangs_api.importing = False
+            thangs_api.searching = False
             thangs_api.failed = True
-            #f.close()
-            os.remove(bearer_location)
+            tag_redraw_areas()
+            try:
+                f.close()
+                os.remove(bearer_location)
+            except:
+                print("File couldn't be removed.")
         return
 
     def execute(self, _context):

@@ -197,15 +197,8 @@ class ThangsApi:
         self.bearer = data["bearer"]
         f.close()
         return
-
-    def handle_download(self, modelIndex, LicenseURL, fileType, domain):
-        print("self.modelId", self.modelId)
-        print("self.modelTitle", self.modelTitle)
-        self.modelId = str(self.modelId)
-        self.modelTitle = str(self.modelTitle)
-        print("self.modelId", self.modelId)
-        print("self.modelTitle", self.modelTitle)
         
+    def handle_download(self, modelIndex, LicenseURL, fileType, domain):
         self.modelIndex = modelIndex
         self.LicenseURL = LicenseURL
         self.fileType = fileType
@@ -214,7 +207,6 @@ class ThangsApi:
         return True
 
     def download_file(self):
-
         self.importing = True
         self.failed = False
 
@@ -222,9 +214,9 @@ class ThangsApi:
             webbrowser.open(self.LicenseURL, new=0, autoraise=True)
 
         print("Downloading...")
-        """
-        model_title = str(self.modelTitleTest)
-        modelID = str(self.modelIDTest)
+
+        model_title = ""
+        modelID = ""
         if self.modelIndex == 0:
             modelID = str(self.model0)
             model_title = self.modelTitle0
@@ -249,11 +241,11 @@ class ThangsApi:
         elif self.modelIndex == 7:
             modelID = str(self.model7)
             model_title = self.modelTitle7
-        """
+    
+        self.modelID = modelID
 
-        #self.modelId = str(self.modelId)
-        #self.modelID = str(self.modelIDTest)
-        #self.modelTitle = str(self.modelTitleTest)
+        self.modelId = str(modelID)
+        self.modelTitle = str(model_title)
         self.temp_dir = os.path.join(Config.THANGS_MODEL_DIR)
         print("Temp Directory: ", self.temp_dir)
         print("Model ID: ", self.modelId)
