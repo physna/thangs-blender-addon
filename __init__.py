@@ -639,22 +639,29 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     modelURL = model.attribution_url
                     cell = grid.column().box()
 
-                    if z == 0:
-                        icon = fetcher.result1
-                    elif z == 1:
-                        icon = fetcher.result2
-                    elif z == 2:
-                        icon = fetcher.result3
-                    elif z == 3:
-                        icon = fetcher.result4
-                    elif z == 4:
-                        icon = fetcher.result5
-                    elif z == 5:
-                        icon = fetcher.result6
-                    elif z == 6:
-                        icon = fetcher.result7
-                    elif z == 7:
-                        icon = fetcher.result8
+                    iconPostition = fetcher.modelList[z].partSelected
+                    icon = fetcher.modelList[z].parts[iconPostition].iconId
+                    # if z == 0:
+                    #     #icon = fetcher.result1
+                    #     iconPostition = fetcher.modelList[z].partSelected
+                    #     icon = fetcher.modelList[z].parts[iconPostition].iconId
+                    # elif z == 1:
+                    #     icon = fetcher.result2
+                    # elif z == 2:
+                    #     icon = fetcher.result3
+                    # elif z == 3:
+                    #     icon = fetcher.result4
+                    # elif z == 4:
+                    #     icon = fetcher.result5
+                    # elif z == 5:
+                    #     icon = fetcher.result6
+                    # elif z == 6:
+                    #     icon = fetcher.result7
+                    # elif z == 7:
+                    #     icon = fetcher.result8
+                    
+                    print(model)
+                    print(fetcher.modelList[z].partSelected)
 
                     cell.template_icon(
                         icon_value=icon, scale=7)
@@ -946,15 +953,19 @@ def register():
     def dropdown_properties_item_set(index):
         def handler(self, context):
             global fetcher
-            enum_models = getattr(fetcher, "enumModels" + str(index + 1))
+            #enum_models = getattr(fetcher, "enumModels" + str(index + 1))
+            enum_models = getattr(fetcher.modelList[index], "parts")
             #for item in enum_models:
             for i, item in enumerate(enum_models):
-                if item[0] == getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)):
-                    setattr(fetcher, "result" + str(index + 1), item[3])
+                print(item)
+                print(item.partId)
+                if item.partId == getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)):
+                    #setattr(fetcher, "result" + str(index + 1), item.iconId)
+                    setattr(fetcher.modelList[index], "partSelected", item.index)
                     #setattr(thangs_api, "model" + str(index), getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)))
                     #setattr(thangs_api, "modelTitle" + str(index), item[1])
                     setattr(thangs_api, "modelId", getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)))
-                    setattr(thangs_api, "modelTitle", item[1])
+                    setattr(thangs_api, "modelTitle", item.partFileName)
                     #setattr(fetcher.modelsCopy[i], "partSelected", str(index))
                     break
 
@@ -967,7 +978,10 @@ def register():
         def handler(self, context):
             global modelDropdownIndex
             global enumHolders
-            enumHolders[index] = fetcher.enumModelTotal[index]
+            #enumHolders[index] = fetcher.enumModelTotal[index]
+            enumHolders[index].clear()
+            for part in fetcher.modelList[index].parts:
+                enumHolders[index].append((part.partId, part.partFileName, "", part.iconId, part.index))
             return enumHolders[index]
         return handler
 

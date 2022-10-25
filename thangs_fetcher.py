@@ -103,10 +103,9 @@ class ThangsFetcher():
         pass
 
     class PartStruct():
-        def __init__(self, partId, partFileName, description, iconId, fileType, index):
+        def __init__(self, partId, partFileName, fileType, iconId, index):
             self.partId = partId
             self.partFileName = partFileName
-            self.description = description
             self.iconId = iconId
             self.fileType= fileType
             self.index = index
@@ -117,7 +116,6 @@ class ThangsFetcher():
 
     class ModelStruct():
         def __init__(self, partList):
-            #modelTitle = ""
             self.partSelected = 0
             self.parts = partList
             pass
@@ -527,7 +525,7 @@ class ThangsFetcher():
                 z = 0
 
                 test = self.PartStruct(
-                    item["modelId"], item["modelTitle"], "", thumb.icon_id, item["originalFileType"], 0)
+                    item["modelId"], item["modelTitle"], item["originalFileType"], thumb.icon_id, 0)
 
                 self.modelsCopy.append(test)
 
@@ -596,7 +594,7 @@ class ThangsFetcher():
                             (modelID, ModelTitle, ""))
 
                         test = self.PartStruct(
-                                    modelID, ModelTitle, "", "", part["originalFileType"], self.x)
+                                    modelID, ModelTitle, part["originalFileType"], "", self.x)
 
                         self.modelsCopy.append(test)
 
