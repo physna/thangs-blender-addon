@@ -376,18 +376,23 @@ class ImportModelOperator(Operator):
         name="Index",
         description="The index of the model to import"
     )
+    partIndex: IntProperty(
+        name="Part Index",
+        description="The index of the part to import"
+    )
     license_url: StringProperty(
         name="License URL",
         description="Model License",
     )
-    fileType: StringProperty(
-        name="Filetype",
-        description="Original Filetype",
-    )
-    domain: StringProperty(
-        name="Domain",
-        description="Model's Domain",
-    )
+    # fileType: StringProperty(
+    #     name="Filetype",
+    #     description="Original Filetype",
+    # )
+    # domain: StringProperty(
+    #     name="Domain",
+    #     description="Model's Domain",
+    # )
+
 
     # def import_model(self):
     #     global thangs_api
@@ -395,9 +400,10 @@ class ImportModelOperator(Operator):
     #     print("Starting Download")
     #     thangs_api.handle_download(self.modelIndex, )
 
-    def login_user(self, _context, modelIndex, LicenseUrl, fileType, domain):
+    def login_user(self, _context, LicenseUrl, modelIndex, partIndex):
         global thangs_api
         global fetcher
+
         print("Starting Login")
         thangs_login_import = ThangsLogin()
         bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
@@ -428,7 +434,7 @@ class ImportModelOperator(Operator):
             thangs_api.bearer = data["bearer"]
             f.close()
             print("Before Import")
-            thangs_api.handle_download(modelIndex, LicenseUrl, fileType, domain)
+            thangs_api.handle_download(fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
             Model_Event(modelIndex)
         except Exception as e:
             print("Error with Logging In:", e)
@@ -445,7 +451,7 @@ class ImportModelOperator(Operator):
 
     def execute(self, _context):
         print("Starting Login and Import")
-        login_thread = threading.Thread(target=self.login_user, args=(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)).start()
+        login_thread = threading.Thread(target=self.login_user, args=(_context, self.license_url, self.modelIndex, self.partIndex)).start()
         #self.login_user(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)
         return {'FINISHED'}
 
@@ -660,8 +666,8 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     # elif z == 7:
                     #     icon = fetcher.result8
                     
-                    print(model)
-                    print(fetcher.modelList[z].partSelected)
+                    # print(model)
+                    # print(fetcher.modelList[z].partSelected)
 
                     cell.template_icon(
                         icon_value=icon, scale=7)
@@ -711,13 +717,13 @@ class THANGS_PT_model_display(bpy.types.Panel):
                                 'wm.import_model', text="Import Model", icon='IMPORT')
                             props.url = modelURL + \
                                 "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
+                            print(z)
                             props.modelIndex = z
+                            props.partIndex = fetcher.modelList[z].partSelected
                             if model.license_url is not None:
                                 props.license_url = str(model.license_url)
                             else:
                                 props.license_url = ""
-                            props.fileType = model.file_type
-                            props.domain = model.domain
 
                     else:
                         row = col.row()
@@ -746,8 +752,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
                                 props.license_url = str(model.license_url)
                             else:
                                 props.license_url = ""
-                            props.fileType = model.file_type
-                            props.domain = model.domain
                             
                     z = z + 1
                     modelDropdownIndex = modelDropdownIndex + 1
@@ -957,8 +961,8 @@ def register():
             enum_models = getattr(fetcher.modelList[index], "parts")
             #for item in enum_models:
             for i, item in enumerate(enum_models):
-                print(item)
-                print(item.partId)
+                # print(item)
+                # print(item.partId)
                 if item.partId == getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)):
                     #setattr(fetcher, "result" + str(index + 1), item.iconId)
                     setattr(fetcher.modelList[index], "partSelected", item.index)
