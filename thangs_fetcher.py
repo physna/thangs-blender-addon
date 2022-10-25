@@ -356,8 +356,6 @@ class ThangsFetcher():
             self.enumModels8.append(
                 (modelId, ModelTitle, "", thumb.icon_id, X))
 
-        X = X + 1
-
     def get_http_search(self):
         global thangs_config
         # Clean up temporary files from previous attempts
@@ -604,6 +602,8 @@ class ThangsFetcher():
                         thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
                             self.i, self.x, thumbnail, modelID, modelId, ModelTitle,)).start()
 
+                        self.x = self.x + 1
+
                     # self.modelsCopy.append(partsCopy)
                 self.enumModelTotal.append(self.enumModelInfo[:])
 
@@ -659,9 +659,7 @@ class ThangsFetcher():
             # model.partSelected = 1
             # print(model.partSelected)
             for part in model.parts[0]:
-                print(part.partFileName)
-                print("Part Thumbnail ID")
-                print(part.iconId)
+                print(part.partFileName + ": " + str(part.iconId))
 
         return
 
