@@ -318,37 +318,43 @@ class ThangsFetcher():
         except:
             thumb = self.pcoll.load(modelID+str(self.x), filepath, 'IMAGE')
 
+
+        try:
+            self.modelList[I].parts[0][X].iconId = thumb.icon_id
+        except:
+            print("Doesn't exist")
+
         if I == 0:
             self.enumModels1.append(
-                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+                (modelID, ModelTitle, "", thumb.icon_id, X))
 
         elif I == 1:
             self.enumModels2.append(
-                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+                (modelID, ModelTitle, "", thumb.icon_id, X))
 
         elif I == 2:
             self.enumModels3.append(
-                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+                (modelID, ModelTitle, "", thumb.icon_id, X))
 
         elif I == 3:
             self.enumModels4.append(
-                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+                (modelID, ModelTitle, "", thumb.icon_id, X))
 
         elif I == 4:
             self.enumModels5.append(
-                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+                (modelID, ModelTitle, "", thumb.icon_id, X))
 
         elif I == 5:
             self.enumModels6.append(
-                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+                (modelID, ModelTitle, "", thumb.icon_id, X))
 
         elif I == 6:
             self.enumModels7.append(
-                (modelID, ModelTitle, "", thumb.icon_id, X+1))
+                (modelID, ModelTitle, "", thumb.icon_id, X))
 
         else:
             self.enumModels8.append(
-                (modelId, ModelTitle, "", thumb.icon_id, os.X_OK+1))
+                (modelId, ModelTitle, "", thumb.icon_id, X))
 
         X = X + 1
 
@@ -579,7 +585,7 @@ class ThangsFetcher():
 
                 if len(item["parts"]) > 0:
                     parts = item["parts"]
-                    self.x = z
+                    self.x = z + 1
                     #partsCopy = []
                     for part in parts:
                         #partsCopy.append(self.Part(part["modelId"], part["modelFileName"], part["modelDescription"], part["thumbnailUrl"], 0))
@@ -602,9 +608,9 @@ class ThangsFetcher():
                 self.enumModelTotal.append(self.enumModelInfo[:])
 
                 testModel = self.ModelStruct(partList=self.modelsCopy[:])
-
                 print(testModel)
                 self.modelList.append(testModel)
+
                 self.i = self.i + 1
 
         try:
@@ -649,8 +655,13 @@ class ThangsFetcher():
         print("Search Completed!")
 
         for model in self.modelList:
+            # print(model.partSelected)
+            # model.partSelected = 1
+            # print(model.partSelected)
             for part in model.parts[0]:
                 print(part.partFileName)
+                print("Part Thumbnail ID")
+                print(part.iconId)
 
         return
 
