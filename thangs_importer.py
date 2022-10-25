@@ -335,7 +335,7 @@ class ThangsApi:
                 })
 
         try:
-            if self.file_extension == '.zip' or self.file_extension == '.usdz':
+            if self.file_extension == '.zip':
                 self.zipped_file_path = self.file_path
                 if self.unzip_archive():
                     split_tup_top = os.path.splitext(self.modelTitle)
@@ -361,9 +361,31 @@ class ThangsApi:
             elif self.file_extension == '.glb' or self.file_extension == '.gltf':
                 print('gltf + glb import')
                 bpy.ops.import_scene.gltf(filepath=self.file_path, import_pack_images=True, merge_vertices=False, import_shading='NORMALS', guess_original_bind_pose=True, bone_heuristic='TEMPERANCE')
-            elif self.file_extension == '.usd' or self.file_extension == '.usda' or self.file_extension == '.usdc':
+            elif self.file_extension == '.usdz':
                 print('usdz import')
-                bpy.ops.wm.usd_import(filepath=self.file_path, relative_path=True)
+                bpy.ops.wm.usd_import(filepath=self.file_path,
+                                import_cameras=True, 
+                                import_curves=True, 
+                                import_lights=True, 
+                                import_materials=True, 
+                                import_meshes=True, 
+                                import_volumes=True, 
+                                scale=1.0, 
+                                read_mesh_uvs=True, 
+                                read_mesh_colors=False, 
+                                import_subdiv=False, 
+                                import_instance_proxies=True, 
+                                import_visible_only=True,
+                                import_guide=False,
+                                import_proxy=True,
+                                import_render=True,
+                                set_frame_range=True,
+                                relative_path=True,
+                                create_collection=False,
+                                light_intensity_scale=1.0,
+                                mtl_name_collision_mode='MAKE_UNIQUE',
+                                import_usd_preview=True,
+                                set_material_blend=True)
             else:
                 print('stl import')
                 bpy.ops.import_mesh.stl(filepath=self.file_path)
