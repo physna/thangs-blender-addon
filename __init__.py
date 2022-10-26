@@ -1,36 +1,30 @@
 # <pep8 compliant>
-from concurrent.futures import thread
-import webbrowser
 import bpy
-import queue
-from bpy.types import (Panel,
-                       PropertyGroup,
+from bpy.types import (PropertyGroup,
                        Operator,
-                       WindowManager,
                        )
 from bpy.props import (StringProperty,
-                       PointerProperty,
-                       FloatVectorProperty,
                        BoolProperty,
                        IntProperty
                        )
-from bpy_extras.object_utils import AddObjectHelper, object_data_add
-from bpy.app.handlers import persistent
 import bpy.utils.previews
-from urllib.request import urlopen
+
+import webbrowser
 import urllib.parse
 import os
 import json
-from .thangs_login import ThangsLogin, stop_access_grant
-from .thangs_fetcher import ThangsFetcher
-from .thangs_events import ThangsEvents
-from . import addon_updater_ops
-from .config import ThangsConfig, initialize
 import socket
 import platform
 import logging
 import threading
-from .thangs_importer import ThangsApi, initialize_thangs_api, get_thangs_api
+
+from . import addon_updater_ops
+from urllib.request import urlopen
+from .thangs_login import ThangsLogin, stop_access_grant
+from .thangs_fetcher import ThangsFetcher
+from .thangs_events import ThangsEvents
+from .config import ThangsConfig, initialize
+from .thangs_importer import initialize_thangs_api, get_thangs_api#, ThangsApi
 
 log = logging.getLogger(__name__)
 
@@ -837,7 +831,6 @@ def register():
 
     def dropdown_properties_item_callback(index):
         def handler(self, context):
-            global modelDropdownIndex
             global enumHolders
             enumHolders[index].clear()
             for part in fetcher.modelList[index].parts:

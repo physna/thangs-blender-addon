@@ -1,9 +1,10 @@
-from time import sleep 
-from .config import get_config, ThangsConfig
 import uuid, webbrowser, requests, threading
 
+from time import sleep 
+from .config import get_config, ThangsConfig
+
 GRANT_CHECK_INTERVAL_SECONDS=0.5 # 500 milliseconds
-MAX_ATTEMPTS=600 # 5 minutes worth
+MAX_ATTEMPTS=300 # 5 minutes worth
 BLENDER_IS_CLOSED = False
 
 
