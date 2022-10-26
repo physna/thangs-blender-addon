@@ -3,7 +3,7 @@ from .config import get_config, ThangsConfig
 import uuid, webbrowser, requests, threading
 
 GRANT_CHECK_INTERVAL_SECONDS=0.5 # 500 milliseconds
-MAX_ATTEMPTS=60 # 5 minutes worth
+MAX_ATTEMPTS=600 # 5 minutes worth
 BLENDER_IS_CLOSED = False
 
 

@@ -182,7 +182,6 @@ def import_model():
         tag_redraw_areas()
         return
 
-
 initialize(bl_info["version"])
 initialize_thangs_api(callback=import_model)
 fetcher = ThangsFetcher(callback=on_complete_search)
@@ -193,70 +192,43 @@ thangs_api = get_thangs_api()
 execution_queue = thangs_api.execution_queue
 
 ButtonSearch = "Search"
-# Added
 PageNumber = fetcher.PageNumber
-#Results = fetcher.Results
-
 pcoll = fetcher.pcoll
-
 PageTotal = fetcher.PageTotal
 fetcher.thangs_ui_mode = 'SEARCH'
 
-modelDropdownIndex = 0
 resultsToShow = 8
 enumHolders = []
 for x in range(resultsToShow):
     enumHolders.append([])
-
-# enumHolders = [
-#     [],
-#     [],
-#     [],
-#     [],
-#     [],
-#     [],
-#     [],
-#     []
-# ]
-
 
 def setSearch():
     global ButtonSearch
     ButtonSearch = bpy.context.scene.thangs_model_search
     return None
 
-
 def LastPage():
-    if fetcher.searching:
-        return None
-
-    if fetcher.PageNumber == fetcher.PageTotal:
+    if fetcher.PageNumber == fetcher.PageTotal or fetcher.searching:
         return None
     else:
         fetcher.PageNumber = fetcher.PageTotal
         fetcher.search(fetcher.query)
         return None
 
-
 def IncPage():
     if fetcher.searching:
         return None
-    # Pages = Results/7
     if fetcher.PageNumber < fetcher.PageTotal:
         fetcher.PageNumber = fetcher.PageNumber + 1
         fetcher.search(fetcher.query)
     return None
 
-
 def DecPage():
-    if fetcher.searching:
-        return None
-    if fetcher.PageNumber == 1:
+    if fetcher.PageNumber == 1 or fetcher.searching:
         return None
     fetcher.PageNumber = fetcher.PageNumber - 1
     fetcher.search(fetcher.query)
     return None
-
 
 def FirstPage():
     if fetcher.searching:
@@ -264,7 +236,6 @@ def FirstPage():
     fetcher.PageNumber = 1
     fetcher.search(fetcher.query)
     return None
-
 
 class SearchButton(bpy.types.Operator):
     """Searches Thangs for Meshes"""
@@ -275,7 +246,6 @@ class SearchButton(bpy.types.Operator):
         setSearch()
         return {'FINISHED'}
 
-
 class LastPageChange(bpy.types.Operator):
     """Go to Last Page"""
     bl_idname = "lastpage.thangs"
@@ -284,7 +254,6 @@ class LastPageChange(bpy.types.Operator):
     def execute(self, context):
         LastPage()
         return {'FINISHED'}
-
 
 class IncPageChange(bpy.types.Operator):
     """Go to Next Page"""
@@ -295,7 +264,6 @@ class IncPageChange(bpy.types.Operator):
         IncPage()
         return {'FINISHED'}
 
-
 class DecPageChange(bpy.types.Operator):
     """Go to Previous Page"""
     bl_idname = "decpage.thangs"
@@ -304,7 +272,6 @@ class DecPageChange(bpy.types.Operator):
     def execute(self, context):
         DecPage()
         return {'FINISHED'}
-
 
 class FirstPageChange(bpy.types.Operator):
     """Go to First Page"""
@@ -389,21 +356,6 @@ class ImportModelOperator(Operator):
         name="License URL",
         description="Model License",
     )
-    # fileType: StringProperty(
-    #     name="Filetype",
-    #     description="Original Filetype",
-    # )
-    # domain: StringProperty(
-    #     name="Domain",
-    #     description="Model's Domain",
-    # )
-
-
-    # def import_model(self):
-    #     global thangs_api
-    #     global fetcher
-    #     print("Starting Download")
-    #     thangs_api.handle_download(self.modelIndex, )
 
     def login_user(self, _context, LicenseUrl, modelIndex, partIndex):
         global thangs_api
@@ -457,9 +409,7 @@ class ImportModelOperator(Operator):
     def execute(self, _context):
         print("Starting Login and Import")
         login_thread = threading.Thread(target=self.login_user, args=(_context, self.license_url, self.modelIndex, self.partIndex)).start()
-        #self.login_user(_context, self.modelIndex, self.license_url, self.fileType, self.domain,)
         return {'FINISHED'}
-
 
 class BrowseToLicenseOperator(Operator):
     """Open model license in browser"""
@@ -536,7 +486,6 @@ class ThangsLink(bpy.types.Operator):
                         "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
         return {'FINISHED'}
 
-
 icon_collections = {}
 icons_dict = bpy.utils.previews.new()
 icon_collections["main"] = icons_dict
@@ -545,10 +494,8 @@ icons_dir = os.path.join(os.path.dirname(__file__), "icons")
 icons_dict.load("ThangsT", os.path.join(icons_dir, "T.png"), 'IMAGE')
 icons_dict.load("CreativeC", os.path.join(icons_dir, "CC-Thin.png"), 'IMAGE')
 
-
 class THANGS_OT_search_invoke(Operator):
     """Search for Query"""
-
     bl_idname = "thangs.search_invoke"
     bl_label = "Clear Search   "
     bl_description = "Clear the Search"
@@ -560,7 +507,7 @@ class THANGS_OT_search_invoke(Operator):
         if fetcher.searching:
             return {'FINISHED'}
         print("Changed Mode to " + str(fetcher.thangs_ui_mode))
-        # If adding a new plant, start off with the defaults
+
         if fetcher.thangs_ui_mode == 'SEARCH':
             self.next_mode == 'VIEW'
         else:
@@ -578,7 +525,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
     bl_category = "Thangs Search"
 
     def next_mode(self, op):
-        # modes: ADD, EDIT, SELECT, SELECT_ADD, VIEW
+        # modes: SEARCH, VIEW
         ops = ['SEARCH', 'VIEW']
         m = fetcher.thangs_ui_mode
         nm = m
@@ -644,35 +591,13 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
                 grid = layout.grid_flow(
                     columns=1, even_columns=True, even_rows=True)
+
                 z = 0
-                modelDropdownIndex = 0
                 for model in fetcher.pcoll.Model:
                     modelURL = model.attribution_url
                     cell = grid.column().box()
 
-                    iconPostition = fetcher.modelList[z].partSelected
-                    icon = fetcher.modelList[z].parts[iconPostition].iconId
-                    # if z == 0:
-                    #     #icon = fetcher.result1
-                    #     iconPostition = fetcher.modelList[z].partSelected
-                    #     icon = fetcher.modelList[z].parts[iconPostition].iconId
-                    # elif z == 1:
-                    #     icon = fetcher.result2
-                    # elif z == 2:
-                    #     icon = fetcher.result3
-                    # elif z == 3:
-                    #     icon = fetcher.result4
-                    # elif z == 4:
-                    #     icon = fetcher.result5
-                    # elif z == 5:
-                    #     icon = fetcher.result6
-                    # elif z == 6:
-                    #     icon = fetcher.result7
-                    # elif z == 7:
-                    #     icon = fetcher.result8
-                    
-                    # print(model)
-                    # print(fetcher.modelList[z].partSelected)
+                    icon = fetcher.modelList[z].parts[fetcher.modelList[z].partSelected].iconId
 
                     cell.template_icon(
                         icon_value=icon, scale=7)
@@ -700,7 +625,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
                         row.enabled = False
                         props = row.operator(
                             'wm.browse_to_license', text="{}".format("No License"))
-                        #props.url = ""
+
                     else:
                         props = row.operator(
                             'wm.browse_to_license', text="{}".format("See License"))
@@ -737,15 +662,13 @@ class THANGS_PT_model_display(bpy.types.Panel):
                         mytool = scene.my_tool
                         dropdown = row.prop(mytool, "dropdown_Parts{}".format(z))
 
-
-                        # if fetcher.length[z] == 1:
-                        #     dropdown.enabled = False
                         if thangs_api.import_limit == True:
                             props = cell.operator(
                             'wm.browse_to_model', text="%s" % model.title, icon='URL')
                             props.url = modelURL + \
                                 "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                             props.modelIndex = z
+                            props.partIndex = fetcher.modelList[z].partSelected
                         else:
                             props = cell.operator(
                                 'wm.import_model', text="Import Model", icon='IMPORT')
@@ -756,10 +679,8 @@ class THANGS_PT_model_display(bpy.types.Panel):
                             if model.license_url is not None:
                                 props.license_url = str(model.license_url)
                             else:
-                                props.license_url = ""
-                            
+                                props.license_url = ""       
                     z = z + 1
-                    modelDropdownIndex = modelDropdownIndex + 1
 
                 row = layout.row()
                 row.ui_units_y = .9
@@ -835,7 +756,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
     def drawSearch(self, context):
         layout = self.layout
-
         wm = context.window_manager
 
         col = layout.column(align=True)
@@ -870,18 +790,15 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
 preview_collections = fetcher.preview_collections
 
-
 def startSearch(self, value):
     queryText = bpy.context.scene.thangs_model_search
     fetcher.search(query=queryText)
-
 
 def heartbeat_timer():
     log.info('sending thangs heartbeat')
     amplitude.send_amplitude_event(
         "Thangs Blender Addon - Heartbeat", event_properties={})
     return 300
-
 
 def open_timer():
     log.info('sending thangs open')
@@ -903,7 +820,6 @@ def execute_queued_functions():
         function()
     return 1.0
 
-
 def register():
     global fetcher
     from bpy.types import WindowManager
@@ -915,19 +831,15 @@ def register():
     )
     import bpy.utils.previews
 
-
-    # Added
     WindowManager.Model_page = IntProperty(
         name="Current Page",
         default=0
     )
-
     WindowManager.Model_dir = StringProperty(
         name="Folder Path",
         subtype='DIR_PATH',
         default=""
     )
-
     WindowManager.Model = EnumProperty(
         name="",
         description="Click to view all results",
@@ -938,7 +850,6 @@ def register():
     fetcher.icons_dict = bpy.utils.previews.new()
     fetcher.pcoll.Model_dir = ""
     fetcher.pcoll.Model = []
-    # Added
     fetcher.pcoll.Model_page = 1
 
     fetcher.preview_collections["main"] = fetcher.pcoll
@@ -962,32 +873,19 @@ def register():
     def dropdown_properties_item_set(index):
         def handler(self, context):
             global fetcher
-            #enum_models = getattr(fetcher, "enumModels" + str(index + 1))
             enum_models = getattr(fetcher.modelList[index], "parts")
-            #for item in enum_models:
             for i, item in enumerate(enum_models):
-                # print(item)
-                # print(item.partId)
                 if item.partId == getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)):
-                    #setattr(fetcher, "result" + str(index + 1), item.iconId)
                     setattr(fetcher.modelList[index], "partSelected", item.index)
-                    #setattr(thangs_api, "model" + str(index), getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)))
-                    #setattr(thangs_api, "modelTitle" + str(index), item[1])
                     setattr(thangs_api, "modelId", getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)))
                     setattr(thangs_api, "modelTitle", item.partFileName)
-                    #setattr(fetcher.modelsCopy[i], "partSelected", str(index))
                     break
-
-            #for i, item in enumerate(fetcher.modelsCopy):
-                #if getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)) == fetcher.modelsCopy[i]
-                #fetcher.modelsCopy[index].partSelected = 
         return handler
 
     def dropdown_properties_item_callback(index):
         def handler(self, context):
             global modelDropdownIndex
             global enumHolders
-            #enumHolders[index] = fetcher.enumModelTotal[index]
             enumHolders[index].clear()
             for part in fetcher.modelList[index].parts:
                 enumHolders[index].append((part.partId, part.partFileName, "", part.iconId, part.index))
@@ -1010,7 +908,6 @@ def register():
     bpy.utils.register_class(DropdownProperties)
     bpy.types.Scene.my_tool = bpy.props.PointerProperty(
         type=DropdownProperties)
-
     bpy.types.Scene.thangs_model_search = bpy.props.StringProperty(
         name="",
         description="Search by text or 'Exact Phrase'",
@@ -1058,7 +955,6 @@ def unregister():
     bpy.utils.unregister_class(ImportModelOperator)
     bpy.utils.unregister_class(BrowseToLicenseOperator)
     bpy.utils.unregister_class(BrowseToCreatorOperator)
-    #bpy.utils.register_class(DropdownProperties)
     bpy.utils.unregister_class(SearchBySelect)
     bpy.utils.unregister_class(BrowseToModelOperator)
 

@@ -303,58 +303,24 @@ class ThangsFetcher():
                 self.PageTotal = math.ceil(self.totalModels/8)
         # Add in event Code
 
-    def get_lazy_thumbs(self, I, X, thumbnail, modelID, modelId, ModelTitle):
-        print("Getting Thumbnail for {0}".format(modelID))
+    def get_lazy_thumbs(self, I, X, thumbnail, modelID,):
         try:
             print(f'Fetching part {thumbnail}')
             filePath = urllib.request.urlretrieve(thumbnail)
             filepath = os.path.join(modelID, filePath[0])
         except:
             filePath = Path(__file__ + "\icons\placeholder.png")
-            filepath = os.path.join(modelId, filePath)
+            filepath = os.path.join(modelID, filePath)
 
         try:
             thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
         except:
-            thumb = self.pcoll.load(modelID+str(self.x), filepath, 'IMAGE')
-
+            thumb = self.pcoll.load(modelID+str(X), filepath, 'IMAGE')
 
         try:
             self.modelList[I].parts[X].iconId = thumb.icon_id
         except:
-            print("Doesn't exist")
-
-        # if I == 0:
-        #     self.enumModels1.append(
-        #         (modelID, ModelTitle, "", thumb.icon_id, X))
-
-        # elif I == 1:
-        #     self.enumModels2.append(
-        #         (modelID, ModelTitle, "", thumb.icon_id, X))
-
-        # elif I == 2:
-        #     self.enumModels3.append(
-        #         (modelID, ModelTitle, "", thumb.icon_id, X))
-
-        # elif I == 3:
-        #     self.enumModels4.append(
-        #         (modelID, ModelTitle, "", thumb.icon_id, X))
-
-        # elif I == 4:
-        #     self.enumModels5.append(
-        #         (modelID, ModelTitle, "", thumb.icon_id, X))
-
-        # elif I == 5:
-        #     self.enumModels6.append(
-        #         (modelID, ModelTitle, "", thumb.icon_id, X))
-
-        # elif I == 6:
-        #     self.enumModels7.append(
-        #         (modelID, ModelTitle, "", thumb.icon_id, X))
-
-        # else:
-        #     self.enumModels8.append(
-        #         (modelId, ModelTitle, "", thumb.icon_id, X))
+            print("Thumbnail Doesn't Exist")
 
     def get_http_search(self):
         global thangs_config
@@ -373,7 +339,6 @@ class ThangsFetcher():
         })
 
         # Get the preview collection (defined in register func).
-
         self.pcoll = self.preview_collections["main"]
 
         if self.CurrentPage == self.pcoll.Model_page:
@@ -393,27 +358,11 @@ class ThangsFetcher():
 
         self.models.clear()
 
-        # self.enumModels1.clear()
-        # self.enumModels2.clear()
-        # self.enumModels3.clear()
-        # self.enumModels4.clear()
-        # self.enumModels5.clear()
-        # self.enumModels6.clear()
-        # self.enumModels7.clear()
-        # self.enumModels8.clear()
-        # self.enumModelInfo.clear()
-        # self.enumModelTotal.clear()
-        # self.thumbnailNumbers.clear()
-
         self.Directory = self.query
-        # Added
         self.CurrentPage = self.PageNumber
 
         # Get the preview collection (defined in register func).
-
         self.pcoll = self.preview_collections["main"]
-
-        # Added
 
         for pcoll in self.preview_collections.values():
             bpy.utils.previews.remove(pcoll)
@@ -461,7 +410,7 @@ class ThangsFetcher():
 
         else:
             responseData = response.json()
-            items = responseData["results"]  # Each model result is X
+            items = responseData["results"]
             if self.newSearch == True:
                 self.uuid = str(uuid.uuid4())
                 self.searchMetaData = responseData["searchMetadata"]
@@ -475,25 +424,19 @@ class ThangsFetcher():
 
             self.get_total_results(response)
 
-            self.i = 0
-
             # ugh
             old_context = ssl._create_default_https_context
             ssl._create_default_https_context = ssl._create_unverified_context
 
             self.modelList.clear()
-
+            I = 0
             for item in items:
                 self.modelsCopy.clear()
-                # self.enumModelInfo.clear()
 
                 if len(item["thumbnails"]) > 0:
                     thumbnail = item["thumbnails"][0]
                 else:
                     thumbnail = item["thumbnailUrl"]
-
-                modelTitle = item["modelTitle"]
-                modelId = item["modelId"]
 
                 self.models.append(ModelInfo(
                     item["modelId"],
@@ -504,115 +447,41 @@ class ThangsFetcher():
                     item["domain"],
                     item["scope"],
                     item["originalFileType"],
-                    (((self.CurrentPage - 1) * 8) + self.i)
+                    (((self.CurrentPage - 1) * 8) + I)
                 ))
 
                 try:
                     print(f'Fetching {thumbnail}')
                     filePath = urllib.request.urlretrieve(thumbnail)
-                    filepath = os.path.join(modelId, filePath[0])
+                    filepath = os.path.join(item["modelId"], filePath[0])
                 except:
                     filePath = Path(__file__ + "\icons\placeholder.png")
-                    filepath = os.path.join(modelId, filePath)
+                    filepath = os.path.join(item["modelId"], filePath)
 
                 try:
-                    thumb = self.pcoll.load(modelId, filepath, 'IMAGE')
+                    thumb = self.pcoll.load(item["modelId"], filepath, 'IMAGE')
                 except:
                     thumb = self.pcoll.load(
-                        modelId+str(self.i), filepath, 'IMAGE')
-
-                #self.thumbnailNumbers.append(thumb.icon_id)
-
-                z = 0
-
-                # test = self.PartStruct(
-                #     item["modelId"], item["modelTitle"], item["originalFileType"], thumb.icon_id, item["domain"], 0)
+                        item["modelId"]+str(I), filepath, 'IMAGE')
 
                 self.modelsCopy.append(self.PartStruct(item["modelId"], item["modelTitle"], item["originalFileType"], thumb.icon_id, item["domain"], 0))
 
-                # self.enumModelInfo.append(
-                #     (modelId, item["modelFileName"], ""))  # , z))
-
-                # if self.i == 0:
-                #     self.enumModels1.append(
-                #         (modelId, item["modelFileName"], "", thumb.icon_id, z))
-                #     self.thangs_api.model0 = modelId
-                #     self.thangs_api.modelTitle0 = item["modelFileName"]
-
-                # elif self.i == 1:
-                #     self.enumModels2.append(
-                #         (modelId, modelTitle, "", thumb.icon_id, z))
-                #     self.thangs_api.model1 = modelId
-                #     self.thangs_api.modelTitle1 = modelTitle
-
-                # elif self.i == 2:
-                #     self.enumModels3.append(
-                #         (modelId, modelTitle, "", thumb.icon_id, z))
-                #     self.thangs_api.model2 = modelId
-                #     self.thangs_api.modelTitle2 = modelTitle
-
-                # elif self.i == 3:
-                #     self.enumModels4.append(
-                #         (modelId, modelTitle, "", thumb.icon_id, z))
-                #     self.thangs_api.model3 = modelId
-                #     self.thangs_api.modelTitle3 = modelTitle
-
-                # elif self.i == 4:
-                #     self.enumModels5.append(
-                #         (modelId, modelTitle, "", thumb.icon_id, z))
-                #     self.thangs_api.model4 = modelId
-                #     self.thangs_api.modelTitle4 = modelTitle
-
-                # elif self.i == 5:
-                #     self.enumModels6.append(
-                #         (modelId, modelTitle, "", thumb.icon_id, z))
-                #     self.thangs_api.model5 = modelId
-                #     self.thangs_api.modelTitle5 = modelTitle
-
-                # elif self.i == 6:
-                #     self.enumModels7.append(
-                #         (modelId, modelTitle, "", thumb.icon_id, z))
-                #     self.thangs_api.model6 = modelId
-                #     self.thangs_api.modelTitle6 = modelTitle
-
-                # else:
-                #     self.enumModels8.append(
-                #         (modelId, modelTitle, "", thumb.icon_id, z))
-                #     self.thangs_api.model7 = modelId
-                #     self.thangs_api.modelTitle7 = modelTitle
-
                 if len(item["parts"]) > 0:
                     parts = item["parts"]
-                    self.x = z + 1
-                    #partsCopy = []
+                    X = 1
                     for part in parts:
-                        #partsCopy.append(self.Part(part["modelId"], part["modelFileName"], part["modelDescription"], part["thumbnailUrl"], 0))
-
-                        # ModelTitle = part["modelFileName"]
-                        #modelID = part["modelId"]
-                        #thumbnail = part["thumbnailUrl"]
-                        # self.enumModelInfo.append(
-                        #     (modelID, ModelTitle, ""))
-
-                        # test = self.PartStruct(
-                        #             modelID, ModelTitle, part["originalFileType"], "", part["domain"], self.x)
-
+                        print("Getting Thumbnail for {0}".format(part["modelId"]))
                         self.modelsCopy.append(self.PartStruct(
-                                    part["modelId"], part["modelFileName"], part["originalFileType"], "", part["domain"], self.x))
-
+                                    part["modelId"], part["modelFileName"], part["originalFileType"], "", part["domain"], X))
+                        
                         thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
-                            self.i, self.x, part["thumbnailUrl"], part["modelId"], modelId, part["modelFileName"],)).start()
+                            I, X, part["thumbnailUrl"], part["modelId"],)).start()
 
-                        self.x = self.x + 1
+                        X = X + 1
 
-                    # self.modelsCopy.append(partsCopy)
-               # self.enumModelTotal.append(self.enumModelInfo[:])
+                self.modelList.append(self.ModelStruct(partList=self.modelsCopy[:]))
 
-                testModel = self.ModelStruct(partList=self.modelsCopy[:])
-                print(testModel)
-                self.modelList.append(testModel)
-
-                self.i = self.i + 1
+                I = I + 1
 
         try:
             ssl._create_default_https_context = old_context
@@ -622,27 +491,8 @@ class ThangsFetcher():
             self.searching = False
             return
 
-        # if self.enumModels1:
-        #     self.result1 = self.enumModels1[0][3]
-        # if self.enumModels2:
-        #     self.result2 = self.enumModels2[0][3]
-        # if self.enumModels3:
-        #     self.result3 = self.enumModels3[0][3]
-        # if self.enumModels4:
-        #     self.result4 = self.enumModels4[0][3]
-        # if self.enumModels5:
-        #     self.result5 = self.enumModels5[0][3]
-        # if self.enumModels6:
-        #     self.result6 = self.enumModels6[0][3]
-        # if self.enumModels7:
-        #     self.result7 = self.enumModels7[0][3]
-        # if self.enumModels8:
-        #     self.result8 = self.enumModels8[0][3]
-
         self.pcoll.Model = self.models
         self.pcoll.Model_dir = self.Directory
-        # Added
-
         self.pcoll.Model_page = self.CurrentPage
 
         self.searching = False
@@ -654,14 +504,6 @@ class ThangsFetcher():
             self.search_callback()
 
         print("Search Completed!")
-
-        for model in self.modelList:
-            # print(model.partSelected)
-            # model.partSelected = 1
-            # print(model.partSelected)
-            for part in model.parts:
-                print(part.partFileName + ": " + str(part.iconId))
-
         return
 
     def get_stl_search(self, stl_path):
@@ -672,47 +514,14 @@ class ThangsFetcher():
 
         self.CurrentPage = self.PageNumber
 
-        # self.amplitude.send_amplitude_event("Text Search Started", event_properties={
-        #     'searchTerm': self.query,
-        # })
-
         self.pcoll = self.preview_collections["main"]
 
-        # if self.CurrentPage == self.pcoll.Model_page:
-        #     if self.Directory == self.pcoll.Model_dir:
-        #         self.searching = False
-        #         self.search_callback()
-        #         return
-        #     else:
-        #         self.newSearch = True
-        #         self.PageNumber = 1
-        #         self.CurrentPage = 1
-
-        # if self.Directory == "" or self.Directory.isspace():
-        #     self.searching = False
-        #     self.search_callback()
-        #     return
-
         self.models.clear()
-        # self.enumModels1.clear()
-        # self.enumModels2.clear()
-        # self.enumModels3.clear()
-        # self.enumModels4.clear()
-        # self.enumModels5.clear()
-        # self.enumModels6.clear()
-        # self.enumModels7.clear()
-        # self.enumModels8.clear()
-        # self.enumModelInfo.clear()
-        # self.enumModelTotal.clear()
-
-        # self.thumbnailNumbers.clear()
 
         self.Directory = self.query
-        # Added
         self.CurrentPage = self.PageNumber
 
         # Get the preview collection (defined in register func).
-
         self.pcoll = self.preview_collections["main"]
 
         # Added
