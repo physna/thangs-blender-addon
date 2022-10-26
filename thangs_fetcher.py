@@ -116,8 +116,9 @@ class ThangsFetcher():
             return str(self.partId)
 
     class ModelStruct():
-        def __init__(self, partList):
+        def __init__(self, modelTitle, partList):
             self.partSelected = 0
+            self.modelTitle = modelTitle
             self.parts = partList
             pass
 
@@ -464,7 +465,7 @@ class ThangsFetcher():
                     thumb = self.pcoll.load(
                         item["modelId"]+str(I), filepath, 'IMAGE')
 
-                self.modelsCopy.append(self.PartStruct(item["modelId"], item["modelTitle"], item["originalFileType"], thumb.icon_id, item["domain"], 0))
+                self.modelsCopy.append(self.PartStruct(item["modelId"], item["modelFileName"], item["originalFileType"], thumb.icon_id, item["domain"], 0))
 
                 if len(item["parts"]) > 0:
                     parts = item["parts"]
@@ -479,7 +480,7 @@ class ThangsFetcher():
 
                         X = X + 1
 
-                self.modelList.append(self.ModelStruct(partList=self.modelsCopy[:]))
+                self.modelList.append(self.ModelStruct(modelTitle= item["modelTitle"], partList=self.modelsCopy[:]))
 
                 I = I + 1
 

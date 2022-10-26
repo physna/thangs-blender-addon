@@ -110,8 +110,6 @@ class ThangsApi:
         
         self.deviceId = ""
         self.LicenseURL = ""
-        self.fileType = ""
-        self.domain = ""
         self.bearer = ""
         self.modelTitle = ""
         
@@ -163,14 +161,14 @@ class ThangsApi:
         print("Downloading...")
 
         self.temp_dir = os.path.join(Config.THANGS_MODEL_DIR)
-        print("Temp Directory: ", self.temp_dir)
-        print("Model ID: ", self.model.partId)
-        print("Model Title: ", self.model.partFileName)
+        print("Temp Directory: ",self.temp_dir)
+        print("Model ID: ",self.model.partId)
+        print("Model Title: ",self.model.partFileName)
         fileDownloaded = [item for item in _files_list if item[0] == self.model.partId and item[1] == self.model.partFileName]
 
         if len(fileDownloaded) < 1:
             headers = {"Authorization": "Bearer "+self.bearer,}
-            print("URL: ", self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url")
+            print("URL: ",self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url")
             try:
                 response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
             except:
@@ -230,7 +228,7 @@ class ThangsApi:
                         f.write(data)
                         done = int(100 * dl / total_length)
                         wm.progress_update(done)
-                        print("filedata: ", done)
+                        print("Filedata: ",done)
 
             _files_list.append(tuple((self.model.partId, self.model.partFileName, filename)))
             wm.progress_end()
@@ -248,6 +246,78 @@ class ThangsApi:
             print('Model Already Downloaded')
         
         self.run_in_main_thread(self.import_callback)
+
+    def import_model(self):
+        print("Starting File Import")
+
+        self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
+                    'extension': self.model.fileType,
+                    'domain': self.model.domain,
+                })
+
+        try:
+            if self.file_extension == '.zip':
+                self.zipped_file_path = self.file_path
+                if self.unzip_archive():
+                    split_tup_top = os.path.splitext(self.modelTitle)
+                    self.file_extension = split_tup_top[1]
+                    self.file_path = os.path.join(self.temp_dir, self.modelTitle)
+                else:
+                    raise Exception("Unzipping didn't complete")
+        except:
+            print('Unzip error')
+            self.importing = False
+            return
+        
+        print("File Path: ", self.file_path)
+        print("File Extension: ", self.file_extension)
+
+        try:
+            if self.file_extension == '.fbx':
+                print('FBX Import')
+                bpy.ops.import_scene.fbx(filepath=self.file_path)
+            elif self.file_extension == '.obj':
+                print('OBJ Import')
+                bpy.ops.import_scene.obj(filepath=self.file_path)
+            elif self.file_extension == '.glb' or self.file_extension == '.gltf':
+                print('GLTF/GLB Import')
+                bpy.ops.import_scene.gltf(filepath=self.file_path, import_pack_images=True, merge_vertices=False, import_shading='NORMALS', guess_original_bind_pose=True, bone_heuristic='TEMPERANCE')
+            elif self.file_extension == '.usdz':
+                print('USDZ Import')
+                bpy.ops.wm.usd_import(filepath=self.file_path,
+                                import_cameras=True, 
+                                import_curves=True, 
+                                import_lights=True, 
+                                import_materials=True, 
+                                import_meshes=True, 
+                                import_volumes=True, 
+                                scale=1.0, 
+                                read_mesh_uvs=True, 
+                                read_mesh_colors=False, 
+                                import_subdiv=False, 
+                                import_instance_proxies=True, 
+                                import_visible_only=True,
+                                import_guide=False,
+                                import_proxy=True,
+                                import_render=True,
+                                set_frame_range=True,
+                                relative_path=True,
+                                create_collection=False,
+                                light_intensity_scale=1.0,
+                                mtl_name_collision_mode='MAKE_UNIQUE',
+                                import_usd_preview=True,
+                                set_material_blend=True)
+            else:
+                print('STL Import')
+                bpy.ops.import_mesh.stl(filepath=self.file_path)
+        except:
+            print('Failed to Import')
+            return
+            
+        print("Imported")
+
+        self.importing = False
+        return
 
     def unzip_archive(self):
         if os.path.exists(self.zipped_file_path):

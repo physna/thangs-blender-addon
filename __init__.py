@@ -131,56 +131,9 @@ def on_complete_search():
     return
 
 def import_model():
-        print("Starting File Import")
-
-        thangs_api.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
-                    'extension': thangs_api.fileType,
-                    'domain': thangs_api.domain,
-                })
-
-        try:
-            if thangs_api.file_extension == '.zip' or thangs_api.file_extension == '.usdz':
-                thangs_api.zipped_file_path = thangs_api.file_path
-                if thangs_api.unzip_archive():
-                    split_tup_top = os.path.splitext(thangs_api.modelTitle)
-                    thangs_api.file_extension = split_tup_top[1]
-                    thangs_api.file_path = os.path.join(thangs_api.temp_dir, thangs_api.modelTitle)
-                else:
-                    raise Exception("Unzipping didn't complete")
-        except:
-            print('Unzip error')
-            thangs_api.importing = False
-            return
-        
-        print("File Path: ",thangs_api.file_path)
-        print("File Extension: ",thangs_api.file_extension)
-
-        try:
-            if thangs_api.file_extension == '.fbx':
-                print('fbx import')
-                bpy.ops.import_scene.fbx(filepath=thangs_api.file_path)
-            elif thangs_api.file_extension == '.obj':
-                print('obj import')
-                bpy.ops.import_scene.obj(filepath=thangs_api.file_path)
-            elif thangs_api.file_extension == '.glb' or thangs_api.file_extension == '.gltf':
-                print('gltf + glb import')
-                bpy.ops.import_scene.gltf(filepath=thangs_api.file_path, import_pack_images=True, merge_vertices=False, import_shading='NORMALS', guess_original_bind_pose=True, bone_heuristic='TEMPERANCE')
-            elif thangs_api.file_extension == '.usd' or thangs_api.file_extension == '.usda' or thangs_api.file_extension == '.usdc':
-                print('usdz import')
-                bpy.ops.wm.usd_import(filepath=thangs_api.file_path, relative_path=True)
-            else:
-                print('stl import')
-                bpy.ops.import_mesh.stl(filepath=thangs_api.file_path)
-        except:
-            print('Failed to Import')
-            return
-            
-        print("Imported")
-
-        thangs_api.importing = False
-
-        tag_redraw_areas()
-        return
+    thangs_api.import_model()
+    tag_redraw_areas()
+    return
 
 initialize(bl_info["version"])
 initialize_thangs_api(callback=import_model)
@@ -596,6 +549,8 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 for model in fetcher.pcoll.Model:
                     modelURL = model.attribution_url
                     cell = grid.column().box()
+
+                    modelTitleRow = cell.row().label(text=str(fetcher.modelList[z].modelTitle))
 
                     icon = fetcher.modelList[z].parts[fetcher.modelList[z].partSelected].iconId
 
