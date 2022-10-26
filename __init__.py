@@ -307,7 +307,7 @@ class ImportModelOperator(Operator):
     def login_user(self, _context, LicenseUrl, modelIndex, partIndex):
         global thangs_api
         global fetcher
-
+        
         print("Starting Login")
         thangs_login_import = ThangsLogin()
         bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
