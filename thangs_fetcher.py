@@ -388,13 +388,13 @@ class ThangsFetcher():
 
                 self.models.append(ModelInfo(
                     item["modelId"],
-                    item["modelTitle"],
+                    item.get('modelTitle') or item.get('modelFileName'),
                     item['attributionUrl'],
                     item["ownerUsername"],
                     item["license"],
                     item["domain"],
                     item["scope"],
-                    item["originalFileType"],
+                    item.get("originalFileType"),
                     (((self.CurrentPage - 1) * 8) + I)
                 ))
 
@@ -412,7 +412,7 @@ class ThangsFetcher():
                     thumb = self.pcoll.load(
                         item["modelId"]+str(I), filepath, 'IMAGE')
 
-                self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item["originalFileType"], thumb.icon_id, item["domain"], 0))
+                self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get("originalFileType"), thumb.icon_id, item["domain"], 0))
 
                 if len(item["parts"]) > 0:
                     parts = item["parts"]
@@ -420,14 +420,15 @@ class ThangsFetcher():
                     for part in parts:
                         print("Getting Thumbnail for {0}".format(part["modelId"]))
                         self.partList.append(self.PartStruct(
-                                    part["modelId"], part["modelFileName"], part["originalFileType"], "", part["domain"], X))
+                                    part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
                         
                         thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
                             I, X, part["thumbnailUrl"], part["modelId"],)).start()
 
                         X += 1
 
-                self.modelList.append(self.ModelStruct(modelTitle= item["modelTitle"], partList=self.partList[:]))
+                title = item.get('modelTitle') or item.get('modelFileName')
+                self.modelList.append(self.ModelStruct(modelTitle=title, partList=self.partList[:]))
 
                 I += 1
 
