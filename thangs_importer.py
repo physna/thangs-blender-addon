@@ -1,28 +1,17 @@
+import bpy
 import os
 import urllib
 import requests
 import shutil
-from .config import get_config
-from .thangs_events import ThangsEvents
-from .thangs_login import ThangsLogin
 import platform
 import socket
 import webbrowser
 import json
 import queue
-import bpy
-from bpy.types import WindowManager
-import bpy.utils.previews
-from bpy.types import (Panel,
-                       PropertyGroup,
-                       Operator,
-                       )
-from bpy.props import (StringProperty,
-                       PointerProperty,
-                       FloatVectorProperty,
-                       )
-from bpy_extras.object_utils import AddObjectHelper, object_data_add
-from bpy.app.handlers import persistent
+
+from .config import get_config
+from .thangs_events import ThangsEvents
+from .thangs_login import ThangsLogin
 
 _thangs_api = None
 _files_list = []
@@ -30,7 +19,6 @@ _files_list = []
 def get_thangs_api():
     global _thangs_api
     return _thangs_api
-
 
 def initialize_thangs_api(callback):
     global _thangs_api
@@ -94,70 +82,26 @@ class Utils:
 
 class ThangsApi:
     def __init__(self, callback=None):
+        self.import_callback = callback
+        self.Thangs_Config = get_config()
         self.amplitude = ThangsEvents()
+
         self.amplitude.deviceId = socket.gethostname().split(".")[0]
         self.amplitude.deviceOs = platform.system()
         self.amplitude.deviceVer = platform.release()
-        self.access_token = ''
-        self.api_token = ''
+        self.execution_queue = queue.Queue()
+        
         self.headers = {}
-        self.username = ''
-        self.thumbnails = []
-        self.context = ""
-        self.thangs_ui_mode = ''
-        self.modelIds = []
-        self.modelTitles = []
-        self.filePaths = []
-        self.modelInfo = []
-        self.enumItems = []
-        self.licenses = []
-        self.creators = []
-        self.filetype = []
-        self.totalModels = 0
-        self.Counter = 0
-        self.pcoll = ""
-        self.PageNumber = 1
-        self.Directory = ""
-        self.PageTotal = 0
-        self.preview_collections = {}
-        self.eventCall = ""
-        self.CurrentPage = 1
-        self.searching = False
+
         self.failed = False
         self.importing = False
         self.import_limit = False
-        self.query = ""
+        
         self.deviceId = ""
-        self.ampURL = ''
-        self.execution_queue = queue.Queue()
-        self.import_thread = None
-        self.model_thread = None
-        self.import_callback = callback
-        self.model_path = ""
-        self.uid = ""
-        self.Thangs_Config = get_config()
-        self.modelID = ""
-        self.modelIndex = 0
         self.LicenseURL = ""
-        self.fileType = ""
-        self.domain = ""
         self.bearer = ""
-        self.model0 = ""
-        self.model1 = ""
-        self.model2 = ""
-        self.model3 = ""
-        self.model4 = ""
-        self.model5 = ""
-        self.model6 = ""
-        self.model7 = ""
-        self.modelTitle0 = ""
-        self.modelTitle1 = ""
-        self.modelTitle2 = ""
-        self.modelTitle3 = ""
-        self.modelTitle4 = ""
-        self.modelTitle5 = ""
-        self.modelTitle6 = ""
-        self.modelTitle7 = ""
+        
+        self.model = None
         pass
 
     def run_in_main_thread(self, function):
@@ -185,12 +129,10 @@ class ThangsApi:
         self.bearer = data["bearer"]
         f.close()
         return
-
-    def handle_download(self, modelIndex, LicenseURL, fileType, domain):
-        self.modelIndex = modelIndex
+        
+    def handle_download(self, part, LicenseURL):
+        self.model = part
         self.LicenseURL = LicenseURL
-        self.fileType = fileType
-        self.domain = domain
         self.download_file()
         return True
 
@@ -203,47 +145,17 @@ class ThangsApi:
 
         print("Downloading...")
 
-        model_title = ""
-        modelID = ""
-        if self.modelIndex == 0:
-            modelID = str(self.model0)
-            model_title = self.modelTitle0
-        elif self.modelIndex == 1:
-            modelID = str(self.model1)
-            model_title = self.modelTitle1
-        elif self.modelIndex == 2:
-            modelID = str(self.model2)
-            model_title = self.modelTitle2
-        elif self.modelIndex == 3:
-            modelID = str(self.model3)
-            model_title = self.modelTitle3
-        elif self.modelIndex == 4:
-            modelID = str(self.model4)
-            model_title = self.modelTitle4
-        elif self.modelIndex == 5:
-            modelID = str(self.model5)
-            model_title = self.modelTitle5
-        elif self.modelIndex == 6:
-            modelID = str(self.model6)
-            model_title = self.modelTitle6
-        elif self.modelIndex == 7:
-            modelID = str(self.model7)
-            model_title = self.modelTitle7
-    
-        self.modelID = modelID
-        self.modelTitle = str(model_title)
         self.temp_dir = os.path.join(Config.THANGS_MODEL_DIR)
-        print("Temp Directory: ", self.temp_dir)
-        print("Model ID: ", self.modelID)
-        print("Model Title: ", self.modelTitle)
-        fileDownloaded = [item for item in _files_list if item[0] == self.modelID and item[1] == self.modelTitle]
+        print("Temp Directory:", self.temp_dir)
+        print("Model ID:", self.model.partId)
+        print("Model Title:", self.model.partFileName)
+        fileDownloaded = [item for item in _files_list if item[0] == self.model.partId and item[1] == self.model.partFileName]
 
         if len(fileDownloaded) < 1:
             headers = {"Authorization": "Bearer "+self.bearer,}
-            print("URL: ", self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url")
-            # TODO: Add in rate limit after this following request (Will error 429)
+            print("URL:", self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url")
             try:
-                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url", headers=headers)
+                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
             except:
                 if response.status_code == 429:
                     self.import_limit = True
@@ -253,7 +165,7 @@ class ThangsApi:
                     self.refresh_bearer()
                     headers = {"Authorization": "Bearer "+self.bearer,}
                     try:
-                        response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(modelID)+"/download-url", headers=headers) 
+                        response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers) 
                     except:
                         self.importing = False
                         return
@@ -301,46 +213,40 @@ class ThangsApi:
                         f.write(data)
                         done = int(100 * dl / total_length)
                         wm.progress_update(done)
-                        print("filedata: ", done)
+                        print("Filedata:", done)
 
-            _files_list.append(tuple((self.modelID, self.modelTitle, filename)))
+            _files_list.append(tuple((self.model.partId, self.model.partFileName, filename)))
             wm.progress_end()
         else:
-            fileDownloaded = [item for item in _files_list if item[0] == self.modelID and item[1] ==  item[2]]
+            fileDownloaded = [item for item in _files_list if item[0] == self.model.partId and item[1] ==  item[2]]
 
             if len(fileDownloaded) > 0:
-                self.file_path = os.path.join(Config.THANGS_MODEL_DIR, self.modelTitle)
+                self.file_path = os.path.join(Config.THANGS_MODEL_DIR, self.model.partFileName)
             else:
-                fileDownloadedStl = [item for item in _files_list if item[0] == self.modelID and item[1] == self.modelTitle]
+                fileDownloadedStl = [item for item in _files_list if item[0] == self.model.partId and item[1] == self.model.partFileName]
                 self.file_path = os.path.join(Config.THANGS_MODEL_DIR, str(fileDownloadedStl[0][2]))
 
             split_tup_top = os.path.splitext(self.file_path)
             self.file_extension = split_tup_top[1]    
             print('Model Already Downloaded')
-
-        #print("Callback")
-        #if self.import_callback is not None:
-        #    self.import_callback()
         
         self.run_in_main_thread(self.import_callback)
-
-        # self.import_model()
 
     def import_model(self):
         print("Starting File Import")
 
         self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
-                    'extension': self.fileType,
-                    'domain': self.domain,
+                    'extension': self.model.fileType,
+                    'domain': self.model.domain,
                 })
 
         try:
             if self.file_extension == '.zip':
                 self.zipped_file_path = self.file_path
                 if self.unzip_archive():
-                    split_tup_top = os.path.splitext(self.modelTitle)
+                    split_tup_top = os.path.splitext(self.model.partFileName)
                     self.file_extension = split_tup_top[1]
-                    self.file_path = os.path.join(self.temp_dir, self.modelTitle)
+                    self.file_path = os.path.join(self.temp_dir, self.model.partFileName)
                 else:
                     raise Exception("Unzipping didn't complete")
         except:
@@ -348,21 +254,21 @@ class ThangsApi:
             self.importing = False
             return
         
-        print("File Path: ", self.file_path)
-        print("File Extension: ", self.file_extension)
+        print("File Path:", self.file_path)
+        print("File Extension:", self.file_extension)
 
         try:
             if self.file_extension == '.fbx':
-                print('fbx import')
+                print('FBX Import')
                 bpy.ops.import_scene.fbx(filepath=self.file_path)
             elif self.file_extension == '.obj':
-                print('obj import')
+                print('OBJ Import')
                 bpy.ops.import_scene.obj(filepath=self.file_path)
             elif self.file_extension == '.glb' or self.file_extension == '.gltf':
-                print('gltf + glb import')
+                print('GLTF/GLB Import')
                 bpy.ops.import_scene.gltf(filepath=self.file_path, import_pack_images=True, merge_vertices=False, import_shading='NORMALS', guess_original_bind_pose=True, bone_heuristic='TEMPERANCE')
             elif self.file_extension == '.usdz':
-                print('usdz import')
+                print('USDZ Import')
                 bpy.ops.wm.usd_import(filepath=self.file_path,
                                 import_cameras=True, 
                                 import_curves=True, 
@@ -387,7 +293,7 @@ class ThangsApi:
                                 import_usd_preview=True,
                                 set_material_blend=True)
             else:
-                print('stl import')
+                print('STL Import')
                 bpy.ops.import_mesh.stl(filepath=self.file_path)
         except:
             print('Failed to Import')
@@ -420,10 +326,9 @@ class ThangsApi:
                 fileUnarchived = [item for item in _files_list if item[2] == file]
 
                 if len(fileUnarchived) < 1:
-                    _files_list.append(tuple((self.modelID, self.modelTitle, file)))
-            
+                    _files_list.append(tuple((self.model.partId, self.model.partFileName, file)))
+                    
             return True
-
         else:
             print('Archive doesn\'t exist')
             return False

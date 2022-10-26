@@ -1,12 +1,9 @@
-from itertools import product
 import threading
-import configparser
 import requests
 import threading
-import time
 import logging
 
-from .config import ThangsConfig, get_config
+from .config import get_config
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +58,6 @@ class ThangsEvents(object):
         }
         if event_properties:
             event['event_properties'] |= event_properties
-
         return event
 
     def _send_amplitude_event(self, event_name, event_properties):
