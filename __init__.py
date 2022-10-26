@@ -152,8 +152,8 @@ def import_model():
             thangs_api.importing = False
             return
         
-        print("File Path: ", thangs_api.file_path)
-        print("File Extension: ", thangs_api.file_extension)
+        print("File Path: ",thangs_api.file_path)
+        print("File Extension: ",thangs_api.file_extension)
 
         try:
             if thangs_api.file_extension == '.fbx':
@@ -203,16 +203,21 @@ PageTotal = fetcher.PageTotal
 fetcher.thangs_ui_mode = 'SEARCH'
 
 modelDropdownIndex = 0
-enumHolders = [
-    [],
-    [],
-    [],
-    [],
-    [],
-    [],
-    [],
-    []
-]
+resultsToShow = 8
+enumHolders = []
+for x in range(resultsToShow):
+    enumHolders.append([])
+
+# enumHolders = [
+#     [],
+#     [],
+#     [],
+#     [],
+#     [],
+#     [],
+#     [],
+#     []
+# ]
 
 
 def setSearch():
@@ -717,7 +722,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
                                 'wm.import_model', text="Import Model", icon='IMPORT')
                             props.url = modelURL + \
                                 "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
-                            print(z)
                             props.modelIndex = z
                             props.partIndex = fetcher.modelList[z].partSelected
                             if model.license_url is not None:
@@ -748,6 +752,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
                             props.url = modelURL + \
                                 "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                             props.modelIndex = z
+                            props.partIndex = fetcher.modelList[z].partSelected
                             if model.license_url is not None:
                                 props.license_url = str(model.license_url)
                             else:
