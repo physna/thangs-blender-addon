@@ -832,8 +832,6 @@ def register():
             for i, item in enumerate(enum_models):
                 if item.partId == getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)):
                     setattr(fetcher.modelList[index], "partSelected", item.index)
-                    # setattr(thangs_api, "modelId", getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)))
-                    # setattr(thangs_api, "modelTitle", item.partFileName)
                     break
         return handler
 
