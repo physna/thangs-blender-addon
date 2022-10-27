@@ -13,7 +13,7 @@ The Thangs Blender addon integrates the search functionality of [Thangs.com](htt
 
 ## Install
 
-To install this addon, download the [latest release](/releases), install it as a regular addon (Preferences -> Addons -> Install), and activate it.
+To install this addon, download the [latest release](https://github.com/physna/thangs-blender-addon/releases/download/v0_1_8/thangs-blender-addon.zip), install it as a regular addon (Preferences -> Addons -> Install), and activate it.
 
 ![Thangs-Breeze_3](https://user-images.githubusercontent.com/105221281/184414452-2c7913d5-4a20-47ca-a31b-125a21067523.gif)
 
