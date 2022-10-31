@@ -755,7 +755,6 @@ def uninstall_old_version_timer():
     existing_breeze_installation = next((mod for mod in addon_utils.modules() if is_old_addon(mod)), None)
     if existing_breeze_installation:
         print('Removing old Thangs Breeze installation')
-        print(existing_breeze_installation.__name__)
         bpy.ops.preferences.addon_remove(module=existing_breeze_installation.__name__)
     return None
 
