@@ -597,14 +597,14 @@ class ThangsFetcher():
                 self.models.append(
                     ModelInfo(
                         model_id,
-                        match_info["attributionUrl"],
-                        str("https://thangs.com/m/") + item["externalId"],
+                        item["title"],
+                        str("https://thangs.com/m/") + model_id,
                         "",
                         "",
                         "",
                         "",
                         "",
-                        (((self.CurrentPage - 1) * 8) + self.i)
+                        (((self.CurrentPage - 1) * 8) + I)
                     )
                 )
 
