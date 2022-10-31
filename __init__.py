@@ -269,7 +269,7 @@ class SearchBySelect(bpy.types.Operator):
             thangs_api.bearer = data["bearer"]
             f.close()
             print("Before Search")
-            fetcher.search("help")
+            #fetcher.search("help")
         
             print("Act Obj")
             print(stl_path)
@@ -290,8 +290,8 @@ class SearchBySelect(bpy.types.Operator):
     def execute(self, _context):
         print("Starting Login and MeshSearch")
         stl_path = fetcher.selectionSearch(bpy.context)
-        search_thread = threading.Thread(target=self.login_user, args=(_context, stl_path,))
-        search_thread.start() 
+        search_thread = threading.Thread(target=self.login_user, args=(_context, stl_path,)).start()
+        #search_thread.start() 
         return {'FINISHED'}
 
 def Model_Event(position):

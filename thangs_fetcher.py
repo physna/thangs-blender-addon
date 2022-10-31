@@ -511,6 +511,8 @@ class ThangsFetcher():
 
         data = open(stl_path, 'rb').read()
 
+        print(data)
+
         print("Starting to Clean")
         shutil.rmtree(os.path.join(
             self.Config.THANGS_MODEL_DIR, "ThangsSelectionSearch"))
@@ -543,12 +545,12 @@ class ThangsFetcher():
                 self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath="+url_filepath)
             print(url)
             response = requests.get(url=url, headers=headers)
-            print(response.status_code())
+            #print(response.status_code())
             responseData = response.json()
 
             print(responseData)
         except:
-            print("It BROKE")
+            print("Get Results Broke")
             self.selectionSearching = False
             self.searching = False
             self.newSearch = False
