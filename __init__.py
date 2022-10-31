@@ -235,7 +235,7 @@ class SearchBySelect(bpy.types.Operator):
     bl_label = "Search By Selection"
     bl_options = {'INTERNAL'}
         
-    def login_user(self, _context):
+    def login_user(self, _context, act_obj):
         global thangs_api
         global fetcher
         #startSearch("")
@@ -270,7 +270,10 @@ class SearchBySelect(bpy.types.Operator):
             f.close()
             print("Before Search")
             fetcher.search("help")
-            fetcher.selectionSearch(_context)
+        
+            print("Act Obj")
+            print(act_obj)
+            fetcher.selectionSearch(_context, act_obj)
             # thangs_api.handle_download(fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
             # Model_Event(modelIndex)
         except Exception as e:
@@ -289,7 +292,8 @@ class SearchBySelect(bpy.types.Operator):
     def execute(self, _context):
         print("Starting Login and MeshSearch")
         #self.login_user(context)
-        search_thread = threading.Thread(target=self.login_user, args=(_context,))
+        act_obj = bpy.context.active_object
+        search_thread = threading.Thread(target=self.login_user, args=(_context, act_obj,))
         search_thread.start() 
         return {'FINISHED'}
 

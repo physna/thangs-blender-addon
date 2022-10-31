@@ -124,10 +124,9 @@ class ThangsFetcher():
             target=self.get_http_search).start()
         return True
 
-    def selectionSearch(self, context):
+    def selectionSearch(self, context, act_obj):
         if self.searching or self.selectionSearching:
             return False
-        act_obj = bpy.context.active_object
         if act_obj:
             previous_mode = act_obj.mode  # Keep current mode
             # Keep already created
