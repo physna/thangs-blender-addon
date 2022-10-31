@@ -749,7 +749,6 @@ def uninstall_old_version_timer():
     def is_old_addon(mod):
         name = mod.bl_info['name']
         if name == 'Thangs Model Search':
-            print(mod.bl_info)
             if mod.__name__ == 'thangs-breeze' and 'RandyHucker' in json.dumps(mod.bl_info):
                 return True
         return False
