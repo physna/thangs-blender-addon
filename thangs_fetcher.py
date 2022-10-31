@@ -142,6 +142,7 @@ class ThangsFetcher():
 
             try:
                 if act_obj.mode == "EDIT":
+                    print("Searching Edit")
                     bpy.ops.mesh.duplicate_move()
                     bpy.ops.mesh.fill(use_beauty=True)
                     bpy.ops.mesh.separate(type='SELECTED')
@@ -529,8 +530,6 @@ class ThangsFetcher():
             #s.put(url=signedUrl, data=data)  # params={'data': data}, args=(),
             putHeaders = {
             "Content-Type": "model/stl",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Connection": "keep-alive", 
             }
             putRequest = requests.put(url=signedUrl, data=data, headers=putHeaders)
             print(putRequest.status_code)
@@ -585,60 +584,65 @@ class ThangsFetcher():
                 return
 
         I = 0
-        for item in items:
-            self.partList.clear()
+        try:
+            for item in items:
+                self.partList.clear()
 
-            thumbnailAPIURL = item["thumbnail_url"]
-            thumbnailURL = requests.head(thumbnailAPIURL)
-            thumbnail = thumbnailURL.headers["Location"]
-            thumbnail = thumbnail.replace("https", "http", 1)
+                thumbnailAPIURL = item["thumbnail_url"]
+                thumbnailURL = requests.head(thumbnailAPIURL)
+                thumbnail = thumbnailURL.headers["Location"]
+                thumbnail = thumbnail.replace("https", "http", 1)
 
-            self.models.append(
-                ModelInfo(
-                    item["model_id"],
-                    item["title"],
-                    str("https://thangs.com/m/") + item["external_id"],
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    (((self.CurrentPage - 1) * 8) + self.i)
+                self.models.append(
+                    ModelInfo(
+                        item["model_id"],
+                        item["title"],
+                        str("https://thangs.com/m/") + item["external_id"],
+                        "",
+                        "",
+                        "",
+                        "",
+                        "",
+                        (((self.CurrentPage - 1) * 8) + self.i)
+                    )
                 )
-            )
 
-            try:
-                print(f'Fetching {thumbnail}')
-                filePath = urllib.request.urlretrieve(thumbnail)
-                filepath = os.path.join(item["model_id"], filePath[0])
-            except:
-                filePath = Path(__file__ + "\icons\placeholder.png")
-                filepath = os.path.join(item["model_id"], filePath)
+                try:
+                    print(f'Fetching {thumbnail}')
+                    filePath = urllib.request.urlretrieve(thumbnail)
+                    filepath = os.path.join(item["model_id"], filePath[0])
+                except:
+                    filePath = Path(__file__ + "\icons\placeholder.png")
+                    filepath = os.path.join(item["model_id"], filePath)
 
-            try:
-                thumb = self.pcoll.load(item["model_id"], filepath, 'IMAGE')
-            except:
-                thumb = self.pcoll.load(
-                    item["model_id"]+str(I), filepath, 'IMAGE')
+                try:
+                    thumb = self.pcoll.load(item["model_id"], filepath, 'IMAGE')
+                except:
+                    thumb = self.pcoll.load(
+                        item["model_id"]+str(I), filepath, 'IMAGE')
 
-            self.partList.append(self.PartStruct(item["model_id"], item["title"], "OriginalFileType", thumb.icon_id, "Domain", 0))
+                self.partList.append(self.PartStruct(item["model_id"], item["title"], "OriginalFileType", thumb.icon_id, "Domain", 0))
 
-            # if len(item["parts"]) > 0:
-            #     parts = item["parts"]
-            #     X = 1
-            #     for part in parts:
-            #         print("Getting Thumbnail for {0}".format(part["modelId"]))
-            #         self.partList.append(self.PartStruct(
-            #                     part["modelId"], part["modelFileName"], part["originalFileType"], "", part["domain"], X))
-                    
-            #         thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
-            #             I, X, part["thumbnailUrl"], part["modelId"],)).start()
+                # if len(item["parts"]) > 0:
+                #     parts = item["parts"]
+                #     X = 1
+                #     for part in parts:
+                #         print("Getting Thumbnail for {0}".format(part["modelId"]))
+                #         self.partList.append(self.PartStruct(
+                #                     part["modelId"], part["modelFileName"], part["originalFileType"], "", part["domain"], X))
+                        
+                #         thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
+                #             I, X, part["thumbnailUrl"], part["modelId"],)).start()
 
-            #         X += 1
+                #         X += 1
 
-            self.modelList.append(self.ModelStruct(modelTitle= item["title"], partList=self.partList[:]))
+                self.modelList.append(self.ModelStruct(modelTitle= item["title"], partList=self.partList[:]))
 
-            I += 1
+                I += 1
+        except:
+            self.searching = False
+            self.selectionSearching = False
+            self.newSearch = False
 
         self.pcoll.Model = self.models
         self.pcoll.Model_dir = self.Directory
