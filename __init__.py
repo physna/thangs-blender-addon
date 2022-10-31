@@ -270,7 +270,7 @@ class SearchBySelect(bpy.types.Operator):
             f.close()
             print("Before Search")
             fetcher.search("help")
-            #fetcher.selectionSearch(_context)
+            fetcher.selectionSearch(_context)
             # thangs_api.handle_download(fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
             # Model_Event(modelIndex)
         except Exception as e:
@@ -286,10 +286,10 @@ class SearchBySelect(bpy.types.Operator):
                 print("File couldn't be removed.")
         return
 
-    def execute(self, context):
+    def execute(self, _context):
         print("Starting Login and Import")
         #self.login_user(context)
-        search_thread = threading.Thread(target=self.login_user, args=(context))
+        search_thread = threading.Thread(target=self.login_user, args=(_context,))
         search_thread.start() 
         return {'FINISHED'}
 
