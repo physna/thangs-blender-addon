@@ -287,7 +287,7 @@ class SearchBySelect(bpy.types.Operator):
         return
 
     def execute(self, _context):
-        print("Starting Login and Import")
+        print("Starting Login and MeshSearch")
         #self.login_user(context)
         search_thread = threading.Thread(target=self.login_user, args=(_context,))
         search_thread.start() 
@@ -344,6 +344,7 @@ class ImportModelOperator(Operator):
         print("Starting Login")
         thangs_login_import = ThangsLogin()
         bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
+        print(bearer_location)
         if not os.path.exists(bearer_location):
             print("Creating Bearer.json")
             f = open(bearer_location, "x")
