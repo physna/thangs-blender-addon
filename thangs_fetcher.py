@@ -517,13 +517,13 @@ class ThangsFetcher():
             self.Config.THANGS_MODEL_DIR, "ThangsSelectionSearch"))
         print("Cleaned STL")
 
-        s = requests.Session()
+        # s = requests.Session()
 
-        retries = Retry(total=10,
-                        backoff_factor=1,
-                        status_forcelist=[500, 502, 503, 504, 521],
-                        allowed_methods=frozenset(['GET', 'POST', 'PUT']),)
-        s.mount('https://', HTTPAdapter(max_retries=retries))
+        # retries = Retry(total=10,
+        #                 backoff_factor=1,
+        #                 status_forcelist=[500, 502, 503, 504, 521],
+        #                 allowed_methods=frozenset(['GET', 'POST', 'PUT']),)
+        # s.mount('https://', HTTPAdapter(max_retries=retries))
 
         try:
             #s.put(url=signedUrl, data=data)  # params={'data': data}, args=(),
