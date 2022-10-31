@@ -587,17 +587,18 @@ class ThangsFetcher():
         try:
             for item in items:
                 self.partList.clear()
-
-                thumbnailAPIURL = item["thumbnail_url"]
+                match_info = item["matchInfo"]
+                model_id = match_info["matchedModelId"]
+                thumbnailAPIURL = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
                 thumbnailURL = requests.head(thumbnailAPIURL)
                 thumbnail = thumbnailURL.headers["Location"]
                 thumbnail = thumbnail.replace("https", "http", 1)
 
                 self.models.append(
                     ModelInfo(
-                        item["model_id"],
-                        item["title"],
-                        str("https://thangs.com/m/") + item["external_id"],
+                        model_id,
+                        match_info["attributionUrl"],
+                        str("https://thangs.com/m/") + item["externalId"],
                         "",
                         "",
                         "",
@@ -610,18 +611,18 @@ class ThangsFetcher():
                 try:
                     print(f'Fetching {thumbnail}')
                     filePath = urllib.request.urlretrieve(thumbnail)
-                    filepath = os.path.join(item["model_id"], filePath[0])
+                    filepath = os.path.join(item["matchedModelId"], filePath[0])
                 except:
                     filePath = Path(__file__ + "\icons\placeholder.png")
-                    filepath = os.path.join(item["model_id"], filePath)
+                    filepath = os.path.join(item["matchedModelId"], filePath)
 
                 try:
-                    thumb = self.pcoll.load(item["model_id"], filepath, 'IMAGE')
+                    thumb = self.pcoll.load(item["matchedModelId"], filepath, 'IMAGE')
                 except:
                     thumb = self.pcoll.load(
-                        item["model_id"]+str(I), filepath, 'IMAGE')
+                        item["matchedModelId"]+str(I), filepath, 'IMAGE')
 
-                self.partList.append(self.PartStruct(item["model_id"], item["title"], "OriginalFileType", thumb.icon_id, "Domain", 0))
+                self.partList.append(self.PartStruct(item["matchedModelId"], match_info["attributionUrl"], "OriginalFileType", thumb.icon_id, "Domain", 0))
 
                 # if len(item["parts"]) > 0:
                 #     parts = item["parts"]
@@ -636,10 +637,11 @@ class ThangsFetcher():
 
                 #         X += 1
 
-                self.modelList.append(self.ModelStruct(modelTitle= item["title"], partList=self.partList[:]))
+                self.modelList.append(self.ModelStruct(modelTitle= match_info["attributionUrl"], partList=self.partList[:]))
 
                 I += 1
-        except:
+        except Exception as e:
+            print("error parsing resutls: ", e)
             self.searching = False
             self.selectionSearching = False
             self.newSearch = False
