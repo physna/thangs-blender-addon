@@ -233,31 +233,64 @@ class SearchBySelect(bpy.types.Operator):
     """Search by Object Selection"""
     bl_idname = "search.selection"
     bl_label = "Search By Selection"
-
-    def execute(self, context):
+    bl_options = {'INTERNAL'}
+        
+    def login_user(self, _context):
+        global thangs_api
+        global fetcher
+        #startSearch("")
+        print("Starting Login")
+        thangs_login_import = ThangsLogin()
         bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
         if not os.path.exists(bearer_location):
             print("Creating Bearer.json")
             f = open(bearer_location, "x")
         
         # check if size of file is 0
-        if os.stat(bearer_location).st_size == 0:
-            print("Json was empty")
-            thangs_login.startLoginFromBrowser()
-            print("Waiting on Login")
-            thangs_login.token_available.wait()
-            bearer = {
-                'bearer': str(thangs_login.token["TOKEN"]),
-            }
-            with open(bearer_location, 'w') as json_file:
-                json.dump(bearer, json_file)
+        try:
+            print("Top of Try")
+            if os.stat(bearer_location).st_size == 0:
+                print("Json was empty")
+                thangs_login_import.startLoginFromBrowser()
+                print("Waiting on Login")
+                thangs_login_import.token_available.wait()
+                print("Setting Bearer")
+                bearer = {
+                    'bearer': str(thangs_login_import.token["TOKEN"]),
+                }
+                print("Dumping")
+                with open(bearer_location, 'w') as json_file:
+                    json.dump(bearer, json_file)
+               
+            print("After Dump")
+            f = open(bearer_location)
+            data = json.load(f)
+            fetcher.bearer = data["bearer"]
+            thangs_api.bearer = data["bearer"]
+            f.close()
+            print("Before Search")
+            fetcher.search("help")
+            #fetcher.selectionSearch(_context)
+            # thangs_api.handle_download(fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
+            # Model_Event(modelIndex)
+        except Exception as e:
+            print("Error with Logging In:", e)
+            thangs_api.importing = False
+            thangs_api.searching = False
+            thangs_api.failed = True
+            tag_redraw_areas()
+            try:
+                f.close()
+                os.remove(bearer_location)
+            except:
+                print("File couldn't be removed.")
+        return
 
-        f = open(bearer_location)
-        data = json.load(f)
-        fetcher.bearer = data["bearer"]
-        thangs_api.bearer = data["bearer"]
-
-        fetcher.selectionSearch(context)
+    def execute(self, context):
+        print("Starting Login and Import")
+        #self.login_user(context)
+        search_thread = threading.Thread(target=self.login_user, args=(context))
+        search_thread.start() 
         return {'FINISHED'}
 
 def Model_Event(position):
@@ -726,8 +759,8 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
 
         # TODO ENABLE SEARCH BY SELECTION
-        # row = col.row()
-        # row.operator(SearchBySelect.bl_idname, text="Search By Selection", icon='NONE')
+        row = col.row()
+        row.operator(SearchBySelect.bl_idname, text="Search By Selection", icon='NONE')
 
     def draw(self, context):
         addon_updater_ops.check_for_update_background()

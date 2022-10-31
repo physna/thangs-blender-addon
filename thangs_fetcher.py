@@ -132,8 +132,8 @@ class ThangsFetcher():
             previous_mode = act_obj.mode  # Keep current mode
             # Keep already created
             previous_objects = set(context.scene.objects)
-            temp_dir = os.path.join(
-                self.Config.THANGS_MODEL_DIR, "ThangsSelectionSearch")
+            temp_dir = os.path.join("tmp", "ThangsSelectionSearch")
+                # self.Config.THANGS_MODEL_DIR, "ThangsSelectionSearch")
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
 
@@ -158,7 +158,7 @@ class ThangsFetcher():
 
                     print(bpy.context.active_object)
                     #archive_path = os.path.join(temp_dir, '{}.stl'.format(self.uid))
-                    path = Path("D:\Github")
+                    path = Path(temp_dir)
                     stl_path = path / f"blender_selection.stl"
                     print(stl_path)
                     bpy.ops.export_mesh.stl(
@@ -482,14 +482,6 @@ class ThangsFetcher():
         self.pcoll = bpy.utils.previews.new()
         self.pcoll.Model_dir = ""
         self.pcoll.Model = ()
-        # self.pcoll.ModelView1 = ()
-        # self.pcoll.ModelView2 = ()
-        # self.pcoll.ModelView3 = ()
-        # self.pcoll.ModelView4 = ()
-        # self.pcoll.ModelView5 = ()
-        # self.pcoll.ModelView6 = ()
-        # self.pcoll.ModelView7 = ()
-        # self.pcoll.ModelView8 = ()
         self.pcoll.Model_page = self.CurrentPage
 
         self.preview_collections["main"] = self.pcoll
