@@ -53,6 +53,7 @@ class ThangsFetcher():
         self.failed = False
         self.newSearch = False
         self.selectionFailed = False
+        self.selectionEmpty = False
 
         self.Thangs_Config = ThangsConfig()
         self.Thangs_Utils = Utils()
@@ -459,6 +460,7 @@ class ThangsFetcher():
         global thangs_config
         print("Started STL Search")
         self.selectionSearching = True
+        self.selectionEmpty = False
 
         self.CurrentPage = self.PageNumber
 
@@ -511,7 +513,7 @@ class ThangsFetcher():
 
         data = open(stl_path, 'rb').read()
 
-        print(data)
+        #print(data)
 
         print("Starting to Clean")
         shutil.rmtree(os.path.join(
@@ -557,46 +559,40 @@ class ThangsFetcher():
             self.selectionFailed = True
             return
 
+        self.get_stl_results(response)
         # if os.path.isfile(stl_path):
         #    os.remove(stl_path)
         # self.Thangs_Utils.clean_downloaded_model_dir("ThangsSelectionSearch")
         numMatches = responseData["numMatches"]
         items = responseData["matches"]
 
-        # if self.newSearch == True:
-        #     self.uuid = str(uuid.uuid4())
-        #     self.searchMetaData = responseData["searchMetadata"]
-        #     self.searchMetaData['searchID'] = self.uuid
-        #     data = {
-        #         "searchId": self.uuid,
-        #         "searchTerm": self.query,
-        #     }blender
+        if responseData["numMatches"] == 0:
+                self.selectionEmpty = True
+                self.selectionSearching = False
+                self.searching = False
+                self.newSearch = False
 
-        #self.amplitude.send_thangs_event("Capture", data)
+                print("Callback")
+                if self.search_callback is not None:
+                    self.search_callback()
 
-        self.get_stl_results(response)
+                print("Selection Search Completed!")
 
-        self.i = 0
+                return
 
-        # print(items)
-
+        I = 0
         for item in items:
-            print("--------")
-            print("--------")
-            print(item)
-            self.enumModelInfo.clear()
+            self.partList.clear()
 
             thumbnailAPIURL = item["thumbnail_url"]
             thumbnailURL = requests.head(thumbnailAPIURL)
             thumbnail = thumbnailURL.headers["Location"]
-
-            modelTitle = item["title"]
-            modelId = item["model_id"]
+            thumbnail = thumbnail.replace("https", "http", 1)
 
             self.models.append(
                 ModelInfo(
-                    modelId,
-                    modelTitle,
+                    item["model_id"],
+                    item["title"],
                     str("https://thangs.com/m/") + item["external_id"],
                     "",
                     "",
@@ -607,103 +603,41 @@ class ThangsFetcher():
                 )
             )
 
-            thumbnail = thumbnail.replace("https", "http", 1)
             try:
+                print(f'Fetching {thumbnail}')
                 filePath = urllib.request.urlretrieve(thumbnail)
-                filepath = os.path.join(modelId, filePath[0])
+                filepath = os.path.join(item["model_id"], filePath[0])
             except:
                 filePath = Path(__file__ + "\icons\placeholder.png")
-                filepath = os.path.join(modelId, filePath)
+                filepath = os.path.join(item["model_id"], filePath)
 
-            thumb = self.pcoll.load(modelId, filepath, 'IMAGE')
+            try:
+                thumb = self.pcoll.load(item["model_id"], filepath, 'IMAGE')
+            except:
+                thumb = self.pcoll.load(
+                    item["model_id"]+str(I), filepath, 'IMAGE')
 
-            #self.thumbnailNumbers.append(thumb.icon_id)
+            self.partList.append(self.PartStruct(item["model_id"], item["title"], "OriginalFileType", thumb.icon_id, "Domain", 0))
 
-            z = 0
+            # if len(item["parts"]) > 0:
+            #     parts = item["parts"]
+            #     X = 1
+            #     for part in parts:
+            #         print("Getting Thumbnail for {0}".format(part["modelId"]))
+            #         self.partList.append(self.PartStruct(
+            #                     part["modelId"], part["modelFileName"], part["originalFileType"], "", part["domain"], X))
+                    
+            #         thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
+            #             I, X, part["thumbnailUrl"], part["modelId"],)).start()
 
-            self.enumModelInfo.append(
-                (modelId, modelTitle, ""))  # , z))
+            #         X += 1
 
-            if self.i == 0:
-                self.enumModels1.append(
-                    (modelId, modelTitle, "", thumb.icon_id, z))
-                self.thangs_api.model0 = modelId
-                self.thangs_api.modelTitle0 = modelTitle
+            self.modelList.append(self.ModelStruct(modelTitle= item["title"], partList=self.partList[:]))
 
-            elif self.i == 1:
-                self.enumModels2.append(
-                    (modelId, modelTitle, "", thumb.icon_id, z))
-                self.thangs_api.model1 = modelId
-                self.thangs_api.modelTitle1 = modelTitle
-
-            elif self.i == 2:
-                self.enumModels3.append(
-                    (modelId, modelTitle, "", thumb.icon_id, z))
-                self.thangs_api.model2 = modelId
-                self.thangs_api.modelTitle2 = modelTitle
-
-            elif self.i == 3:
-                self.enumModels4.append(
-                    (modelId, modelTitle, "", thumb.icon_id, z))
-                self.thangs_api.model3 = modelId
-                self.thangs_api.modelTitle3 = modelTitle
-
-            elif self.i == 4:
-                self.enumModels5.append(
-                    (modelId, modelTitle, "", thumb.icon_id, z))
-                self.thangs_api.model4 = modelId
-                self.thangs_api.modelTitle4 = modelTitle
-
-            elif self.i == 5:
-                self.enumModels6.append(
-                    (modelId, modelTitle, "", thumb.icon_id, z))
-                self.thangs_api.model5 = modelId
-                self.thangs_api.modelTitle5 = modelTitle
-
-            elif self.i == 6:
-                self.enumModels7.append(
-                    (modelId, modelTitle, "", thumb.icon_id, z))
-                self.thangs_api.model6 = modelId
-                self.thangs_api.modelTitle6 = modelTitle
-
-            else:
-                self.enumModels8.append(
-                    (modelId, modelTitle, "", thumb.icon_id, z))
-                self.thangs_api.model7 = modelId
-                self.thangs_api.modelTitle7 = modelTitle
-
-            self.enumModelTotal.append(self.enumModelInfo[:])
-            self.i = self.i + 1
-
-        if self.enumModels1:
-            self.result1 = self.enumModels1[0][3]
-        if self.enumModels2:
-            self.result2 = self.enumModels2[0][3]
-        if self.enumModels3:
-            self.result3 = self.enumModels3[0][3]
-        if self.enumModels4:
-            self.result4 = self.enumModels4[0][3]
-        if self.enumModels5:
-            self.result5 = self.enumModels5[0][3]
-        if self.enumModels6:
-            self.result6 = self.enumModels6[0][3]
-        if self.enumModels7:
-            self.result7 = self.enumModels7[0][3]
-        if self.enumModels8:
-            self.result8 = self.enumModels8[0][3]
+            I += 1
 
         self.pcoll.Model = self.models
-        self.pcoll.ModelView1 = self.enumModels1
-        self.pcoll.ModelView2 = self.enumModels2
-        self.pcoll.ModelView3 = self.enumModels3
-        self.pcoll.ModelView4 = self.enumModels4
-        self.pcoll.ModelView5 = self.enumModels5
-        self.pcoll.ModelView6 = self.enumModels6
-        self.pcoll.ModelView7 = self.enumModels7
-        self.pcoll.ModelView8 = self.enumModels8
         self.pcoll.Model_dir = self.Directory
-        # Added
-
         self.pcoll.Model_page = self.CurrentPage
 
         self.selectionSearching = False

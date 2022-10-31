@@ -726,6 +726,15 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 SearchingRow = layout.row()
                 SearchingRow.label(
                     text="Please try again!") 
+            elif fetcher.selectionEmpty == True:
+                SearchingRow.label(
+                    text="Unable to find results for")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="your selection on Thangs...")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="Please try again!") 
             else:
                 SearchingRow.label(
                     text="Found 0 Models for:")
