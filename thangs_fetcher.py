@@ -124,15 +124,16 @@ class ThangsFetcher():
             target=self.get_http_search).start()
         return True
 
-    def selectionSearch(self, context, act_obj):
+    def selectionSearch(self, context):
         if self.searching or self.selectionSearching:
             return False
+        act_obj = bpy.context.active_object
         if act_obj:
             previous_mode = act_obj.mode  # Keep current mode
             # Keep already created
             previous_objects = set(context.scene.objects)
-            temp_dir = os.path.join("tmp", "ThangsSelectionSearch")
-                # self.Config.THANGS_MODEL_DIR, "ThangsSelectionSearch")
+            temp_dir = os.path.join(
+                self.Config.THANGS_MODEL_DIR, "ThangsSelectionSearch")
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
 
@@ -157,7 +158,7 @@ class ThangsFetcher():
 
                     print(bpy.context.active_object)
                     #archive_path = os.path.join(temp_dir, '{}.stl'.format(self.uid))
-                    path = Path(temp_dir)
+                    path = Path("D:\Github")
                     stl_path = path / f"blender_selection.stl"
                     print(stl_path)
                     bpy.ops.export_mesh.stl(
@@ -184,8 +185,7 @@ class ThangsFetcher():
 
                 bpy.ops.object.delete()
 
-                self.search_thread = threading.Thread(
-                    target=self.get_stl_search, args=(stl_path,)).start()
+                return stl_path
 
             except:
                 bpy.ops.object.mode_set(mode=previous_mode)
@@ -492,16 +492,22 @@ class ThangsFetcher():
         }
 
         try:
-            response = requests.get(str(
-                self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl", headers=headers)
+            url_endpoint = str(self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl"
+            print(url_endpoint)
+            response = requests.get(url_endpoint, headers=headers)
             responseData = response.json()
 
             print(responseData)
+            signedUrl = responseData["signedUrl"]
+            new_Filename = responseData["newFileName"]
         except:
-            print("URL BROKEN")
+            print("URL BROKEN" + url_endpoint)
+            self.selectionSearching = False
+            self.searching = False
+            self.newSearch = False
+            self.selectionFailed = True
+            return
 
-        signedUrl = responseData["signedUrl"]
-        new_Filename = responseData["newFileName"]
 
         data = open(stl_path, 'rb').read()
 
