@@ -289,6 +289,8 @@ class SearchBySelect(bpy.types.Operator):
         return
 
     def execute(self, _context):
+        fetcher.selectionEmpty = False
+        fetcher.selectionFailed = False
         print("Starting Login and MeshSearch")
         stl_path = fetcher.selectionSearch(bpy.context)
         search_thread = threading.Thread(target=self.login_user, args=(_context, stl_path,)).start()

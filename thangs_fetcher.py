@@ -510,10 +510,7 @@ class ThangsFetcher():
             self.selectionFailed = True
             return
 
-
         data = open(stl_path, 'rb').read()
-
-        #print(data)
 
         print("Starting to Clean")
         shutil.rmtree(os.path.join(
@@ -529,7 +526,14 @@ class ThangsFetcher():
         s.mount('https://', HTTPAdapter(max_retries=retries))
 
         try:
-            s.put(url=signedUrl, data=data)  # params={'data': data}, args=(),
+            #s.put(url=signedUrl, data=data)  # params={'data': data}, args=(),
+            putHeaders = {
+            "Content-Type": "model/stl",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive", 
+            }
+            putRequest = requests.put(url=signedUrl, data=data, headers=putHeaders)
+            print(putRequest.status_code)
             #response = s.post(url, headers=headers, data=data)
         except:
             print("API Failed")
