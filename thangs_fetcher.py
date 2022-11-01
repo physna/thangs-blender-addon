@@ -160,7 +160,7 @@ class ThangsFetcher():
 
                     print(bpy.context.active_object)
                     #archive_path = os.path.join(temp_dir, '{}.stl'.format(self.uid))
-                    path = Path("D:\Github")
+                    path = Path(temp_dir)
                     stl_path = path / f"blender_selection.stl"
                     print(stl_path)
                     bpy.ops.export_mesh.stl(
@@ -588,7 +588,7 @@ class ThangsFetcher():
                 self.partList.clear()
                 match_info = item["matchInfo"]
                 model_id = match_info["matchedModelId"]
-
+                attributionUrl = match_info["attributionUrl"]
                 thumbnailAPIURL = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
                 thumbnailURL = requests.head(thumbnailAPIURL)
                 thumbnail = thumbnailURL.headers["Location"]
@@ -622,7 +622,7 @@ class ThangsFetcher():
                     thumb = self.pcoll.load(
                         model_id+str(I), filepath, 'IMAGE')
 
-                self.partList.append(self.PartStruct(model_id, match_info["attributionUrl"], "OriginalFileType", thumb.icon_id, "Domain", 0))
+                self.partList.append(self.PartStruct(model_id, attributionUrl, "OriginalFileType", thumb.icon_id, "Domain", 0))
 
                 # if len(item["parts"]) > 0:
                 #     parts = item["parts"]
@@ -637,7 +637,7 @@ class ThangsFetcher():
 
                 #         X += 1
 
-                self.modelList.append(self.ModelStruct(modelTitle= match_info["attributionUrl"], partList=self.partList[:]))
+                self.modelList.append(self.ModelStruct(modelTitle= attributionUrl, partList=self.partList[:]))
 
                 I += 1
         except Exception as e:
