@@ -475,8 +475,6 @@ class ThangsFetcher():
         # Get the preview collection (defined in register func).
         self.pcoll = self.preview_collections["main"]
 
-        # Added
-
         for pcoll in self.preview_collections.values():
             bpy.utils.previews.remove(pcoll)
         self.preview_collections.clear()
@@ -583,12 +581,14 @@ class ThangsFetcher():
 
                 return
 
+        self.modelList.clear()
         I = 0
         try:
             for item in items:
                 self.partList.clear()
                 match_info = item["matchInfo"]
                 model_id = match_info["matchedModelId"]
+
                 thumbnailAPIURL = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
                 thumbnailURL = requests.head(thumbnailAPIURL)
                 thumbnail = thumbnailURL.headers["Location"]
@@ -597,7 +597,7 @@ class ThangsFetcher():
                 self.models.append(
                     ModelInfo(
                         model_id,
-                        item["title"],
+                        item["externalId"],
                         str("https://thangs.com/m/") + model_id,
                         "",
                         "",
@@ -607,22 +607,22 @@ class ThangsFetcher():
                         (((self.CurrentPage - 1) * 8) + I)
                     )
                 )
-
+                
                 try:
                     print(f'Fetching {thumbnail}')
                     filePath = urllib.request.urlretrieve(thumbnail)
-                    filepath = os.path.join(item["matchedModelId"], filePath[0])
+                    filepath = os.path.join(model_id, filePath[0])
                 except:
                     filePath = Path(__file__ + "\icons\placeholder.png")
-                    filepath = os.path.join(item["matchedModelId"], filePath)
+                    filepath = os.path.join(model_id, filePath)
 
                 try:
-                    thumb = self.pcoll.load(item["matchedModelId"], filepath, 'IMAGE')
+                    thumb = self.pcoll.load(model_id, filepath, 'IMAGE')
                 except:
                     thumb = self.pcoll.load(
-                        item["matchedModelId"]+str(I), filepath, 'IMAGE')
+                        model_id+str(I), filepath, 'IMAGE')
 
-                self.partList.append(self.PartStruct(item["matchedModelId"], match_info["attributionUrl"], "OriginalFileType", thumb.icon_id, "Domain", 0))
+                self.partList.append(self.PartStruct(model_id, match_info["attributionUrl"], "OriginalFileType", thumb.icon_id, "Domain", 0))
 
                 # if len(item["parts"]) > 0:
                 #     parts = item["parts"]
