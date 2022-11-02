@@ -17,6 +17,7 @@ import socket
 import platform
 import logging
 import threading
+import addon_utils
 
 from . import addon_updater_ops
 from urllib.request import urlopen
@@ -31,14 +32,14 @@ log = logging.getLogger(__name__)
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
-    "version": (0, 2, 0),
+    "version": (0, 2, 1),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
     "description": "Browse and download free 3D models",
     "warning": "",
     "support": "COMMUNITY",
-    "wiki_url": "https://github.com/RandyHucker/thangs-blender-addon",
-    "tracker_url": "https://github.com/RandyHucker/thangs-blender-addon/issues/new/choose",
+    "wiki_url": "https://github.com/physna/thangs-blender-addon",
+    "tracker_url": "https://github.com/physna/thangs-blender-addon/issues/new/choose",
     "category": "Import/Export"
 }
 
@@ -743,6 +744,20 @@ def startSearch(self, value):
     queryText = bpy.context.scene.thangs_model_search
     fetcher.search(query=queryText)
 
+
+def uninstall_old_version_timer():
+    def is_old_addon(mod):
+        name = mod.bl_info['name']
+        if name == 'Thangs Model Search':
+            if mod.__name__ == 'thangs-breeze' and 'RandyHucker' in json.dumps(mod.bl_info):
+                return True
+        return False
+    existing_breeze_installation = next((mod for mod in addon_utils.modules() if is_old_addon(mod)), None)
+    if existing_breeze_installation:
+        print('Removing old Thangs Breeze installation')
+        bpy.ops.preferences.addon_remove(module=existing_breeze_installation.__name__)
+    return None
+
 def heartbeat_timer():
     log.info('sending thangs heartbeat')
     amplitude.send_amplitude_event(
@@ -871,6 +886,7 @@ def register():
     bpy.app.timers.register(heartbeat_timer)
     bpy.app.timers.register(open_timer)
     bpy.app.timers.register(execute_queued_functions)
+    bpy.app.timers.register(uninstall_old_version_timer)
 
     log.info("Finished Register")
 
@@ -879,10 +895,13 @@ def unregister():
     from bpy.types import WindowManager
     global thangs_login
 
-    del WindowManager.Model
+    if hasattr(WindowManager, 'Model'):
+        del WindowManager.Model
     bpy.app.timers.unregister(heartbeat_timer)
     bpy.app.timers.unregister(open_timer)
     bpy.app.timers.unregister(execute_queued_functions)
+    if bpy.app.timers.is_registered(uninstall_old_version_timer):
+        bpy.app.timers.unregister(uninstall_old_version_timer)
 
     for pcoll in fetcher.preview_collections.values():
         bpy.utils.previews.remove(pcoll)
@@ -904,7 +923,8 @@ def unregister():
     bpy.utils.unregister_class(SearchBySelect)
     bpy.utils.unregister_class(BrowseToModelOperator)
 
-    del bpy.types.Scene.my_tool
+    if hasattr(bpy.types.Scene, 'my_tool'):
+        del bpy.types.Scene.my_tool
     addon_updater_ops.unregister()
 
     stop_access_grant()
