@@ -128,6 +128,7 @@ class ThangsFetcher():
     def selectionSearch(self, context):
         if self.searching or self.selectionSearching:
             return False
+        self.selectionSearching = True
         act_obj = bpy.context.active_object
         if act_obj:
             previous_mode = act_obj.mode  # Keep current mode
@@ -546,12 +547,9 @@ class ThangsFetcher():
             url_filepath = urllib.parse.quote(new_Filename, safe='')
             url = str(
                 self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath="+url_filepath)
-            print(url)
             response = requests.get(url=url, headers=headers)
-            #print(response.status_code())
             responseData = response.json()
 
-            print(responseData)
         except:
             print("Get Results Broke")
             self.selectionSearching = False

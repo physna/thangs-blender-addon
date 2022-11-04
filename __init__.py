@@ -294,7 +294,6 @@ class SearchBySelect(bpy.types.Operator):
         print("Starting Login and MeshSearch")
         stl_path = fetcher.selectionSearch(bpy.context)
         search_thread = threading.Thread(target=self.login_user, args=(_context, stl_path,)).start()
-        #search_thread.start() 
         return {'FINISHED'}
 
 def Model_Event(position):
@@ -756,6 +755,16 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
         col = layout.column(align=True)
 
+        row = col.row()
+        row.prop(context.scene, "thangs_model_search")
+
+        # TODO ENABLE SEARCH BY SELECTION
+        if bpy.context.active_object != None:
+            row = col.row()
+            row.label(text="")
+            row=col.row()
+            row.operator(SearchBySelect.bl_idname, text="Search By Object Selection", icon='NONE')
+
         if fetcher.searching:
             col.enabled = False
             SearchingRow = layout.row(align=True)
@@ -764,17 +773,15 @@ class THANGS_PT_model_display(bpy.types.Panel):
             SearchingRow = layout.row(align=True)
             SearchingRow.label(
                 text="'"+bpy.context.scene.thangs_model_search+"'")
-
-        row = col.row()
-
-        row.prop(context.scene, "thangs_model_search")
-
-        row.scale_x = .18
-
-
-        # TODO ENABLE SEARCH BY SELECTION
-        row = col.row()
-        row.operator(SearchBySelect.bl_idname, text="Search By Selection", icon='NONE')
+        
+        if fetcher.selectionSearching:
+            col.enabled = False
+            SearchingRow = layout.row(align=True)
+            SearchingRow.label(
+                text="Fetching results for")
+            SearchingRow = layout.row(align=True)
+            SearchingRow.label(
+                text="your object selection!")
 
     def draw(self, context):
         addon_updater_ops.check_for_update_background()
@@ -783,6 +790,11 @@ class THANGS_PT_model_display(bpy.types.Panel):
         else:
             self.drawSearch(context)
         addon_updater_ops.update_notice_box_ui(self, context)
+
+def draw_menu(self, context):
+    layout = self.layout
+    layout.separator()
+    layout.operator(SearchBySelect.bl_idname, text="Thangs: Search By Selection")
 
 preview_collections = fetcher.preview_collections
 
@@ -879,6 +891,8 @@ def register():
     bpy.utils.register_class(BrowseToCreatorOperator)
     bpy.utils.register_class(SearchBySelect)
     bpy.utils.register_class(BrowseToModelOperator)
+    bpy.types.VIEW3D_MT_object_context_menu.append(draw_menu)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(draw_menu)
 
     def dropdown_properties_item_set(index):
         def handler(self, context):
@@ -968,6 +982,8 @@ def unregister():
     bpy.utils.unregister_class(BrowseToCreatorOperator)
     bpy.utils.unregister_class(SearchBySelect)
     bpy.utils.unregister_class(BrowseToModelOperator)
+    bpy.types.VIEW3D_MT_object_context_menu.remove(draw_menu)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(draw_menu)
 
     if hasattr(bpy.types.Scene, 'my_tool'):
         del bpy.types.Scene.my_tool
