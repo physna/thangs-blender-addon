@@ -233,6 +233,7 @@ class ThangsApi:
         self.run_in_main_thread(self.import_callback)
 
     def import_model(self):
+        self.failed = False
         print("Starting File Import")
 
         self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
@@ -251,6 +252,7 @@ class ThangsApi:
                     raise Exception("Unzipping didn't complete")
         except:
             print('Unzip error')
+            self.failed = True
             self.importing = False
             return
         
@@ -297,6 +299,8 @@ class ThangsApi:
                 bpy.ops.import_mesh.stl(filepath=self.file_path)
         except:
             print('Failed to Import')
+            self.failed = True
+            self.importing = False
             return
             
         print("Imported")
