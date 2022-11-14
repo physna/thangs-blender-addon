@@ -682,7 +682,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 SearchingRow = layout.row()
                 SearchingRow.label(
                     text="Please try again!")
-            elif fetcher.SelectionFailed == True:
+            elif fetcher.selectionFailed == True:
                 SearchingRow.label(
                     text="Unable to search for")
                 SearchingRow = layout.row()
