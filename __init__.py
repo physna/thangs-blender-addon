@@ -691,6 +691,15 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 SearchingRow = layout.row()
                 SearchingRow.label(
                     text="Please try again!") 
+            elif thangs_api.failed == True:
+                SearchingRow.label(
+                    text="Unable to import")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="your selection from Thangs")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="Please try again!")
             else:
                 SearchingRow.label(
                     text="Found 0 Models for:")
