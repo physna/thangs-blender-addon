@@ -509,12 +509,14 @@ class THANGS_OT_search_invoke(Operator):
         context.area.tag_redraw()
         return {'FINISHED'}
 
-
-class THANGS_PT_model_display(bpy.types.Panel):
-    bl_label = "Thangs Model Search"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "Thangs Search"
+class View3DPanel:
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS' if bpy.app.version < (2, 80, 0) else 'UI'
+    bl_category = 'Thangs'
+    bl_context = 'objectmode'
+class TextSearch(View3DPanel, bpy.types.Panel):
+    bl_idname = "VIEW3D_PT_thangs_textsearch"
+    bl_label = "Thangs Search"
 
     def next_mode(self, op):
         # modes: SEARCH, VIEW
@@ -586,7 +588,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
 
                 grid = layout.grid_flow(
                     columns=1, even_columns=True, even_rows=True)
-
+            
                 z = 0
                 for model in fetcher.pcoll.Model:
                     modelURL = model.attribution_url
@@ -770,13 +772,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
         if not fetcher.selectionSearching:
             row.prop(context.scene, "thangs_model_search")
 
-        # TODO ENABLE SEARCH BY SELECTION
-        if bpy.context.active_object != None:
-            row = col.row()
-            row.label(text="")
-            row=col.row()
-            row.operator(SearchBySelect.bl_idname, text="Search By Object Selection", icon='NONE')
-
         if fetcher.searching:
             col.enabled = False
             SearchingRow = layout.row(align=True)
@@ -811,6 +806,37 @@ class THANGS_PT_model_display(bpy.types.Panel):
         else:
             self.drawSearch(context)
         addon_updater_ops.update_notice_box_ui(self, context)
+
+class MeshSearch(View3DPanel, bpy.types.Panel):
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "VIEW3D_PT_thangs_meshsearch"
+    bl_label = "Thangs Mesh Search"
+
+    def draw(self, context):
+        if bpy.context.active_object != None:
+            layout = self.layout
+            wm = context.window_manager
+
+            col = layout.column(align=True)
+            if fetcher.searching or fetcher.selectionThumbnailGrab or fetcher.selectionSearching:
+                col.enabled = False
+            row = col.row()
+            row.label(text="Right click on an object")
+            row = col.row()
+            row.label(text="to try out Geo-Search!")
+            row=col.row()
+            row.operator(SearchBySelect.bl_idname, text="Click here for Geo-Search", icon='NONE')
+        else:
+            layout = self.layout
+            wm = context.window_manager
+
+            col = layout.column(align=True)
+            if fetcher.searching or fetcher.selectionThumbnailGrab or fetcher.selectionSearching:
+                col.enabled = False
+            row = col.row()
+            row.label(text="Have an object selected for")
+            row = col.row()
+            row.label(text="Geo-Search info!")
 
 def draw_menu(self, context):
     layout = self.layout
@@ -852,6 +878,7 @@ def open_timer():
                     # True: n-panel is open
                     # False: n-panel is closed
                     n_panel_is_open = space.show_region_ui
+                    #print(bpy.context.window_manager.windows[0].screen)
 
                     amplitude.send_amplitude_event(
                         "Thangs Blender Addon - Opened", event_properties={'panel_open': n_panel_is_open})
@@ -898,7 +925,8 @@ def register():
     fetcher.preview_collections["main"] = fetcher.pcoll
     icon_collections["main"] = icons_dict
 
-    bpy.utils.register_class(THANGS_PT_model_display)
+    bpy.utils.register_class(MeshSearch)
+    bpy.utils.register_class(TextSearch)
     bpy.utils.register_class(THANGS_OT_search_invoke)
     bpy.utils.register_class(SearchButton)
     bpy.utils.register_class(IncPageChange)
@@ -989,7 +1017,8 @@ def unregister():
     fetcher.preview_collections.clear()
     icon_collections.clear()
 
-    bpy.utils.unregister_class(THANGS_PT_model_display)
+    bpy.utils.unregister_class(MeshSearch)
+    bpy.utils.unregister_class(TextSearch)
     bpy.utils.unregister_class(THANGS_OT_search_invoke)
     bpy.utils.unregister_class(SearchButton)
     bpy.utils.unregister_class(IncPageChange)
