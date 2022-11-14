@@ -24,9 +24,10 @@ from requests.adapters import HTTPAdapter, Retry
 
 
 class ThangsFetcher():
-    def __init__(self, callback=None):
+    def __init__(self, callback=None, stl_callback=None):
         self.search_thread = None
         self.search_callback = callback
+        self.stl_callback = stl_callback
 
         self.context = ""
         self.thangs_ui_mode = ''
@@ -35,6 +36,7 @@ class ThangsFetcher():
         self.query = ""
         self.uuid = ""
         self.bearer = ""
+        self.searchType = ""
 
         self.models = []
         self.partList = []
@@ -54,6 +56,7 @@ class ThangsFetcher():
         self.newSearch = False
         self.selectionFailed = False
         self.selectionEmpty = False
+        self.selectionThumbnailGrab = False
 
         self.Thangs_Config = ThangsConfig()
         self.Thangs_Utils = Utils()
@@ -71,7 +74,7 @@ class ThangsFetcher():
             self.partId = partId
             self.partFileName = partFileName
             self.iconId = iconId
-            self.fileType= fileType
+            self.fileType = fileType
             self.index = index
             self.domain = domain
             pass
@@ -209,7 +212,7 @@ class ThangsFetcher():
         return False
 
     def get_total_results(self, responseData):
-       
+
         print("Started Counting Results")
         items = responseData["searchMetadata"]
         self.totalModels = items['totalResults']
@@ -281,7 +284,7 @@ class ThangsFetcher():
             }
 
             self.amplitude.send_thangs_event("Capture", data)
-        if show_summary: 
+        if show_summary:
             self.get_total_results(responseData)
 
         # ugh
@@ -290,6 +293,9 @@ class ThangsFetcher():
 
         self.modelList.clear()
         I = 0
+        if self.searchType == "object":
+                self.selectionThumbnailGrab = True
+                self.stl_callback()
         for item in items:
             self.partList.clear()
 
@@ -297,7 +303,8 @@ class ThangsFetcher():
             #     thumbnail = item["thumbnails"][0]
             # else:
             model_id = item["modelId"]
-            thumbnail = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"#item["thumbnailUrl"]
+            # item["thumbnailUrl"]
+            thumbnail = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
 
             self.models.append(ModelInfo(
                 item["modelId"],
@@ -325,7 +332,8 @@ class ThangsFetcher():
                 thumb = self.pcoll.load(
                     item["modelId"]+str(I), filepath, 'IMAGE')
 
-            self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get("originalFileType"), thumb.icon_id, item["domain"], 0))
+            self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get(
+                "originalFileType"), thumb.icon_id, item["domain"], 0))
 
             if len(item["parts"]) > 0:
                 parts = item["parts"]
@@ -333,15 +341,16 @@ class ThangsFetcher():
                 for part in parts:
                     print("Getting Thumbnail for {0}".format(part["modelId"]))
                     self.partList.append(self.PartStruct(
-                                part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
-                    
+                        part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
+
                     thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
                         I, X, part["thumbnailUrl"], part["modelId"],)).start()
 
                     X += 1
 
             title = item.get('modelTitle') or item.get('modelFileName')
-            self.modelList.append(self.ModelStruct(modelTitle=title, partList=self.partList[:]))
+            self.modelList.append(self.ModelStruct(
+                modelTitle=title, partList=self.partList[:]))
 
             I += 1
 
@@ -358,7 +367,9 @@ class ThangsFetcher():
         self.pcoll.Model_page = self.CurrentPage
 
         self.searching = False
+        self.selectionSearching = False
         self.newSearch = False
+        self.selectionThumbnailGrab = False
 
         self.thangs_ui_mode = 'VIEW'
 
@@ -368,6 +379,7 @@ class ThangsFetcher():
         print("Search Completed!")
 
     def get_http_search(self):
+        self.searchType = "Text"
         global thangs_config
         # Clean up temporary files from previous attempts
         urllib.request.urlcleanup()
@@ -454,18 +466,21 @@ class ThangsFetcher():
             })
 
         else:
-            
+
             responseData = response.json()
             self.display_search_results(responseData)
-            
+
         return
 
     def get_stl_search(self, stl_path):
-        import re
         global thangs_config
-        print("Started STL Search")
+        self.searchType = "Object"
+        self.thangs_ui_mode = 'SEARCH'
         self.selectionSearching = True
         self.selectionEmpty = False
+        self.stl_callback()
+
+        print("Started STL Search")
 
         self.CurrentPage = self.PageNumber
 
@@ -497,12 +512,13 @@ class ThangsFetcher():
         }
 
         try:
-            url_endpoint = str(self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl"
+            url_endpoint = str(
+                self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl"
             print(url_endpoint)
             response = requests.get(url_endpoint, headers=headers)
             responseData = response.json()
 
-            print(responseData)
+            # print(responseData)
             signedUrl = responseData["signedUrl"]
             new_Filename = responseData["newFileName"]
         except:
@@ -515,12 +531,17 @@ class ThangsFetcher():
 
         data = open(stl_path, 'rb').read()
 
+        # print("DATA")
+        # print(data)
+
         try:
             putHeaders = {
-            "Content-Type": "model/stl",
+                "Content-Type": "model/stl",
             }
-            putRequest = requests.put(url=signedUrl, data=data, headers=putHeaders)
+            putRequest = requests.put(
+                url=signedUrl, data=data, headers=putHeaders)
             print(putRequest.status_code)
+
             #response = s.post(url, headers=headers, data=data)
         except:
             print("API Failed")
@@ -534,7 +555,7 @@ class ThangsFetcher():
 
         try:
             url = str(
-                self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath=" + new_Filename )
+                self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath=" + new_Filename)
             print(url)
 
             response = requests.get(url=url, headers=headers)
@@ -542,7 +563,7 @@ class ThangsFetcher():
             responseData = response.json()
             responseData["searchMetadata"] = {}
             self.totalModels = 20
-            self.display_search_results(responseData,show_summary=False)
+            self.display_search_results(responseData, show_summary=False)
         except Exception as e:
             print("Get Results Broke: ", e)
             self.selectionSearching = False

@@ -120,6 +120,14 @@ def tag_redraw_areas(area_types: iter = ["ALL"]):
                 if area_type == "ALL" or area.type == area_type:
                     area.tag_redraw()
 
+def redraw_search(area_types: iter = ["ALL"]):
+    area_types = confirm_list(area_types)
+    screens = [bpy.context.screen] if bpy.context.screen else bpy.data.screens
+    for screen in screens:
+        for area in screen.areas:
+            for area_type in area_types:
+                if area_type == "ALL" or area.type == area_type:
+                    area.tag_redraw()
 
 def on_complete_search():
     tag_redraw_areas()
@@ -132,7 +140,7 @@ def import_model():
 
 initialize(bl_info["version"])
 initialize_thangs_api(callback=import_model)
-fetcher = ThangsFetcher(callback=on_complete_search)
+fetcher = ThangsFetcher(callback=on_complete_search, stl_callback=redraw_search)
 amplitude = ThangsEvents()
 thangs_config = ThangsConfig()
 thangs_login = ThangsLogin()
@@ -566,9 +574,12 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     "link.thangs", icon_value=icons_dict["ThangsT"].icon_id)
 
                 row = layout.row()
-                row.label(
-                    text="“"+bpy.context.scene.thangs_model_search+"” on Thangs")
-
+                if fetcher.searchType == "Text":
+                    row.label(
+                        text="“"+bpy.context.scene.thangs_model_search+"” on Thangs")
+                elif fetcher.searchType == "Object":
+                    row.label(
+                        text="your object on Thangs")
                 row = layout.row()
                 p = row.operator("thangs.search_invoke", icon='CANCEL')
                 p.next_mode = self.next_mode('SEARCH')
@@ -732,7 +743,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
                     text="Unable to find results for")
                 SearchingRow = layout.row()
                 SearchingRow.label(
-                    text="your selection on Thangs...")
+                    text="your selection on Thangs")
                 SearchingRow = layout.row()
                 SearchingRow.label(
                     text="Please try again!") 
@@ -756,7 +767,8 @@ class THANGS_PT_model_display(bpy.types.Panel):
         col = layout.column(align=True)
 
         row = col.row()
-        row.prop(context.scene, "thangs_model_search")
+        if not fetcher.selectionSearching:
+            row.prop(context.scene, "thangs_model_search")
 
         # TODO ENABLE SEARCH BY SELECTION
         if bpy.context.active_object != None:
@@ -774,7 +786,16 @@ class THANGS_PT_model_display(bpy.types.Panel):
             SearchingRow.label(
                 text="'"+bpy.context.scene.thangs_model_search+"'")
         
-        if fetcher.selectionSearching:
+        if fetcher.selectionThumbnailGrab:
+            col.enabled = False
+            SearchingRow = layout.row(align=True)
+            SearchingRow.label(
+                text="Fetching thumbnails for")
+            SearchingRow = layout.row(align=True)
+            SearchingRow.label(
+                text="your object selection results!")
+
+        elif fetcher.selectionSearching:
             col.enabled = False
             SearchingRow = layout.row(align=True)
             SearchingRow.label(
