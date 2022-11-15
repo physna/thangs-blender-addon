@@ -9,7 +9,7 @@ workflows:
 jobs:
   build:
     docker:
-      - image: 'python:3.10'
+      - image: 'python:3.11'
     steps:
       - checkout
       - run: apt-get update && apt-get -y install rsync zip

@@ -1,21 +1,25 @@
-
-# Thangs Blender Addon
+# Thangs Blender Addon - Never Design from Zero Again.
 
 **Find models with Thangs from within Blender**
 
 ## Features
 
-The Thangs Blender addon integrates the search functionality of [Thangs.com](https://thangs.com) into [Blender](http://www.blender.org). Discover models on Thangs and import them into Blender with just a few clicks.
+The Thangs Blender addon integrates the search functionality of [Thangs.com](https://thangs.com) into [Blender](http://www.blender.org). Discover models on Thangs and import them into Blender with just a few clicks!
 
-
-![My Video](https://user-images.githubusercontent.com/105221281/191535999-777c0cd0-9f2c-4eb4-9ca2-8ccd7cb05aec.gif)
-
+![BlenderSearchGif](https://user-images.githubusercontent.com/105221281/201858553-192ad292-df0e-4e12-af07-9665b33a95bc.gif)
 
 ## Install
 
-To install this addon, download the [latest release](https://github.com/physna/thangs-blender-addon/releases/download/v0_1_8/thangs-blender-addon.zip), install it as a regular addon (Preferences -> Addons -> Install), and activate it.
+- Get Thangs Blender Addon on [Blender Market](https://www.blendermarket.com/products/thangs-blender-addon) or [Gumroad](https://randyhucker.gumroad.com/l/thangs-blender-addon)
+- Open Blender, then go to Edit > Preferences > Add-ons > Install and then find the zip file
+
+(You can also download for free on the [releases page](https://github.com/physna/thangs-blender-addon/releases))
 
 ![Thangs-Breeze_3](https://user-images.githubusercontent.com/105221281/184414452-2c7913d5-4a20-47ca-a31b-125a21067523.gif)
+
+## Platforms
+
+Thangs Blender Addon works on Windows, Mac and Linux. Blender 3.0.0+ is supported.
 
 ## Usage
 

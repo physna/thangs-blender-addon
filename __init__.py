@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
-    "version": (0, 2, 2),
+    "version": (0, 2, 3),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
     "description": "Browse and download free 3D models",
@@ -460,6 +460,7 @@ class THANGS_OT_search_invoke(Operator):
             self.next_mode == 'VIEW'
         else:
             self.next_mode == 'SEARCH'
+        context.scene.thangs_model_search = ""
         fetcher.thangs_ui_mode = self.next_mode
 
         context.area.tag_redraw()
@@ -682,7 +683,7 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 SearchingRow = layout.row()
                 SearchingRow.label(
                     text="Please try again!")
-            elif fetcher.SelectionFailed == True:
+            elif fetcher.selectionFailed == True:
                 SearchingRow.label(
                     text="Unable to search for")
                 SearchingRow = layout.row()
@@ -691,6 +692,15 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 SearchingRow = layout.row()
                 SearchingRow.label(
                     text="Please try again!") 
+            elif thangs_api.failed == True:
+                SearchingRow.label(
+                    text="Unable to import")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="your selection from Thangs")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="Please try again!")
             else:
                 SearchingRow.label(
                     text="Found 0 Models for:")
@@ -720,7 +730,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 text="'"+bpy.context.scene.thangs_model_search+"'")
 
         row = col.row()
-
         row.prop(context.scene, "thangs_model_search")
 
         row.scale_x = .18
@@ -741,8 +750,9 @@ class THANGS_PT_model_display(bpy.types.Panel):
 preview_collections = fetcher.preview_collections
 
 def startSearch(self, value):
-    queryText = bpy.context.scene.thangs_model_search
-    fetcher.search(query=queryText)
+    if bpy.context.scene.thangs_model_search:
+        queryText = bpy.context.scene.thangs_model_search
+        fetcher.search(query=queryText)
 
 
 def uninstall_old_version_timer():
@@ -757,6 +767,32 @@ def uninstall_old_version_timer():
         print('Removing old Thangs Breeze installation')
         bpy.ops.preferences.addon_remove(module=existing_breeze_installation.__name__)
     return None
+
+def open_N_Panel():
+    first_open = os.path.join(os.path.dirname(__file__), 'firstOpen.json')
+    if not os.path.exists(first_open):
+        f = open(first_open, "x")
+
+    print("Top of Try")
+    print(os.stat(first_open).st_size)
+    if os.stat(first_open).st_size == 0:
+        info = {
+            'firstOpening': False,
+        }
+        with open(first_open, 'w') as json_file:
+            json.dump(info, json_file)
+
+        context_copy = bpy.context.copy()
+        for area in bpy.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                context_copy['area'] = area
+                bpy.ops.wm.context_toggle(context_copy,data_path="space_data.show_region_ui")
+
+def open_panel_timer():
+    try:
+        open_N_Panel()
+    except:
+        pass
 
 def heartbeat_timer():
     log.info('sending thangs heartbeat')
@@ -883,6 +919,7 @@ def register():
 
     addon_updater_ops.register(bl_info)
 
+    bpy.app.timers.register(open_panel_timer)
     bpy.app.timers.register(heartbeat_timer)
     bpy.app.timers.register(open_timer)
     bpy.app.timers.register(execute_queued_functions)
@@ -897,6 +934,8 @@ def unregister():
 
     if hasattr(WindowManager, 'Model'):
         del WindowManager.Model
+    if bpy.app.timers.is_registered(open_panel_timer):
+        bpy.app.timers.unregister(open_panel_timer)
     bpy.app.timers.unregister(heartbeat_timer)
     bpy.app.timers.unregister(open_timer)
     bpy.app.timers.unregister(execute_queued_functions)
