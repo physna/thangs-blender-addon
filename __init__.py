@@ -767,6 +767,32 @@ def uninstall_old_version_timer():
         bpy.ops.preferences.addon_remove(module=existing_breeze_installation.__name__)
     return None
 
+def open_N_Panel():
+    first_open = os.path.join(os.path.dirname(__file__), 'firstOpen.json')
+    if not os.path.exists(first_open):
+        f = open(first_open, "x")
+
+    print("Top of Try")
+    print(os.stat(first_open).st_size)
+    if os.stat(first_open).st_size == 0:
+        info = {
+            'firstOpening': False,
+        }
+        with open(first_open, 'w') as json_file:
+            json.dump(info, json_file)
+
+        context_copy = bpy.context.copy()
+        for area in bpy.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                context_copy['area'] = area
+                bpy.ops.wm.context_toggle(context_copy,data_path="space_data.show_region_ui")
+
+def open_panel_timer():
+    try:
+        open_N_Panel()
+    except:
+        pass
+
 def heartbeat_timer():
     log.info('sending thangs heartbeat')
     amplitude.send_amplitude_event(
@@ -892,6 +918,7 @@ def register():
 
     addon_updater_ops.register(bl_info)
 
+    bpy.app.timers.register(open_panel_timer)
     bpy.app.timers.register(heartbeat_timer)
     bpy.app.timers.register(open_timer)
     bpy.app.timers.register(execute_queued_functions)
@@ -906,6 +933,8 @@ def unregister():
 
     if hasattr(WindowManager, 'Model'):
         del WindowManager.Model
+    if bpy.app.timers.is_registered(open_panel_timer):
+        bpy.app.timers.unregister(open_panel_timer)
     bpy.app.timers.unregister(heartbeat_timer)
     bpy.app.timers.unregister(open_timer)
     bpy.app.timers.unregister(execute_queued_functions)
