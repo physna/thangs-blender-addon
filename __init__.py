@@ -460,6 +460,7 @@ class THANGS_OT_search_invoke(Operator):
             self.next_mode == 'VIEW'
         else:
             self.next_mode == 'SEARCH'
+        context.scene.thangs_model_search = ""
         fetcher.thangs_ui_mode = self.next_mode
 
         context.area.tag_redraw()
@@ -729,7 +730,6 @@ class THANGS_PT_model_display(bpy.types.Panel):
                 text="'"+bpy.context.scene.thangs_model_search+"'")
 
         row = col.row()
-
         row.prop(context.scene, "thangs_model_search")
 
         row.scale_x = .18
@@ -750,8 +750,9 @@ class THANGS_PT_model_display(bpy.types.Panel):
 preview_collections = fetcher.preview_collections
 
 def startSearch(self, value):
-    queryText = bpy.context.scene.thangs_model_search
-    fetcher.search(query=queryText)
+    if bpy.context.scene.thangs_model_search:
+        queryText = bpy.context.scene.thangs_model_search
+        fetcher.search(query=queryText)
 
 
 def uninstall_old_version_timer():
