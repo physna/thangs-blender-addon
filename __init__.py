@@ -767,7 +767,28 @@ def uninstall_old_version_timer():
         bpy.ops.preferences.addon_remove(module=existing_breeze_installation.__name__)
     return None
 
+def open_N_Panel():
+    first_open = os.path.join(os.path.dirname(__file__), 'firstOpen.json')
+    if not os.path.exists(first_open):
+        f = open(first_open, "x")
+
+    print("Top of Try")
+    print(os.stat(first_open).st_size)
+    if os.stat(first_open).st_size == 0:
+        info = {
+            'firstOpening': False,
+        }
+        with open(first_open, 'w') as json_file:
+            json.dump(info, json_file)
+
+        context_copy = bpy.context.copy()
+        for area in bpy.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                context_copy['area'] = area
+                bpy.ops.wm.context_toggle(context_copy,data_path="space_data.show_region_ui")
+
 def heartbeat_timer():
+    open_N_Panel()
     log.info('sending thangs heartbeat')
     amplitude.send_amplitude_event(
         "Thangs Blender Addon - Heartbeat", event_properties={})
