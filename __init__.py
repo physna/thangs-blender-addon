@@ -787,8 +787,13 @@ def open_N_Panel():
                 context_copy['area'] = area
                 bpy.ops.wm.context_toggle(context_copy,data_path="space_data.show_region_ui")
 
+def open_panel_timer():
+    try:
+        open_N_Panel()
+    except:
+        pass
+
 def heartbeat_timer():
-    open_N_Panel()
     log.info('sending thangs heartbeat')
     amplitude.send_amplitude_event(
         "Thangs Blender Addon - Heartbeat", event_properties={})
@@ -913,6 +918,7 @@ def register():
 
     addon_updater_ops.register(bl_info)
 
+    bpy.app.timers.register(open_panel_timer)
     bpy.app.timers.register(heartbeat_timer)
     bpy.app.timers.register(open_timer)
     bpy.app.timers.register(execute_queued_functions)
@@ -927,6 +933,8 @@ def unregister():
 
     if hasattr(WindowManager, 'Model'):
         del WindowManager.Model
+    if bpy.app.timers.is_registered(open_panel_timer):
+        bpy.app.timers.unregister(open_panel_timer)
     bpy.app.timers.unregister(heartbeat_timer)
     bpy.app.timers.unregister(open_timer)
     bpy.app.timers.unregister(execute_queued_functions)
