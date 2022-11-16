@@ -162,7 +162,7 @@ def LastPage():
         return None
     else:
         fetcher.PageNumber = fetcher.PageTotal
-        fetcher.search(fetcher.query)
+        fetcher.pageination_Search()
         return None
 
 def IncPage():
@@ -170,21 +170,21 @@ def IncPage():
         return None
     if fetcher.PageNumber < fetcher.PageTotal:
         fetcher.PageNumber = fetcher.PageNumber + 1
-        fetcher.search(fetcher.query)
+        fetcher.pageination_Search()
     return None
 
 def DecPage():
     if fetcher.PageNumber == 1 or fetcher.searching:
         return None
     fetcher.PageNumber = fetcher.PageNumber - 1
-    fetcher.search(fetcher.query)
+    fetcher.pageination_Search()
     return None
 
 def FirstPage():
     if fetcher.searching:
         return None
     fetcher.PageNumber = 1
-    fetcher.search(fetcher.query)
+    fetcher.pageination_Search()
     return None
 
 class SearchButton(bpy.types.Operator):
@@ -441,9 +441,9 @@ class ThangsLink(bpy.types.Operator):
     bl_label = "Redirect to Thangs"
 
     def execute(self, context):
-        amplitude.send_amplitude_event("nav to thangs", event_properties={})
-        webbrowser.open(thangs_config.thangs_config["url"] + "search/" + fetcher.query +
-                        "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
+        amplitude.send_amplitude_event("Thangs Blender Addon - Nav to Thangs", event_properties={})
+        webbrowser.open(thangs_config.thangs_config["url"] + "search/" + str(fetcher.searchTerm) +
+                        "?scope=all&view=compact-grid&utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
         return {'FINISHED'}
 
 icon_collections = {}
