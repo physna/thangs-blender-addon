@@ -362,7 +362,6 @@ class ImportModelOperator(Operator):
         if thangs_login_import.event != None:
             print("Stopping Login")
             thangs_login_import.event.set()
-            thangs_login_import.join()
             login_thread.join()
             thangs_login_import = ThangsLogin()
         thangs_login_import.event = Event()

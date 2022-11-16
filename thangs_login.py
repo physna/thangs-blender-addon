@@ -62,6 +62,7 @@ class ThangsLogin(threading.Thread):
             print("Unsuccessful Login")
             self.token_available.set()
             self.token_available.clear()
+            self.event = None
 
     def apiAccessGrantUrl(self, codeChallengeId, attempts):
         return f"{self.config['url']}api/users/access-grant/{codeChallengeId}/check?attempts={attempts}"
