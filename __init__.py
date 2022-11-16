@@ -162,7 +162,7 @@ def LastPage():
         return None
     else:
         fetcher.PageNumber = fetcher.PageTotal
-        fetcher.search(fetcher.query)
+        fetcher.pageination_Search()
         return None
 
 def IncPage():
@@ -170,21 +170,21 @@ def IncPage():
         return None
     if fetcher.PageNumber < fetcher.PageTotal:
         fetcher.PageNumber = fetcher.PageNumber + 1
-        fetcher.search(fetcher.query)
+        fetcher.pageination_Search()
     return None
 
 def DecPage():
     if fetcher.PageNumber == 1 or fetcher.searching:
         return None
     fetcher.PageNumber = fetcher.PageNumber - 1
-    fetcher.search(fetcher.query)
+    fetcher.pageination_Search()
     return None
 
 def FirstPage():
     if fetcher.searching:
         return None
     fetcher.PageNumber = 1
-    fetcher.search(fetcher.query)
+    fetcher.pageination_Search()
     return None
 
 class SearchButton(bpy.types.Operator):
