@@ -307,7 +307,7 @@ class ThangsApi:
             return
             
         print("Imported")
-        self.amplitude.send_amplitude_event("Thangs Blender Addon - Model Import Success", event_properties={})
+        self.amplitude.send_amplitude_event("Thangs Blender Addon - import model - success", event_properties={})
 
         self.importing = False
         return
