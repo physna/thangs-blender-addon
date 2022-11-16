@@ -25,7 +25,7 @@ from .thangs_login import ThangsLogin, stop_access_grant
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from .config import ThangsConfig, initialize
-from .thangs_importer import initialize_thangs_api, get_thangs_api#, ThangsApi
+from .thangs_importer import initialize_thangs_api, get_thangs_api
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ bl_info = {
     "version": (0, 2, 2),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
-    "description": "Browse and download free 3D models",
+    "description": "Browse and import free 3D models",
     "warning": "",
     "support": "COMMUNITY",
     "wiki_url": "https://github.com/physna/thangs-blender-addon",
@@ -145,9 +145,9 @@ pcoll = fetcher.pcoll
 PageTotal = fetcher.PageTotal
 fetcher.thangs_ui_mode = 'SEARCH'
 
-resultsToShow = 8
+fetcher.resultsToShow = 8
 enumHolders = []
-for x in range(resultsToShow):
+for x in range(fetcher.resultsToShow):
     enumHolders.append([])
 
 def setSearch():
