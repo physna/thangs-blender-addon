@@ -118,7 +118,16 @@ class ThangsFetcher():
     def search(self, query):
         if self.searching:
             return False
-        self.query = urllib.parse.quote(query)
+        self.query = urllib.parse.quote(query, safe='')
+        # this should return immediately with True
+        # kick off a thread that does the searching
+        self.search_thread = threading.Thread(
+            target=self.get_http_search).start()
+        return True
+
+    def pageination_Search(self):
+        if self.searching:
+            return False
         # this should return immediately with True
         # kick off a thread that does the searching
         self.search_thread = threading.Thread(
