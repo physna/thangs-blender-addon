@@ -297,13 +297,17 @@ class ThangsApi:
             else:
                 print('STL Import')
                 bpy.ops.import_mesh.stl(filepath=self.file_path)
-        except:
+        except Exception as e:
             print('Failed to Import')
             self.failed = True
             self.importing = False
+            self.amplitude.send_amplitude_event("Thangs Blender Addon - Model Import Failure", event_properties={
+                    'Exception': str(e),
+                })
             return
             
         print("Imported")
+        self.amplitude.send_amplitude_event("Thangs Blender Addon - Model Import Success", event_properties={})
 
         self.importing = False
         return
