@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
-    "version": (0, 2, 4),
+    "version": (0, 2, 5),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
     "description": "Browse and import free 3D models",
@@ -442,7 +442,7 @@ class ThangsLink(bpy.types.Operator):
 
     def execute(self, context):
         amplitude.send_amplitude_event("Thangs Blender Addon - Nav to Thangs", event_properties={})
-        webbrowser.open(thangs_config.thangs_config["url"] + "search/" + str(fetcher.searchTerm) +
+        webbrowser.open(thangs_config.thangs_config["url"] + "search/" + fetcher.query +
                         "?scope=all&view=compact-grid&utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
         return {'FINISHED'}
 

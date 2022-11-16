@@ -93,7 +93,6 @@ class ThangsFetcher():
         self.Directory = ""
         self.pcoll = ""
         self.query = ""
-        self.searchTerm = ""
         self.uuid = ""
         self.bearer = ""
 
@@ -119,8 +118,7 @@ class ThangsFetcher():
     def search(self, query):
         if self.searching:
             return False
-        self.searchTerm = query
-        self.query = urllib.parse.quote(query)
+        self.query = urllib.parse.quote(query, safe='')
         # this should return immediately with True
         # kick off a thread that does the searching
         self.search_thread = threading.Thread(
