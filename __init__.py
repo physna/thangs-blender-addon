@@ -141,6 +141,7 @@ thangs_api = get_thangs_api()
 execution_queue = thangs_api.execution_queue
 
 ButtonSearch = "Search"
+Origin = ""
 PageNumber = fetcher.PageNumber
 pcoll = fetcher.pcoll
 PageTotal = fetcher.PageTotal
@@ -259,6 +260,7 @@ class SearchBySelect(bpy.types.Operator):
         data = json.load(f)
         fetcher.bearer = data["bearer"]
         thangs_api.bearer = data["bearer"]
+        f.close()
 
         fetcher.selectionSearch(context)
         return {'FINISHED'}
@@ -805,9 +807,10 @@ def open_panel_timer():
         pass
 
 def heartbeat_timer():
+    global Origin
     log.info('sending thangs heartbeat')
     amplitude.send_amplitude_event(
-        "Thangs Blender Addon - Heartbeat", event_properties={})
+        "Thangs Blender Addon - Heartbeat", event_properties={'Origin': Origin})
     return 300
 
 def open_timer():
@@ -832,6 +835,7 @@ def execute_queued_functions():
 
 def register():
     global fetcher
+    global Origin
     from bpy.types import WindowManager
     from bpy.props import (
         StringProperty,
@@ -934,6 +938,12 @@ def register():
     bpy.app.timers.register(open_timer)
     bpy.app.timers.register(execute_queued_functions)
     bpy.app.timers.register(uninstall_old_version_timer)
+
+    origin_location = os.path.join(os.path.dirname(__file__), 'origin.json')
+    f = open(origin_location)
+    data = json.load(f)
+    Origin = data["origin"]
+    f.close()
 
     log.info("Finished Register")
 
