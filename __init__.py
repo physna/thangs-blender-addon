@@ -940,10 +940,11 @@ def register():
     bpy.app.timers.register(uninstall_old_version_timer)
 
     origin_location = os.path.join(os.path.dirname(__file__), 'origin.json')
-    f = open(origin_location)
-    data = json.load(f)
-    Origin = data["origin"]
-    f.close()
+    if os.path.exists(origin_location):
+        f = open(origin_location)
+        data = json.load(f)
+        Origin = data["origin"]
+        f.close()
 
     log.info("Finished Register")
 
