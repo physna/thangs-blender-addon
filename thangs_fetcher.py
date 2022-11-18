@@ -262,18 +262,35 @@ class ThangsFetcher():
         # Add in event Code
 
     def get_lazy_thumbs(self, I, X, thumbnail, modelID,):
-        try:
-            print(f'Fetching part {thumbnail}')
-            filePath = urllib.request.urlretrieve(thumbnail)
-            filepath = os.path.join(modelID, filePath[0])
-        except:
-            filePath = Path(__file__ + "\icons\placeholder.png")
-            filepath = os.path.join(modelID, filePath)
+        global thangs_config
+        temp_dir = os.path.join(
+            self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
+        icon_path = os.path.join(temp_dir, modelID)
+        if not os.path.exists(icon_path):
+            os.makedirs(icon_path)
+
+        thumbnailPath = thumbnail.replace("%2F", "/")
+        thumbnailPath = thumbnail.replace("?", "/")
+        icon_path = os.path.join(icon_path, thumbnailPath.split('/')[-1])
+
+        if not os.path.exists(icon_path):
+            try:
+                print(f'Fetching part {thumbnail}')
+                filePath = urllib.request.urlretrieve(url=thumbnail, filename=icon_path)
+                icon_path = os.path.join(modelID, filePath[0])
+            except Exception as e:
+                print(e)
+                filePath = Path(__file__ + "\icons\placeholder.png")
+                icon_path = os.path.join(modelID, filePath)
+                
         try:
-            thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
+            thumb = self.pcoll.load(modelID, icon_path, 'IMAGE')
         except:
-            thumb = self.pcoll.load(modelID+str(X), filepath, 'IMAGE')
+            thumb = self.pcoll.load(
+                modelID+str(I), icon_path, 'IMAGE')
 
         try:
             self.modelList[I].parts[X].iconId = thumb.icon_id
@@ -419,15 +436,16 @@ class ThangsFetcher():
                 icon_path = os.path.join(temp_dir, item["modelId"])
                 if not os.path.exists(icon_path):
                     os.makedirs(icon_path)
-                icon_path = os.path.join(icon_path, thumbnail.split('/')[-1])
+                thumbnailPath = thumbnail.replace("%2F", "/")
+                thumbnailPath = thumbnail.replace("?", "/")
+                icon_path = os.path.join(icon_path, thumbnailPath.split('/')[-1])
                 if not os.path.exists(icon_path):
                     try:
                         print(f'Fetching {thumbnail}')
-                        filePath = urllib.request.urlretrieve(thumbnail, icon_path)
+                        filePath = urllib.request.urlretrieve(url=thumbnail, filename=icon_path)
                         icon_path = os.path.join(item["modelId"], filePath[0])
                     except Exception as e:
                         print(e)
-
                 try:
                     thumb = self.pcoll.load(item["modelId"], icon_path, 'IMAGE')
                 except:
