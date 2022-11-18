@@ -12,6 +12,7 @@ import shutil
 import math
 import platform
 import ssl
+import time
 import socket
 
 from .model_info import ModelInfo
@@ -293,9 +294,10 @@ class ThangsFetcher():
                 modelID+str(I), icon_path, 'IMAGE')
 
         try:
+            time.sleep(.25)
             self.modelList[I].parts[X].iconId = thumb.icon_id
-        except:
-            print("Thumbnail Doesn't Exist")
+        except Exception as e:
+            print(X)
 
     def get_http_search(self):
         global thangs_config
@@ -460,7 +462,7 @@ class ThangsFetcher():
                     for part in parts:
                         print("Getting Thumbnail for {0}".format(part["modelId"]))
                         self.partList.append(self.PartStruct(
-                                    part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
+                                    part["modelId"], part["modelFileName"], part.get("originalFileType"), 0, part["domain"], X))
                         
                         thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
                             I, X, part["thumbnailUrl"], part["modelId"],)).start()
