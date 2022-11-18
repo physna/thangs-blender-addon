@@ -285,6 +285,12 @@ class ThangsFetcher():
         # Clean up temporary files from previous attempts
         urllib.request.urlcleanup()
         print("Started Search")
+        
+        temp_dir = os.path.join(
+            self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
         self.searching = True
         self.failed = False
 
@@ -408,19 +414,25 @@ class ThangsFetcher():
                     (((self.CurrentPage - 1) * 8) + I)
                 ))
 
-                try:
-                    print(f'Fetching {thumbnail}')
-                    filePath = urllib.request.urlretrieve(thumbnail)
-                    filepath = os.path.join(item["modelId"], filePath[0])
-                except:
-                    filePath = Path(__file__ + "\icons\placeholder.png")
-                    filepath = os.path.join(item["modelId"], filePath)
+
+
+                icon_path = os.path.join(temp_dir, item["modelId"])
+                if not os.path.exists(icon_path):
+                    os.makedirs(icon_path)
+                icon_path = os.path.join(icon_path, thumbnail.split('/')[-1])
+                if not os.path.exists(icon_path):
+                    try:
+                        print(f'Fetching {thumbnail}')
+                        filePath = urllib.request.urlretrieve(thumbnail, icon_path)
+                        icon_path = os.path.join(item["modelId"], filePath[0])
+                    except Exception as e:
+                        print(e)
 
                 try:
-                    thumb = self.pcoll.load(item["modelId"], filepath, 'IMAGE')
+                    thumb = self.pcoll.load(item["modelId"], icon_path, 'IMAGE')
                 except:
                     thumb = self.pcoll.load(
-                        item["modelId"]+str(I), filepath, 'IMAGE')
+                        item["modelId"]+str(I), icon_path, 'IMAGE')
 
                 self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get("originalFileType"), thumb.icon_id, item["domain"], 0))
 
