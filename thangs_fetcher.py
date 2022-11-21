@@ -291,10 +291,6 @@ class ThangsFetcher():
         # Added
         self.CurrentPage = self.PageNumber
 
-        self.amplitude.send_amplitude_event("Text Search Started", event_properties={
-            'searchTerm': self.query,
-        })
-
         # Get the preview collection (defined in register func).
         self.pcoll = self.preview_collections["main"]
 
@@ -304,6 +300,9 @@ class ThangsFetcher():
                 self.search_callback()
                 return
             else:
+                self.amplitude.send_amplitude_event("Text Search Started", event_properties={
+                                                        'searchTerm': self.query,
+                                                    })
                 self.newSearch = True
                 self.PageNumber = 1
                 self.CurrentPage = 1
