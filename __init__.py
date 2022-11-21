@@ -130,9 +130,11 @@ def import_model():
     tag_redraw_areas()
     return
 
+resultsToShow = 8
+
 initialize(bl_info["version"])
 initialize_thangs_api(callback=import_model)
-fetcher = ThangsFetcher(callback=on_complete_search)
+fetcher = ThangsFetcher(callback=on_complete_search, results_to_show=resultsToShow)
 amplitude = ThangsEvents()
 thangs_config = ThangsConfig()
 thangs_login = ThangsLogin()
@@ -145,7 +147,7 @@ pcoll = fetcher.pcoll
 PageTotal = fetcher.PageTotal
 fetcher.thangs_ui_mode = 'SEARCH'
 
-resultsToShow = 8
+
 enumHolders = []
 for x in range(resultsToShow):
     enumHolders.append([])
