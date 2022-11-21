@@ -47,7 +47,6 @@ class ThangsFetcher():
         self.PageTotal = 0
         self.PageNumber = 1
         self.CurrentPage = 1
-        self.resultsToShow = 0
 
         self.searching = False
         self.selectionSearching = False
@@ -338,9 +337,7 @@ class ThangsFetcher():
                 return
         else:
             try:
-                response = requests.get(
-                    str(self.Thangs_Config.thangs_config['url'])+"api/models/v2/search-by-text?page=" +
-                    str(self.CurrentPage-1)+"&searchTerm="+ str(urllib.parse.quote(self.query, safe='')) +
+                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+str(urllib.parse.quote(self.query, safe='')) +
                     "&pageSize="+str(self.resultsToShow)+"&collapse=true",
                     headers={"x-thangs-searchmetadata": base64.b64encode(
                         json.dumps(self.searchMetaData).encode()).decode(),
