@@ -297,7 +297,7 @@ class ThangsApi:
             else:
                 print('STL Import')
                 bpy.ops.import_mesh.stl(filepath=self.file_path)
-        except:
+        except Exception as e:
             print('Failed to Import')
             self.failed = True
             self.importing = False
