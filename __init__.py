@@ -773,6 +773,8 @@ def open_N_Panel():
     if not os.path.exists(first_open):
         f = open(first_open, "x")
 
+    print("Top of Try")
+    print(os.stat(first_open).st_size)
     if os.stat(first_open).st_size == 0:
         info = {
             'firstOpening': False,

@@ -327,7 +327,7 @@ class ThangsFetcher():
         if self.newSearch == True:
             try:
                 response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+ str(urllib.parse.quote(self.query, safe='')) +
-                                        "&pageSize="+str(self.resultsToShow)+"&collapse=true",
+                                        "&pageSize=8&collapse=true",
                                         headers={"x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")})
             except:
                 self.failed = True
@@ -337,7 +337,7 @@ class ThangsFetcher():
         else:
             try:
                 response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+str(urllib.parse.quote(self.query, safe='')) +
-                    "&pageSize="+str(self.resultsToShow)+"&collapse=true",
+                    "&pageSize=8&collapse=true",
                     headers={"x-thangs-searchmetadata": base64.b64encode(
                         json.dumps(self.searchMetaData).encode()).decode(),
                         "x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")},
