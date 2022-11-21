@@ -306,7 +306,7 @@ class ThangsApi:
                     'domain': self.model.domain,
                     'success': False,
                     'exception': e,
-                  })
+                })
             return
         
         self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
