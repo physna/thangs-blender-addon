@@ -430,7 +430,7 @@ class ThangsLink(bpy.types.Operator):
 
     def execute(self, context):
         amplitude.send_amplitude_event("Thangs Blender Addon - Nav to Thangs", event_properties={})
-        webbrowser.open(thangs_config.thangs_config["url"] + "search/" + fetcher.query +
+        webbrowser.open(thangs_config.thangs_config["url"] + "search/" + str(urllib.parse.quote(fetcher.query, safe='')) +
                         "?scope=all&view=compact-grid&utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
         return {'FINISHED'}
 

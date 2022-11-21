@@ -117,16 +117,7 @@ class ThangsFetcher():
     def search(self, query):
         if self.searching:
             return False
-        self.query = urllib.parse.quote(query, safe='')
-        # this should return immediately with True
-        # kick off a thread that does the searching
-        self.search_thread = threading.Thread(
-            target=self.get_http_search).start()
-        return True
-
-    def pageination_Search(self):
-        if self.searching:
-            return False
+        self.query = query
         # this should return immediately with True
         # kick off a thread that does the searching
         self.search_thread = threading.Thread(
@@ -336,8 +327,8 @@ class ThangsFetcher():
 
         if self.newSearch == True:
             try:
-                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+self.query +
-                                        "&pageSize=8&collapse=true",
+                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+ str(urllib.parse.quote(self.query, safe='')) +
+                                        "&pageSize="+str(self.resultsToShow)+"&collapse=true",
                                         headers={"x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")})
             except:
                 self.failed = True
@@ -346,10 +337,8 @@ class ThangsFetcher():
                 return
         else:
             try:
-                response = requests.get(
-                    str(self.Thangs_Config.thangs_config['url'])+"api/models/v2/search-by-text?page=" +
-                    str(self.CurrentPage-1)+"&searchTerm="+self.query +
-                    "&pageSize=8&collapse=true",
+                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+str(urllib.parse.quote(self.query, safe='')) +
+                    "&pageSize="+str(self.resultsToShow)+"&collapse=true",
                     headers={"x-thangs-searchmetadata": base64.b64encode(
                         json.dumps(self.searchMetaData).encode()).decode(),
                         "x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")},
