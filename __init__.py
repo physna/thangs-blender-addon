@@ -931,11 +931,12 @@ def unregister():
     global thangs_login
     global amplitude
 
-    try:
-        amplitude.send_amplitude_event(
-            "Thangs Blender Addon - Uninstalled", event_properties={})
-    except Exception as e:
-        print(e)
+    if isinstance(bpy.context.space_data, bpy.types.SpacePreferences):
+        try:
+            amplitude.send_amplitude_event(
+                "Thangs Blender Addon - Uninstalled", event_properties={})
+        except Exception as e:
+            print(e)
 
     if hasattr(WindowManager, 'Model'):
         del WindowManager.Model
