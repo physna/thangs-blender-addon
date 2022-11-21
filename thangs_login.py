@@ -16,7 +16,6 @@ class ThangsLogin(threading.Thread):
     token = {}
     Thangs_Config = get_config()
     token_available = threading.Event()
-    event = None
 
     def __init__(self):
         super().__init__()
@@ -37,8 +36,6 @@ class ThangsLogin(threading.Thread):
         while done == False and BLENDER_IS_CLOSED == False and attempts < MAX_ATTEMPTS:
             response = self.checkAccessGrant(codeChallengeId, attempts)
             print(attempts)
-            if self.event.is_set():
-                break
             if response.status_code == 200:
                 print("Successful Login")
                 done = True
@@ -46,14 +43,12 @@ class ThangsLogin(threading.Thread):
                 self.token = token.json()
                 self.token_available.set()
                 self.token_available.clear()
-                self.event = None
                 return
             elif response.status_code == 401:
                 print("Unsuccessful Login")
                 done = True
                 self.token_available.set()
                 self.token_available.clear()
-                self.event = None
                 return
 
             else:

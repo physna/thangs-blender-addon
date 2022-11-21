@@ -301,13 +301,21 @@ class ThangsApi:
             print('Failed to Import')
             self.failed = True
             self.importing = False
-            self.amplitude.send_amplitude_event("Thangs Blender Addon - import model - failure", event_properties={
-                    'Exception': str(e),
+            self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
+                    'extension': self.model.fileType,
+                    'domain': self.model.domain,
+                    'success': False,
+                    'exception': e,
                 })
             return
-            
+        
+        self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
+                    'extension': self.model.fileType,
+                    'domain': self.model.domain,
+                    'success': True,
+                })
+
         print("Imported")
-        self.amplitude.send_amplitude_event("Thangs Blender Addon - import model - success", event_properties={})
 
         self.importing = False
         return

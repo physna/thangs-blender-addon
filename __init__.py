@@ -25,18 +25,17 @@ from .thangs_login import ThangsLogin, stop_access_grant
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from .config import ThangsConfig, initialize
-from .thangs_importer import initialize_thangs_api, get_thangs_api
-from threading import Event
+from .thangs_importer import initialize_thangs_api, get_thangs_api#, ThangsApi
 
 log = logging.getLogger(__name__)
 
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
-    "version": (0, 2, 4),
+    "version": (0, 2, 5),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
-    "description": "Browse and import free 3D models",
+    "description": "Browse and download free 3D models",
     "warning": "",
     "support": "COMMUNITY",
     "wiki_url": "https://github.com/physna/thangs-blender-addon",
@@ -136,7 +135,7 @@ initialize_thangs_api(callback=import_model)
 fetcher = ThangsFetcher(callback=on_complete_search)
 amplitude = ThangsEvents()
 thangs_config = ThangsConfig()
-thangs_login_import = ThangsLogin()
+thangs_login = ThangsLogin()
 thangs_api = get_thangs_api()
 execution_queue = thangs_api.execution_queue
 
@@ -145,11 +144,10 @@ PageNumber = fetcher.PageNumber
 pcoll = fetcher.pcoll
 PageTotal = fetcher.PageTotal
 fetcher.thangs_ui_mode = 'SEARCH'
-login_thread = None
 
-fetcher.resultsToShow = 8
+resultsToShow = 8
 enumHolders = []
-for x in range(fetcher.resultsToShow):
+for x in range(resultsToShow):
     enumHolders.append([])
 
 def setSearch():
@@ -162,7 +160,7 @@ def LastPage():
         return None
     else:
         fetcher.PageNumber = fetcher.PageTotal
-        fetcher.search(fetcher.query)
+        fetcher.pageination_Search()
         return None
 
 def IncPage():
@@ -170,21 +168,21 @@ def IncPage():
         return None
     if fetcher.PageNumber < fetcher.PageTotal:
         fetcher.PageNumber = fetcher.PageNumber + 1
-        fetcher.search(fetcher.query)
+        fetcher.pageination_Search()
     return None
 
 def DecPage():
     if fetcher.PageNumber == 1 or fetcher.searching:
         return None
     fetcher.PageNumber = fetcher.PageNumber - 1
-    fetcher.search(fetcher.query)
+    fetcher.pageination_Search()
     return None
 
 def FirstPage():
     if fetcher.searching:
         return None
     fetcher.PageNumber = 1
-    fetcher.search(fetcher.query)
+    fetcher.pageination_Search()
     return None
 
 class SearchButton(bpy.types.Operator):
@@ -246,11 +244,11 @@ class SearchBySelect(bpy.types.Operator):
         # check if size of file is 0
         if os.stat(bearer_location).st_size == 0:
             print("Json was empty")
-            thangs_login_import.startLoginFromBrowser()
+            thangs_login.startLoginFromBrowser()
             print("Waiting on Login")
-            thangs_login_import.token_available.wait()
+            thangs_login.token_available.wait()
             bearer = {
-                'bearer': str(thangs_login_import.token["TOKEN"]),
+                'bearer': str(thangs_login.token["TOKEN"]),
             }
             with open(bearer_location, 'w') as json_file:
                 json.dump(bearer, json_file)
@@ -310,9 +308,9 @@ class ImportModelOperator(Operator):
     def login_user(self, _context, LicenseUrl, modelIndex, partIndex):
         global thangs_api
         global fetcher
-        global thangs_login_import
         
         print("Starting Login")
+        thangs_login_import = ThangsLogin()
         bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
         if not os.path.exists(bearer_location):
             print("Creating Bearer.json")
@@ -357,17 +355,8 @@ class ImportModelOperator(Operator):
         return
 
     def execute(self, _context):
-        global thangs_login_import
-        global login_thread
-        if thangs_login_import.event != None:
-            print("Stopping Login")
-            thangs_login_import.event.set()
-            login_thread.join()
-            thangs_login_import = ThangsLogin()
-        thangs_login_import.event = Event()
         print("Starting Login and Import")
-        login_thread = threading.Thread(target=self.login_user, args=(_context, self.license_url, self.modelIndex, self.partIndex))
-        login_thread.start()
+        login_thread = threading.Thread(target=self.login_user, args=(_context, self.license_url, self.modelIndex, self.partIndex)).start()
         return {'FINISHED'}
 
 class BrowseToLicenseOperator(Operator):
@@ -440,9 +429,9 @@ class ThangsLink(bpy.types.Operator):
     bl_label = "Redirect to Thangs"
 
     def execute(self, context):
-        amplitude.send_amplitude_event("nav to thangs", event_properties={})
-        webbrowser.open(thangs_config.thangs_config["url"] + "search/" + fetcher.query +
-                        "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
+        amplitude.send_amplitude_event("Thangs Blender Addon - Nav to Thangs", event_properties={})
+        webbrowser.open(thangs_config.thangs_config["url"] + "search/" + str(urllib.parse.quote(fetcher.query, safe='')) +
+                        "?scope=all&view=compact-grid&utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
         return {'FINISHED'}
 
 icon_collections = {}
@@ -939,6 +928,8 @@ def register():
 
 def unregister():
     from bpy.types import WindowManager
+    global thangs_login
+    global amplitude
 
     if hasattr(WindowManager, 'Model'):
         del WindowManager.Model
