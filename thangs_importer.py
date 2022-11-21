@@ -14,7 +14,6 @@ from .thangs_events import ThangsEvents
 from .thangs_login import ThangsLogin
 
 _thangs_api = None
-_files_list = []
 
 def get_thangs_api():
     global _thangs_api
@@ -102,7 +101,15 @@ class ThangsApi:
         self.bearer = ""
         
         self.model = None
+        self.downloaded_files_list = []
         pass
+
+    class DownloadedFile(): 
+        def __init__(self, partId, partFileName, downloadedFileName):
+            self.partId = partId
+            self.partFileName = partFileName
+            self.downloadedFileName = downloadedFileName
+            pass
 
     def run_in_main_thread(self, function):
         self.execution_queue.put(function)
@@ -145,13 +152,19 @@ class ThangsApi:
 
         print("Downloading...")
 
-        self.temp_dir = os.path.join(Config.THANGS_MODEL_DIR)
-        print("Temp Directory:", self.temp_dir)
+        self.model_folder_path = os.path.join(Config.THANGS_MODEL_DIR, self.model.partId)
+        print("Model Folder:", self.model_folder_path)
         print("Model ID:", self.model.partId)
         print("Model Title:", self.model.partFileName)
-        fileDownloaded = [item for item in _files_list if item[0] == self.model.partId and item[1] == self.model.partFileName]
 
-        if len(fileDownloaded) < 1:
+        fileExists = False
+        for item in self.downloaded_files_list:
+            if item.partId == self.model.partId and item.partFileName == self.model.partFileName:
+                fileDownloaded = item.downloadedFileName
+                fileExists = True
+                break
+
+        if not fileExists:
             headers = {"Authorization": "Bearer "+self.bearer,}
             print("URL:", self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url")
             try:
@@ -196,11 +209,12 @@ class ThangsApi:
                 filename = urlDecoded[-(len(urlDecoded) - (fileindex + 1)):]
 
             filename = filename.replace('"', '')
-            self.file_path = os.path.join(self.temp_dir, filename)
+            self.file_path = os.path.join(self.model_folder_path, filename)
 
             print("Starting Download")
             wm = bpy.context.window_manager
             wm.progress_begin(0, 100)
+            os.makedirs(self.model_folder_path)
             with open(self.file_path, "wb") as f:
                 total_length = r.headers.get('content-length')
                 if total_length is None:  # no content length header
@@ -215,18 +229,12 @@ class ThangsApi:
                         wm.progress_update(done)
                         print("Filedata:", done)
 
-            _files_list.append(tuple((self.model.partId, self.model.partFileName, filename)))
+            self.downloaded_files_list.append(self.DownloadedFile(partId=self.model.partId, partFileName=self.model.partFileName, downloadedFileName=filename))
             wm.progress_end()
         else:
-            fileDownloaded = [item for item in _files_list if item[0] == self.model.partId and item[1] ==  item[2]]
+            self.file_path = os.path.join(self.model_folder_path, fileDownloaded)
 
-            if len(fileDownloaded) > 0:
-                self.file_path = os.path.join(Config.THANGS_MODEL_DIR, self.model.partFileName)
-            else:
-                fileDownloadedStl = [item for item in _files_list if item[0] == self.model.partId and item[1] == self.model.partFileName]
-                self.file_path = os.path.join(Config.THANGS_MODEL_DIR, str(fileDownloadedStl[0][2]))
-
-            split_tup_top = os.path.splitext(self.file_path)
+            split_tup_top = os.path.splitext(fileDownloaded)
             self.file_extension = split_tup_top[1]    
             print('Model Already Downloaded')
         
@@ -247,7 +255,7 @@ class ThangsApi:
                 if self.unzip_archive():
                     split_tup_top = os.path.splitext(self.model.partFileName)
                     self.file_extension = split_tup_top[1]
-                    self.file_path = os.path.join(self.temp_dir, self.model.partFileName)
+                    self.file_path = os.path.join(self.model_folder_path, self.model.partFileName)
                 else:
                     raise Exception("Unzipping didn't complete")
         except:
@@ -339,10 +347,7 @@ class ThangsApi:
             print(*files, sep="\n")
 
             for file in files:
-                fileUnarchived = [item for item in _files_list if item[2] == file]
-
-                if len(fileUnarchived) < 1:
-                    _files_list.append(tuple((self.model.partId, self.model.partFileName, file)))
+                self.downloaded_files_list.append(self.DownloadedFile(partId=self.model.partId, partFileName=self.model.partFileName, downloadedFileName=file))
                     
             return True
         else:
