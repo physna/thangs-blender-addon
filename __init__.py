@@ -929,9 +929,13 @@ def register():
 def unregister():
     from bpy.types import WindowManager
     global thangs_login
+    global amplitude
 
-    amplitude.send_amplitude_event(
-        "Thangs Blender Addon - Uninstalled", event_properties={})
+    try:
+        amplitude.send_amplitude_event(
+            "Thangs Blender Addon - Uninstalled", event_properties={})
+    except Exception as e:
+        print(e)
 
     if hasattr(WindowManager, 'Model'):
         del WindowManager.Model
