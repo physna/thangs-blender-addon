@@ -238,18 +238,17 @@ class ThangsFetcher():
                 'searchMetadata': self.searchMetaData,
             })
 
-    def get_stl_results(self, response):
-        if response.status_code != 200:
-            self.totalModels = 0
-            self.PageTotal = 0
+    def get_stl_results(self, items):
+        #if response.status_code != 200:
+        #    self.totalModels = 0
+        #    self.PageTotal = 0
+        print("Started Counting Results")
+        #responseData = response.json()
+        self.totalModels = len(items)
+        if math.ceil(self.totalModels/8) > 99:
+            self.PageTotal = 99
         else:
-            print("Started Counting Results")
-            responseData = response.json()
-            self.totalModels = responseData["numMatches"]
-            if math.ceil(self.totalModels/8) > 99:
-                self.PageTotal = 99
-            else:
-                self.PageTotal = math.ceil(self.totalModels/8)
+            self.PageTotal = math.ceil(self.totalModels/8)
         # Add in event Code
 
     def get_lazy_thumbs(self, I, X, thumbnail, modelID,):
@@ -380,7 +379,6 @@ class ThangsFetcher():
 
     def get_http_search(self):
         self.searchType = "Text"
-        global thangs_config
         # Clean up temporary files from previous attempts
         urllib.request.urlcleanup()
         print("Started Search")
@@ -472,8 +470,115 @@ class ThangsFetcher():
 
         return
 
+
+    def display_stl_results(self, responseData, show_summary=True):
+        #print(responseData)
+        items = responseData["results"]
+        if self.newSearch == True:
+            self.uuid = str(uuid.uuid4())
+            self.searchMetaData = responseData["searchMetadata"]
+            self.searchMetaData['searchID'] = self.uuid
+            data = {
+                "searchId": self.uuid,
+                "searchTerm": "Selection Search",
+            }
+
+            self.amplitude.send_thangs_event("Capture", data)
+        if show_summary:
+            self.get_stl_results(items)
+
+        # ugh
+        old_context = ssl._create_default_https_context
+        ssl._create_default_https_context = ssl._create_unverified_context
+
+        self.modelList.clear()
+        I = 0
+        if self.searchType == "object":
+                self.selectionThumbnailGrab = True
+                self.stl_callback()
+        for item in items[((self.CurrentPage-1)*8):(self.CurrentPage*8)]:
+            self.partList.clear()
+
+            # if len(item["thumbnails"]) > 0:
+            #     thumbnail = item["thumbnails"][0]
+            # else:
+            model_id = item["modelId"]
+            # item["thumbnailUrl"]
+            thumbnail = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
+
+            self.models.append(ModelInfo(
+                item["modelId"],
+                item.get('modelTitle') or item.get('modelFileName'),
+                item['attributionUrl'],
+                item["ownerUsername"],
+                item["license"],
+                item["domain"],
+                item["scope"],
+                item.get("originalFileType"),
+                (((self.CurrentPage - 1) * 8) + I)
+            ))
+
+            try:
+                print(f'Fetching {thumbnail}')
+                filePath = urllib.request.urlretrieve(thumbnail)
+                filepath = os.path.join(item["modelId"], filePath[0])
+            except:
+                filePath = Path(__file__ + "\icons\placeholder.png")
+                filepath = os.path.join(item["modelId"], filePath)
+
+            try:
+                thumb = self.pcoll.load(item["modelId"], filepath, 'IMAGE')
+            except:
+                thumb = self.pcoll.load(
+                    item["modelId"]+str(I), filepath, 'IMAGE')
+
+            self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get(
+                "originalFileType"), thumb.icon_id, item["domain"], 0))
+
+            if len(item["parts"]) > 0:
+                parts = item["parts"]
+                X = 1
+                for part in parts:
+                    print("Getting Thumbnail for {0}".format(part["modelId"]))
+                    self.partList.append(self.PartStruct(
+                        part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
+
+                    thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
+                        I, X, part["thumbnailUrl"], part["modelId"],)).start()
+
+                    X += 1
+
+            title = item.get('modelTitle') or item.get('modelFileName')
+            self.modelList.append(self.ModelStruct(
+                modelTitle=title, partList=self.partList[:]))
+
+            I += 1
+
+        try:
+            ssl._create_default_https_context = old_context
+        except:
+            self.failed = True
+            self.newSearch = False
+            self.searching = False
+            return
+
+        self.pcoll.Model = self.models
+        self.pcoll.Model_dir = self.Directory
+        self.pcoll.Model_page = self.CurrentPage
+
+        self.searching = False
+        self.selectionSearching = False
+        self.newSearch = False
+        self.selectionThumbnailGrab = False
+
+        self.thangs_ui_mode = 'VIEW'
+
+        if self.search_callback is not None:
+            self.search_callback()
+
+        print("Search Completed!")
+
     def get_stl_search(self, stl_path):
-        global thangs_config
         self.searchType = "Object"
         self.thangs_ui_mode = 'SEARCH'
         self.selectionSearching = True
@@ -531,9 +636,6 @@ class ThangsFetcher():
 
         data = open(stl_path, 'rb').read()
 
-        # print("DATA")
-        # print(data)
-
         try:
             putHeaders = {
                 "Content-Type": "model/stl",
@@ -562,8 +664,7 @@ class ThangsFetcher():
 
             responseData = response.json()
             responseData["searchMetadata"] = {}
-            self.totalModels = 20
-            self.display_search_results(responseData, show_summary=False)
+            self.display_stl_results(responseData, show_summary=True)
         except Exception as e:
             print("Get Results Broke: ", e)
             self.selectionSearching = False
