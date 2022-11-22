@@ -25,7 +25,8 @@ from .thangs_login import ThangsLogin, stop_access_grant
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from .config import ThangsConfig, initialize
-from .thangs_importer import initialize_thangs_api, get_thangs_api#, ThangsApi
+from .thangs_importer import initialize_thangs_api, get_thangs_api
+from threading import Event
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ bl_info = {
     "version": (0, 2, 5),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
-    "description": "Browse and download free 3D models",
+    "description": "Browse and import free 3D models",
     "warning": "",
     "support": "COMMUNITY",
     "wiki_url": "https://github.com/physna/thangs-blender-addon",
@@ -137,7 +138,7 @@ initialize_thangs_api(callback=import_model)
 fetcher = ThangsFetcher(callback=on_complete_search, results_to_show=resultsToShow)
 amplitude = ThangsEvents()
 thangs_config = ThangsConfig()
-thangs_login = ThangsLogin()
+thangs_login_import = ThangsLogin()
 thangs_api = get_thangs_api()
 execution_queue = thangs_api.execution_queue
 
@@ -246,11 +247,11 @@ class SearchBySelect(bpy.types.Operator):
         # check if size of file is 0
         if os.stat(bearer_location).st_size == 0:
             print("Json was empty")
-            thangs_login.startLoginFromBrowser()
+            thangs_login_import.startLoginFromBrowser()
             print("Waiting on Login")
-            thangs_login.token_available.wait()
+            thangs_login_import.token_available.wait()
             bearer = {
-                'bearer': str(thangs_login.token["TOKEN"]),
+                'bearer': str(thangs_login_import.token["TOKEN"]),
             }
             with open(bearer_location, 'w') as json_file:
                 json.dump(bearer, json_file)
@@ -310,9 +311,9 @@ class ImportModelOperator(Operator):
     def login_user(self, _context, LicenseUrl, modelIndex, partIndex):
         global thangs_api
         global fetcher
+        global thangs_login_import
         
         print("Starting Login")
-        thangs_login_import = ThangsLogin()
         bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
         if not os.path.exists(bearer_location):
             print("Creating Bearer.json")
@@ -357,8 +358,18 @@ class ImportModelOperator(Operator):
         return
 
     def execute(self, _context):
+        global thangs_login_import
+        global login_thread
+        if thangs_login_import.event != None:
+            print("Stopping Login")
+            thangs_login_import.event.set()
+            thangs_login_import.join()
+            login_thread.join()
+            thangs_login_import = ThangsLogin()
+        thangs_login_import.event = Event()
         print("Starting Login and Import")
-        login_thread = threading.Thread(target=self.login_user, args=(_context, self.license_url, self.modelIndex, self.partIndex)).start()
+        login_thread = threading.Thread(target=self.login_user, args=(_context, self.license_url, self.modelIndex, self.partIndex))
+        login_thread.start()
         return {'FINISHED'}
 
 class BrowseToLicenseOperator(Operator):
@@ -930,8 +941,6 @@ def register():
 
 def unregister():
     from bpy.types import WindowManager
-    global thangs_login
-    global amplitude
 
     if hasattr(WindowManager, 'Model'):
         del WindowManager.Model
