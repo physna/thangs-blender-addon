@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
-    "version": (0, 2, 5),
+    "version": (0, 2, 8),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
     "description": "Browse and import free 3D models",
@@ -363,8 +363,14 @@ class ImportModelOperator(Operator):
         if thangs_login_import.event != None:
             print("Stopping Login")
             thangs_login_import.event.set()
-            thangs_login_import.join()
-            login_thread.join()
+            try:
+                thangs_login_import.join()
+            except:
+                pass
+            try:
+                login_thread.join()
+            except:
+                pass
             thangs_login_import = ThangsLogin()
         thangs_login_import.event = Event()
         print("Starting Login and Import")
