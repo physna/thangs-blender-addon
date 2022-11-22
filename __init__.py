@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
-    "version": (0, 2, 7),
+    "version": (0, 2, 8),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
     "description": "Browse and import free 3D models",
