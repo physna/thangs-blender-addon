@@ -132,6 +132,10 @@ class ThangsFetcher():
         if self.searching or self.selectionSearching:
             return False
         self.selectionSearching = True
+
+        self.thangs_ui_mode = 'SEARCH'
+        self.stl_callback()
+
         act_obj = bpy.context.active_object
         temp_dir = os.path.join(
             self.Config.THANGS_MODEL_DIR, "ThangsSelectionSearch")
@@ -271,7 +275,7 @@ class ThangsFetcher():
             print("Thumbnail Doesn't Exist")
 
     def display_search_results(self, responseData, show_summary=True):
-        print(responseData)
+        #print(responseData)
         items = responseData["results"]
         if self.newSearch == True:
             self.uuid = str(uuid.uuid4())
@@ -303,7 +307,13 @@ class ThangsFetcher():
             # else:
             model_id = item["modelId"]
             # item["thumbnailUrl"]
-            thumbnail = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
+
+            if len(item["thumbnails"]) > 0:
+                    thumbnail = item["thumbnails"][0]
+            else:
+                thumbnail = item["thumbnailUrl"]
+            
+            #thumbnail = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
 
             self.models.append(ModelInfo(
                 item["modelId"],
@@ -504,7 +514,12 @@ class ThangsFetcher():
             # else:
             model_id = item["modelId"]
             # item["thumbnailUrl"]
-            thumbnail = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
+
+            if len(item["thumbnails"]) > 0:
+                    thumbnail = item["thumbnails"][0]
+            else:
+                thumbnail = item["thumbnailUrl"]
+            #thumbnail = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
 
             self.models.append(ModelInfo(
                 item["modelId"],
