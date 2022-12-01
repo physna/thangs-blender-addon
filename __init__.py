@@ -25,7 +25,7 @@ from .thangs_login import ThangsLogin, stop_access_grant
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from .config import ThangsConfig, initialize
-from .thangs_importer import initialize_thangs_api, get_thangs_api#, ThangsApi
+from .thangs_importer import initialize_thangs_api, get_thangs_api  # , ThangsApi
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
     fp_val: StringProperty(
         name='fp_val',
         description="Api Protection Identifier",
-        default="")        
+        default="")
 
     def draw(self, context):
         layout = self.layout
@@ -120,6 +120,7 @@ def tag_redraw_areas(area_types: iter = ["ALL"]):
                 if area_type == "ALL" or area.type == area_type:
                     area.tag_redraw()
 
+
 def redraw_search(area_types: iter = ["ALL"]):
     area_types = confirm_list(area_types)
     screens = [bpy.context.screen] if bpy.context.screen else bpy.data.screens
@@ -129,18 +130,22 @@ def redraw_search(area_types: iter = ["ALL"]):
                 if area_type == "ALL" or area.type == area_type:
                     area.tag_redraw()
 
+
 def on_complete_search():
     tag_redraw_areas()
     return
+
 
 def import_model():
     thangs_api.import_model()
     tag_redraw_areas()
     return
 
+
 initialize(bl_info["version"])
 initialize_thangs_api(callback=import_model)
-fetcher = ThangsFetcher(callback=on_complete_search, stl_callback=redraw_search)
+fetcher = ThangsFetcher(callback=on_complete_search,
+                        stl_callback=redraw_search)
 amplitude = ThangsEvents()
 thangs_config = ThangsConfig()
 thangs_login = ThangsLogin()
@@ -158,10 +163,12 @@ enumHolders = []
 for x in range(resultsToShow):
     enumHolders.append([])
 
+
 def setSearch():
     global ButtonSearch
     ButtonSearch = bpy.context.scene.thangs_model_search
     return None
+
 
 def LastPage():
     if fetcher.PageNumber == fetcher.PageTotal or fetcher.searching:
@@ -171,6 +178,7 @@ def LastPage():
         fetcher.search(fetcher.query)
         return None
 
+
 def IncPage():
     if fetcher.searching:
         return None
@@ -179,6 +187,7 @@ def IncPage():
         fetcher.search(fetcher.query)
     return None
 
+
 def DecPage():
     if fetcher.PageNumber == 1 or fetcher.searching:
         return None
@@ -186,12 +195,14 @@ def DecPage():
     fetcher.search(fetcher.query)
     return None
 
+
 def FirstPage():
     if fetcher.searching:
         return None
     fetcher.PageNumber = 1
     fetcher.search(fetcher.query)
     return None
+
 
 class SearchButton(bpy.types.Operator):
     """Searches Thangs for Meshes"""
@@ -202,6 +213,7 @@ class SearchButton(bpy.types.Operator):
         setSearch()
         return {'FINISHED'}
 
+
 class LastPageChange(bpy.types.Operator):
     """Go to Last Page"""
     bl_idname = "lastpage.thangs"
@@ -210,6 +222,7 @@ class LastPageChange(bpy.types.Operator):
     def execute(self, context):
         LastPage()
         return {'FINISHED'}
+
 
 class IncPageChange(bpy.types.Operator):
     """Go to Next Page"""
@@ -220,6 +233,7 @@ class IncPageChange(bpy.types.Operator):
         IncPage()
         return {'FINISHED'}
 
+
 class DecPageChange(bpy.types.Operator):
     """Go to Previous Page"""
     bl_idname = "decpage.thangs"
@@ -228,6 +242,7 @@ class DecPageChange(bpy.types.Operator):
     def execute(self, context):
         DecPage()
         return {'FINISHED'}
+
 
 class FirstPageChange(bpy.types.Operator):
     """Go to First Page"""
@@ -238,23 +253,25 @@ class FirstPageChange(bpy.types.Operator):
         FirstPage()
         return {'FINISHED'}
 
+
 class SearchBySelect(bpy.types.Operator):
     """Search by Object Selection"""
     bl_idname = "search.selection"
     bl_label = "Search By Selection"
     bl_options = {'INTERNAL'}
-        
+
     def login_user(self, _context, stl_path):
         global thangs_api
         global fetcher
-        #startSearch("")
+        # startSearch("")
         print("Starting Login")
         thangs_login_import = ThangsLogin()
-        bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
+        bearer_location = os.path.join(
+            os.path.dirname(__file__), 'bearer.json')
         if not os.path.exists(bearer_location):
             print("Creating Bearer.json")
             f = open(bearer_location, "x")
-        
+
         # check if size of file is 0
         try:
             print("Top of Try")
@@ -270,7 +287,7 @@ class SearchBySelect(bpy.types.Operator):
                 print("Dumping")
                 with open(bearer_location, 'w') as json_file:
                     json.dump(bearer, json_file)
-               
+
             print("After Dump")
             f = open(bearer_location)
             data = json.load(f)
@@ -278,8 +295,8 @@ class SearchBySelect(bpy.types.Operator):
             thangs_api.bearer = data["bearer"]
             f.close()
             print("Before Search")
-            #fetcher.search("help")
-        
+            # fetcher.search("help")
+
             print("Act Obj")
             print(stl_path)
             fetcher.get_stl_search(stl_path)
@@ -301,8 +318,10 @@ class SearchBySelect(bpy.types.Operator):
         fetcher.selectionFailed = False
         print("Starting Login and MeshSearch")
         stl_path = fetcher.selectionSearch(bpy.context)
-        search_thread = threading.Thread(target=self.login_user, args=(_context, stl_path,)).start()
+        search_thread = threading.Thread(
+            target=self.login_user, args=(_context, stl_path,)).start()
         return {'FINISHED'}
+
 
 def Model_Event(position):
     model = fetcher.models[position]
@@ -324,6 +343,7 @@ def Model_Event(position):
     }
     amplitude.send_thangs_event("Results", data)
     return
+
 
 class ImportModelOperator(Operator):
     """Import Model into Blender"""
@@ -351,15 +371,16 @@ class ImportModelOperator(Operator):
     def login_user(self, _context, LicenseUrl, modelIndex, partIndex):
         global thangs_api
         global fetcher
-        
+
         print("Starting Login")
         thangs_login_import = ThangsLogin()
-        bearer_location = os.path.join(os.path.dirname(__file__), 'bearer.json')
+        bearer_location = os.path.join(
+            os.path.dirname(__file__), 'bearer.json')
         print(bearer_location)
         if not os.path.exists(bearer_location):
             print("Creating Bearer.json")
             f = open(bearer_location, "x")
-        
+
         # check if size of file is 0
         try:
             print("Top of Try")
@@ -375,7 +396,7 @@ class ImportModelOperator(Operator):
                 print("Dumping")
                 with open(bearer_location, 'w') as json_file:
                     json.dump(bearer, json_file)
-               
+
             print("After Dump")
             f = open(bearer_location)
             data = json.load(f)
@@ -383,7 +404,8 @@ class ImportModelOperator(Operator):
             thangs_api.bearer = data["bearer"]
             f.close()
             print("Before Import")
-            thangs_api.handle_download(fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
+            thangs_api.handle_download(
+                fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
             Model_Event(modelIndex)
         except Exception as e:
             print("Error with Logging In:", e)
@@ -400,8 +422,10 @@ class ImportModelOperator(Operator):
 
     def execute(self, _context):
         print("Starting Login and Import")
-        login_thread = threading.Thread(target=self.login_user, args=(_context, self.license_url, self.modelIndex, self.partIndex)).start()
+        login_thread = threading.Thread(target=self.login_user, args=(
+            _context, self.license_url, self.modelIndex, self.partIndex)).start()
         return {'FINISHED'}
+
 
 class BrowseToLicenseOperator(Operator):
     """Open model license in browser"""
@@ -423,6 +447,7 @@ class BrowseToLicenseOperator(Operator):
         webbrowser.open(self.url)
         Model_Event(self.modelIndex)
         return {'FINISHED'}
+
 
 class BrowseToModelOperator(Operator):
     """Open model in browser"""
@@ -467,6 +492,7 @@ class BrowseToCreatorOperator(Operator):
         Model_Event(self.modelIndex)
         return {'FINISHED'}
 
+
 class ThangsLink(bpy.types.Operator):
     """Click to continue on Thangs"""
     bl_idname = "link.thangs"
@@ -478,6 +504,7 @@ class ThangsLink(bpy.types.Operator):
                         "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
         return {'FINISHED'}
 
+
 icon_collections = {}
 icons_dict = bpy.utils.previews.new()
 icon_collections["main"] = icons_dict
@@ -485,6 +512,7 @@ icons_dict = icon_collections["main"]
 icons_dir = os.path.join(os.path.dirname(__file__), "icons")
 icons_dict.load("ThangsT", os.path.join(icons_dir, "T.png"), 'IMAGE')
 icons_dict.load("CreativeC", os.path.join(icons_dir, "CC-Thin.png"), 'IMAGE')
+
 
 class THANGS_OT_search_invoke(Operator):
     """Search for Query"""
@@ -505,15 +533,16 @@ class THANGS_OT_search_invoke(Operator):
         else:
             self.next_mode == 'SEARCH'
         fetcher.thangs_ui_mode = self.next_mode
-
         context.area.tag_redraw()
         return {'FINISHED'}
+
 
 class View3DPanel:
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS' if bpy.app.version < (2, 80, 0) else 'UI'
     bl_category = 'Thangs'
-    bl_context = 'objectmode'
+
+
 class TextSearch(View3DPanel, bpy.types.Panel):
     bl_idname = "VIEW3D_PT_thangs_textsearch"
     bl_label = "Thangs Search"
@@ -549,7 +578,7 @@ class TextSearch(View3DPanel, bpy.types.Panel):
             SearchingRow = SearchingLayout.row(align=True)
             SearchingRow.label(
                 text="Searching...")
-        
+
         if thangs_api.importing == True:
             layout.active = False
             ImportingLayout = self.layout
@@ -588,13 +617,14 @@ class TextSearch(View3DPanel, bpy.types.Panel):
 
                 grid = layout.grid_flow(
                     columns=1, even_columns=True, even_rows=True)
-            
+
                 z = 0
                 for model in fetcher.pcoll.Model:
                     modelURL = model.attribution_url
                     cell = grid.column().box()
 
-                    modelTitleRow = cell.row().label(text=str(fetcher.modelList[z].modelTitle))
+                    modelTitleRow = cell.row().label(
+                        text=str(fetcher.modelList[z].modelTitle))
 
                     icon = fetcher.modelList[z].parts[fetcher.modelList[z].partSelected].iconId
 
@@ -634,10 +664,10 @@ class TextSearch(View3DPanel, bpy.types.Panel):
                     if model.file_type == ".blend":
                         row = col.row()
                         row.label(text="{}".format(""), icon='APPEND_BLEND')
-                        
+
                         if thangs_api.import_limit == True:
                             props = cell.operator(
-                            'wm.browse_to_model', text="%s" % model.title, icon='URL')
+                                'wm.browse_to_model', text="%s" % model.title, icon='URL')
                             props.url = modelURL + \
                                 "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                             props.modelIndex = z
@@ -659,11 +689,12 @@ class TextSearch(View3DPanel, bpy.types.Panel):
 
                         scene = context.scene
                         mytool = scene.my_tool
-                        dropdown = row.prop(mytool, "dropdown_Parts{}".format(z))
+                        dropdown = row.prop(
+                            mytool, "dropdown_Parts{}".format(z))
 
                         if thangs_api.import_limit == True:
                             props = cell.operator(
-                            'wm.browse_to_model', text="%s" % model.title, icon='URL')
+                                'wm.browse_to_model', text="%s" % model.title, icon='URL')
                             props.url = modelURL + \
                                 "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                             props.modelIndex = z
@@ -678,7 +709,7 @@ class TextSearch(View3DPanel, bpy.types.Panel):
                             if model.license_url is not None:
                                 props.license_url = str(model.license_url)
                             else:
-                                props.license_url = ""       
+                                props.license_url = ""
                     z = z + 1
 
                 row = layout.row()
@@ -704,7 +735,7 @@ class TextSearch(View3DPanel, bpy.types.Panel):
 
                 column = row.column(align=True)
                 column.label(text=""+str(fetcher.PageNumber) +
-                              "/"+str(fetcher.PageTotal)+"")
+                             "/"+str(fetcher.PageTotal)+"")
 
                 column = row.column(align=True)
                 if fetcher.PageNumber == fetcher.PageTotal:
@@ -739,7 +770,7 @@ class TextSearch(View3DPanel, bpy.types.Panel):
                     text="your selection on Thangs")
                 SearchingRow = layout.row()
                 SearchingRow.label(
-                    text="Please try again!") 
+                    text="Please try again!")
             elif fetcher.selectionEmpty == True:
                 SearchingRow.label(
                     text="Unable to find results for")
@@ -748,7 +779,7 @@ class TextSearch(View3DPanel, bpy.types.Panel):
                     text="your selection on Thangs")
                 SearchingRow = layout.row()
                 SearchingRow.label(
-                    text="Please try again!") 
+                    text="Please try again!")
             else:
                 SearchingRow.label(
                     text="Found 0 Models for:")
@@ -780,7 +811,7 @@ class TextSearch(View3DPanel, bpy.types.Panel):
             SearchingRow = layout.row(align=True)
             SearchingRow.label(
                 text="'"+bpy.context.scene.thangs_model_search+"'")
-        
+
         if fetcher.selectionThumbnailGrab:
             col.enabled = False
             SearchingRow = layout.row(align=True)
@@ -807,6 +838,7 @@ class TextSearch(View3DPanel, bpy.types.Panel):
             self.drawSearch(context)
         addon_updater_ops.update_notice_box_ui(self, context)
 
+
 class MeshSearch(View3DPanel, bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_idname = "VIEW3D_PT_thangs_meshsearch"
@@ -824,8 +856,9 @@ class MeshSearch(View3DPanel, bpy.types.Panel):
             row.label(text="Right click on an object")
             row = col.row()
             row.label(text="to try out Geo-Search!")
-            row=col.row()
-            row.operator(SearchBySelect.bl_idname, text="Click here for Geo-Search", icon='NONE')
+            row = col.row()
+            row.operator(SearchBySelect.bl_idname,
+                         text="Click here for Geo-Search", icon='NONE')
         else:
             layout = self.layout
             wm = context.window_manager
@@ -838,12 +871,16 @@ class MeshSearch(View3DPanel, bpy.types.Panel):
             row = col.row()
             row.label(text="Geo-Search info!")
 
+
 def draw_menu(self, context):
     layout = self.layout
     layout.separator()
-    layout.operator(SearchBySelect.bl_idname, text="Thangs: Search By Selection")
+    layout.operator(SearchBySelect.bl_idname,
+                    text="Thangs: Search By Selection")
+
 
 preview_collections = fetcher.preview_collections
+
 
 def startSearch(self, value):
     queryText = bpy.context.scene.thangs_model_search
@@ -857,17 +894,21 @@ def uninstall_old_version_timer():
             if mod.__name__ == 'thangs-breeze' and 'RandyHucker' in json.dumps(mod.bl_info):
                 return True
         return False
-    existing_breeze_installation = next((mod for mod in addon_utils.modules() if is_old_addon(mod)), None)
+    existing_breeze_installation = next(
+        (mod for mod in addon_utils.modules() if is_old_addon(mod)), None)
     if existing_breeze_installation:
         print('Removing old Thangs Breeze installation')
-        bpy.ops.preferences.addon_remove(module=existing_breeze_installation.__name__)
+        bpy.ops.preferences.addon_remove(
+            module=existing_breeze_installation.__name__)
     return None
+
 
 def heartbeat_timer():
     log.info('sending thangs heartbeat')
     amplitude.send_amplitude_event(
         "Thangs Blender Addon - Heartbeat", event_properties={})
     return 300
+
 
 def open_timer():
     log.info('sending thangs open')
@@ -878,17 +919,19 @@ def open_timer():
                     # True: n-panel is open
                     # False: n-panel is closed
                     n_panel_is_open = space.show_region_ui
-                    #print(bpy.context.window_manager.windows[0].screen)
+                    # print(bpy.context.window_manager.windows[0].screen)
 
                     amplitude.send_amplitude_event(
                         "Thangs Blender Addon - Opened", event_properties={'panel_open': n_panel_is_open})
                     return 60
+
 
 def execute_queued_functions():
     while not execution_queue.empty():
         function = execution_queue.get()
         function()
     return 1.0
+
 
 def register():
     global fetcher
@@ -949,7 +992,8 @@ def register():
             enum_models = getattr(fetcher.modelList[index], "parts")
             for i, item in enumerate(enum_models):
                 if item.partId == getattr(bpy.context.scene.my_tool, "dropdown_Parts" + str(index)):
-                    setattr(fetcher.modelList[index], "partSelected", item.index)
+                    setattr(fetcher.modelList[index],
+                            "partSelected", item.index)
                     break
         return handler
 
@@ -958,7 +1002,8 @@ def register():
             global enumHolders
             enumHolders[index].clear()
             for part in fetcher.modelList[index].parts:
-                enumHolders[index].append((part.partId, part.partFileName, "", part.iconId, part.index))
+                enumHolders[index].append(
+                    (part.partId, part.partFileName, "", part.iconId, part.index))
             return enumHolders[index]
         return handler
 
