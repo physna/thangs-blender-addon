@@ -152,7 +152,7 @@ class ThangsFetcher():
                 if act_obj.mode == "EDIT":
                     print("Searching Edit")
                     bpy.ops.mesh.duplicate_move()
-                    bpy.ops.mesh.fill(use_beauty=True)
+                    bpy.ops.mesh.solidify()
                     bpy.ops.mesh.separate(type='SELECTED')
 
         #            #Back to object mode
