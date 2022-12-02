@@ -15,7 +15,6 @@ import ssl
 import socket
 
 from .model_info import ModelInfo
-from .fp_val import FP
 from .thangs_events import ThangsEvents
 from .config import ThangsConfig
 from .thangs_importer import get_thangs_api, Utils, Config
@@ -61,7 +60,6 @@ class ThangsFetcher():
         self.amplitude.deviceId = socket.gethostname().split(".")[0]
         self.amplitude.deviceOs = platform.system()
         self.amplitude.deviceVer = platform.release()
-        self.FP = FP()
         self.thangs_api = get_thangs_api()
         self.results_to_show = results_to_show
         pass
@@ -328,8 +326,7 @@ class ThangsFetcher():
         if self.newSearch == True:
             try:
                 response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+ str(urllib.parse.quote(self.query, safe='')) +
-                                        "&pageSize="+str(self.results_to_show)+"&collapse=true",
-                                        headers={"x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")})
+                                        "&pageSize="+str(self.results_to_show)+"&collapse=true")
             except Exception as e:
                 print(e)
                 self.failed = True
@@ -341,8 +338,7 @@ class ThangsFetcher():
                 response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+str(urllib.parse.quote(self.query, safe='')) +
                     "&pageSize="+str(self.results_to_show)+"&collapse=true",
                     headers={"x-thangs-searchmetadata": base64.b64encode(
-                        json.dumps(self.searchMetaData).encode()).decode(),
-                        "x-fp-val": self.FP.getVal(self.Thangs_Config.thangs_config['url']+"fp_m")},
+                        json.dumps(self.searchMetaData).encode()).decode()},
                 )
             except Exception as e:
                 print(e)

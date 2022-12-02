@@ -83,12 +83,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
         description="Number of minutes between checking for updates",
         default=10,
         min=0,
-        max=59)
-
-    fp_val: StringProperty(
-        name='fp_val',
-        description="Api Protection Identifier",
-        default="")        
+        max=59)       
 
     def draw(self, context):
         layout = self.layout
