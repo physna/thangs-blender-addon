@@ -161,3 +161,4 @@ cython_debug/
 .build/
 thangs-blender-addon.zip
 bearer.json
+thangs-blender-addon_updater
