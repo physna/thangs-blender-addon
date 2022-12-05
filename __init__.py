@@ -25,17 +25,19 @@ from .thangs_login import ThangsLogin, stop_access_grant
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from .config import ThangsConfig, initialize
-from .thangs_importer import initialize_thangs_api, get_thangs_api  # , ThangsApi
+from .thangs_importer import initialize_thangs_api, get_thangs_api
+from threading import Event
+
 
 log = logging.getLogger(__name__)
 
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
-    "version": (0, 2, 0),
+    "version": (0, 2, 8),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs Search",
-    "description": "Browse and download free 3D models",
+    "description": "Browse and import free 3D models",
     "warning": "",
     "support": "COMMUNITY",
     "wiki_url": "https://github.com/physna/thangs-blender-addon",
@@ -141,10 +143,12 @@ def import_model():
     tag_redraw_areas()
     return
 
+resultsToShow = 8
 
 initialize(bl_info["version"])
 initialize_thangs_api(callback=import_model)
-fetcher = ThangsFetcher(callback=on_complete_search,
+fetcher = ThangsFetcher(callback=on_complete_search, 
+                        results_to_show=resultsToShow,
                         stl_callback=redraw_search)
 amplitude = ThangsEvents()
 thangs_config = ThangsConfig()
@@ -158,7 +162,7 @@ pcoll = fetcher.pcoll
 PageTotal = fetcher.PageTotal
 fetcher.thangs_ui_mode = 'SEARCH'
 
-resultsToShow = 8
+
 enumHolders = []
 for x in range(resultsToShow):
     enumHolders.append([])
@@ -264,8 +268,8 @@ class SearchBySelect(bpy.types.Operator):
         global thangs_api
         global fetcher
         # startSearch("")
-        print("Starting Login")
-        thangs_login_import = ThangsLogin()
+        print("Starting Login: Search by Select")
+        thangs_login = ThangsLogin()
         bearer_location = os.path.join(
             os.path.dirname(__file__), 'bearer.json')
         if not os.path.exists(bearer_location):
@@ -273,18 +277,16 @@ class SearchBySelect(bpy.types.Operator):
             f = open(bearer_location, "x")
 
         # check if size of file is 0
+
         try:
-            print("Top of Try")
             if os.stat(bearer_location).st_size == 0:
                 print("Json was empty")
-                thangs_login_import.startLoginFromBrowser()
+                thangs_login.startLoginFromBrowser()
                 print("Waiting on Login")
-                thangs_login_import.token_available.wait()
-                print("Setting Bearer")
+                thangs_login.token_available.wait()
                 bearer = {
-                    'bearer': str(thangs_login_import.token["TOKEN"]),
+                    'bearer': str(thangs_login.token["TOKEN"]),
                 }
-                print("Dumping")
                 with open(bearer_location, 'w') as json_file:
                     json.dump(bearer, json_file)
 
@@ -372,8 +374,8 @@ class ImportModelOperator(Operator):
         global thangs_api
         global fetcher
 
-        print("Starting Login")
-        thangs_login_import = ThangsLogin()
+        print("Starting Login: Import Model")
+        thangs_login = ThangsLogin()
         bearer_location = os.path.join(
             os.path.dirname(__file__), 'bearer.json')
         print(bearer_location)
@@ -386,12 +388,12 @@ class ImportModelOperator(Operator):
             print("Top of Try")
             if os.stat(bearer_location).st_size == 0:
                 print("Json was empty")
-                thangs_login_import.startLoginFromBrowser()
+                thangs_login.startLoginFromBrowser()
                 print("Waiting on Login")
-                thangs_login_import.token_available.wait()
+                thangs_login.token_available.wait()
                 print("Setting Bearer")
                 bearer = {
-                    'bearer': str(thangs_login_import.token["TOKEN"]),
+                    'bearer': str(thangs_login.token["TOKEN"]),
                 }
                 print("Dumping")
                 with open(bearer_location, 'w') as json_file:
@@ -421,6 +423,21 @@ class ImportModelOperator(Operator):
         return
 
     def execute(self, _context):
+        global thangs_login
+        global login_thread
+        if thangs_login.event != None:
+            print("Stopping Login")
+            thangs_login.event.set()
+            try:
+                thangs_login.join()
+            except:
+                pass
+            try:
+                login_thread.join()
+            except:
+                pass
+            thangs_login = ThangsLogin()
+        thangs_login.event = Event()
         print("Starting Login and Import")
         login_thread = threading.Thread(target=self.login_user, args=(
             _context, self.license_url, self.modelIndex, self.partIndex)).start()
@@ -499,9 +516,9 @@ class ThangsLink(bpy.types.Operator):
     bl_label = "Redirect to Thangs"
 
     def execute(self, context):
-        amplitude.send_amplitude_event("nav to thangs", event_properties={})
-        webbrowser.open(thangs_config.thangs_config["url"] + "search/" + fetcher.query +
-                        "?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
+        amplitude.send_amplitude_event("Thangs Blender Addon - Nav to Thangs", event_properties={})
+        webbrowser.open(thangs_config.thangs_config["url"] + "search/" + str(urllib.parse.quote(fetcher.query, safe='')) +
+                        "?scope=all&view=compact-grid&utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
         return {'FINISHED'}
 
 
@@ -532,6 +549,7 @@ class THANGS_OT_search_invoke(Operator):
             self.next_mode == 'VIEW'
         else:
             self.next_mode == 'SEARCH'
+        context.scene.thangs_model_search = ""
         fetcher.thangs_ui_mode = self.next_mode
         context.area.tag_redraw()
         return {'FINISHED'}
@@ -770,13 +788,22 @@ class TextSearch(View3DPanel, bpy.types.Panel):
                     text="your selection on Thangs")
                 SearchingRow = layout.row()
                 SearchingRow.label(
-                    text="Please try again!")
+                    text="Please try again!") 
             elif fetcher.selectionEmpty == True:
                 SearchingRow.label(
                     text="Unable to find results for")
                 SearchingRow = layout.row()
                 SearchingRow.label(
                     text="your selection on Thangs")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="Please try again!")
+            elif thangs_api.failed == True:
+                SearchingRow.label(
+                    text="Unable to import")
+                SearchingRow = layout.row()
+                SearchingRow.label(
+                    text="your selection from Thangs")
                 SearchingRow = layout.row()
                 SearchingRow.label(
                     text="Please try again!")
@@ -883,8 +910,9 @@ preview_collections = fetcher.preview_collections
 
 
 def startSearch(self, value):
-    queryText = bpy.context.scene.thangs_model_search
-    fetcher.search(query=queryText)
+    if bpy.context.scene.thangs_model_search:
+        queryText = bpy.context.scene.thangs_model_search
+        fetcher.search(query=queryText)
 
 
 def uninstall_old_version_timer():
@@ -902,6 +930,29 @@ def uninstall_old_version_timer():
             module=existing_breeze_installation.__name__)
     return None
 
+def open_N_Panel():
+    first_open = os.path.join(os.path.dirname(__file__), 'firstOpen.json')
+    if not os.path.exists(first_open):
+        f = open(first_open, "x")
+
+    if os.stat(first_open).st_size == 0:
+        info = {
+            'firstOpening': False,
+        }
+        with open(first_open, 'w') as json_file:
+            json.dump(info, json_file)
+
+        context_copy = bpy.context.copy()
+        for area in bpy.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                context_copy['area'] = area
+                bpy.ops.wm.context_toggle(context_copy,data_path="space_data.show_region_ui")
+
+def open_panel_timer():
+    try:
+        open_N_Panel()
+    except:
+        pass
 
 def heartbeat_timer():
     log.info('sending thangs heartbeat')
@@ -1037,6 +1088,7 @@ def register():
 
     addon_updater_ops.register(bl_info)
 
+    bpy.app.timers.register(open_panel_timer)
     bpy.app.timers.register(heartbeat_timer)
     bpy.app.timers.register(open_timer)
     bpy.app.timers.register(execute_queued_functions)
@@ -1047,10 +1099,11 @@ def register():
 
 def unregister():
     from bpy.types import WindowManager
-    global thangs_login
 
     if hasattr(WindowManager, 'Model'):
         del WindowManager.Model
+    if bpy.app.timers.is_registered(open_panel_timer):
+        bpy.app.timers.unregister(open_panel_timer)
     bpy.app.timers.unregister(heartbeat_timer)
     bpy.app.timers.unregister(open_timer)
     bpy.app.timers.unregister(execute_queued_functions)
