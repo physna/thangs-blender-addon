@@ -28,7 +28,6 @@ from .config import ThangsConfig, initialize
 from .thangs_importer import initialize_thangs_api, get_thangs_api
 from threading import Event
 
-
 log = logging.getLogger(__name__)
 
 bl_info = {
@@ -84,7 +83,7 @@ class DemoPreferences(bpy.types.AddonPreferences):
         description="Number of minutes between checking for updates",
         default=10,
         min=0,
-        max=59)
+        max=59)       
 
     def draw(self, context):
         layout = self.layout
@@ -162,12 +161,10 @@ enumHolders = []
 for x in range(resultsToShow):
     enumHolders.append([])
 
-
 def setSearch():
     global ButtonSearch
     ButtonSearch = bpy.context.scene.thangs_model_search
     return None
-
 
 def LastPage():
     if fetcher.PageNumber == fetcher.PageTotal or fetcher.searching:
@@ -177,7 +174,6 @@ def LastPage():
         fetcher.search(fetcher.query)
         return None
 
-
 def IncPage():
     if fetcher.searching:
         return None
@@ -186,7 +182,6 @@ def IncPage():
         fetcher.search(fetcher.query)
     return None
 
-
 def DecPage():
     if fetcher.PageNumber == 1 or fetcher.searching:
         return None
@@ -194,14 +189,12 @@ def DecPage():
     fetcher.search(fetcher.query)
     return None
 
-
 def FirstPage():
     if fetcher.searching:
         return None
     fetcher.PageNumber = 1
     fetcher.search(fetcher.query)
     return None
-
 
 class SearchButton(bpy.types.Operator):
     """Searches Thangs for Meshes"""
@@ -212,7 +205,6 @@ class SearchButton(bpy.types.Operator):
         setSearch()
         return {'FINISHED'}
 
-
 class LastPageChange(bpy.types.Operator):
     """Go to Last Page"""
     bl_idname = "lastpage.thangs"
@@ -221,7 +213,6 @@ class LastPageChange(bpy.types.Operator):
     def execute(self, context):
         LastPage()
         return {'FINISHED'}
-
 
 class IncPageChange(bpy.types.Operator):
     """Go to Next Page"""
@@ -232,7 +223,6 @@ class IncPageChange(bpy.types.Operator):
         IncPage()
         return {'FINISHED'}
 
-
 class DecPageChange(bpy.types.Operator):
     """Go to Previous Page"""
     bl_idname = "decpage.thangs"
@@ -242,7 +232,6 @@ class DecPageChange(bpy.types.Operator):
         DecPage()
         return {'FINISHED'}
 
-
 class FirstPageChange(bpy.types.Operator):
     """Go to First Page"""
     bl_idname = "firstpage.thangs"
@@ -251,7 +240,6 @@ class FirstPageChange(bpy.types.Operator):
     def execute(self, context):
         FirstPage()
         return {'FINISHED'}
-
 
 class SearchBySelect(bpy.types.Operator):
     """Search by Object Selection"""
@@ -270,7 +258,6 @@ class SearchBySelect(bpy.types.Operator):
         if not os.path.exists(bearer_location):
             print("Creating Bearer.json")
             f = open(bearer_location, "x")
-
         # check if size of file is 0
 
         try:
@@ -341,7 +328,6 @@ def Model_Event(position):
     amplitude.send_thangs_event("Results", data)
     return
 
-
 class ImportModelOperator(Operator):
     """Import Model into Blender"""
     bl_idname = "wm.import_model"
@@ -377,7 +363,6 @@ class ImportModelOperator(Operator):
         if not os.path.exists(bearer_location):
             print("Creating Bearer.json")
             f = open(bearer_location, "x")
-
         # check if size of file is 0
         try:
             print("Top of Try")
@@ -438,7 +423,6 @@ class ImportModelOperator(Operator):
             _context, self.license_url, self.modelIndex, self.partIndex)).start()
         return {'FINISHED'}
 
-
 class BrowseToLicenseOperator(Operator):
     """Open model license in browser"""
     bl_idname = "wm.browse_to_license"
@@ -459,7 +443,6 @@ class BrowseToLicenseOperator(Operator):
         webbrowser.open(self.url)
         Model_Event(self.modelIndex)
         return {'FINISHED'}
-
 
 class BrowseToModelOperator(Operator):
     """Open model in browser"""
@@ -482,7 +465,6 @@ class BrowseToModelOperator(Operator):
         Model_Event(self.modelIndex)
         return {'FINISHED'}
 
-
 class BrowseToCreatorOperator(Operator):
     """Open creator's profile in browser"""
     bl_idname = "wm.browse_to_creator"
@@ -504,7 +486,6 @@ class BrowseToCreatorOperator(Operator):
         Model_Event(self.modelIndex)
         return {'FINISHED'}
 
-
 class ThangsLink(bpy.types.Operator):
     """Click to continue on Thangs"""
     bl_idname = "link.thangs"
@@ -516,7 +497,6 @@ class ThangsLink(bpy.types.Operator):
                         "?scope=all&view=compact-grid&utm_source=blender&utm_medium=referral&utm_campaign=blender_extender", new=0, autoraise=True)
         return {'FINISHED'}
 
-
 icon_collections = {}
 icons_dict = bpy.utils.previews.new()
 icon_collections["main"] = icons_dict
@@ -524,7 +504,6 @@ icons_dict = icon_collections["main"]
 icons_dir = os.path.join(os.path.dirname(__file__), "icons")
 icons_dict.load("ThangsT", os.path.join(icons_dir, "T.png"), 'IMAGE')
 icons_dict.load("CreativeC", os.path.join(icons_dir, "CC-Thin.png"), 'IMAGE')
-
 
 class THANGS_OT_search_invoke(Operator):
     """Search for Query"""
@@ -549,12 +528,10 @@ class THANGS_OT_search_invoke(Operator):
         context.area.tag_redraw()
         return {'FINISHED'}
 
-
 class View3DPanel:
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS' if bpy.app.version < (2, 80, 0) else 'UI'
     bl_category = 'Thangs'
-
 
 class TextSearch(View3DPanel, bpy.types.Panel):
     bl_idname = "VIEW3D_PT_thangs_textsearch"
@@ -636,8 +613,7 @@ class TextSearch(View3DPanel, bpy.types.Panel):
                     modelURL = model.attribution_url
                     cell = grid.column().box()
 
-                    modelTitleRow = cell.row().label(
-                        text=str(fetcher.modelList[z].modelTitle))
+                    modelTitleRow = cell.row().label(text=str(fetcher.modelList[z].modelTitle))
 
                     icon = fetcher.modelList[z].parts[fetcher.modelList[z].partSelected].iconId
 
@@ -860,7 +836,6 @@ class TextSearch(View3DPanel, bpy.types.Panel):
             self.drawSearch(context)
         addon_updater_ops.update_notice_box_ui(self, context)
 
-
 class MeshSearch(View3DPanel, bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     bl_idname = "VIEW3D_PT_thangs_meshsearch"
@@ -892,7 +867,6 @@ class MeshSearch(View3DPanel, bpy.types.Panel):
             row.label(text="Have an object selected for")
             row = col.row()
             row.label(text="Geo-Search info!")
-
 
 def draw_menu(self, context):
     layout = self.layout
@@ -955,7 +929,6 @@ def heartbeat_timer():
         "Thangs Blender Addon - Heartbeat", event_properties={})
     return 300
 
-
 def open_timer():
     log.info('sending thangs open')
     for area in bpy.context.screen.areas:
@@ -971,13 +944,11 @@ def open_timer():
                         "Thangs Blender Addon - Opened", event_properties={'panel_open': n_panel_is_open})
                     return 60
 
-
 def execute_queued_functions():
     while not execution_queue.empty():
         function = execution_queue.get()
         function()
     return 1.0
-
 
 def register():
     global fetcher
@@ -1091,7 +1062,6 @@ def register():
 
     log.info("Finished Register")
 
-
 def unregister():
     from bpy.types import WindowManager
 
@@ -1134,7 +1104,6 @@ def unregister():
 
     stop_access_grant()
     urllib.request.urlcleanup()
-
 
 if __name__ == "__main__":
     register()
