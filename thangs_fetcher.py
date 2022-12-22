@@ -24,7 +24,7 @@ from requests.adapters import HTTPAdapter, Retry
 
 
 class ThangsFetcher():
-    def __init__(self, callback=None):
+    def __init__(self, callback=None, results_to_show=8):
         self.search_thread = None
         self.search_callback = callback
 
@@ -63,6 +63,7 @@ class ThangsFetcher():
         self.amplitude.deviceVer = platform.release()
         self.FP = FP()
         self.thangs_api = get_thangs_api()
+        self.resultsToShow = results_to_show
         pass
 
     class PartStruct():
