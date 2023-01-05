@@ -7,6 +7,7 @@ from .config import get_config
 
 log = logging.getLogger(__name__)
 
+
 class ThangsEvents(object):
     def __init__(self):
         self.deviceId = ""
@@ -39,6 +40,8 @@ class ThangsEvents(object):
                           )
 
     def send_amplitude_event(self, event_name, event_properties=None):
+        if event_name != "Thangs Blender Addon - Heartbeat" and event_name != "Thangs Blender Addon - Opened":
+            print(f"Running {event_name}")
         threading.Thread(
             target=self._send_amplitude_event,
             args=(event_name, event_properties)
@@ -62,5 +65,9 @@ class ThangsEvents(object):
 
     def _send_amplitude_event(self, event_name, event_properties):
         event = self._construct_event(event_name, event_properties)
-        response = requests.post(self.ampURL, json={'events': [event]})
-        log.info('Sent amplitude event: ' + event_name + 'Response: ' + str(response.status_code) + " " + response.headers['x-cloud-trace-context'])
+        try:
+            response = requests.post(self.ampURL, json={'events': [event]})
+        except Exception as e:
+            print(e)
+        log.info('Sent amplitude event: ' + event_name + 'Response: ' +
+                 str(response.status_code) + " " + response.headers['x-cloud-trace-context'])
