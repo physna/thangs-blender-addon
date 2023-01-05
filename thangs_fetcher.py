@@ -12,6 +12,7 @@ import shutil
 import math
 import platform
 import ssl
+import time
 import socket
 
 from .model_info import ModelInfo
@@ -256,23 +257,41 @@ class ThangsFetcher():
         # Add in event Code
 
     def get_lazy_thumbs(self, I, X, thumbnail, modelID,):
+        global thangs_config
+        temp_dir = os.path.join(
+            self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
+        icon_path = os.path.join(temp_dir, modelID)
+        if not os.path.exists(icon_path):
+            os.makedirs(icon_path)
+
+        thumbnailPath = thumbnail.replace("%2F", "/")
+        thumbnailPath = thumbnail.replace("?", "/")
+        icon_path = os.path.join(icon_path, thumbnailPath.split('/')[-1])
+
+        if not os.path.exists(icon_path):
+            try:
+                print(f'Fetching part {thumbnail}')
+                filePath = urllib.request.urlretrieve(url=thumbnail, filename=icon_path)
+                icon_path = os.path.join(modelID, filePath[0])
+            except Exception as e:
+                print(e)
+                filePath = Path(__file__ + "\icons\placeholder.png")
+                icon_path = os.path.join(modelID, filePath)
+                
         try:
-            print(f'Fetching part {thumbnail}')
-            filePath = urllib.request.urlretrieve(thumbnail)
-            filepath = os.path.join(modelID, filePath[0])
+            thumb = self.pcoll.load(modelID, icon_path, 'IMAGE')
         except:
-            filePath = Path(__file__ + "\icons\placeholder.png")
-            filepath = os.path.join(modelID, filePath)
+            thumb = self.pcoll.load(
+                modelID+str(I), icon_path, 'IMAGE')
 
         try:
-            thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
-        except:
-            thumb = self.pcoll.load(modelID+str(X), filepath, 'IMAGE')
-
-        try:
+            time.sleep(.25)
             self.modelList[I].parts[X].iconId = thumb.icon_id
-        except:
-            print("Thumbnail Doesn't Exist")
+        except Exception as e:
+            print(X)
 
     def display_search_results(self, responseData, show_summary=True):
         #print(responseData)
@@ -392,6 +411,12 @@ class ThangsFetcher():
         # Clean up temporary files from previous attempts
         urllib.request.urlcleanup()
         print("Started Search")
+        
+        temp_dir = os.path.join(
+            self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
         self.searching = True
         self.failed = False
 
@@ -514,57 +539,61 @@ class ThangsFetcher():
 
             if len(item["thumbnails"]) > 0:
                     thumbnail = item["thumbnails"][0]
-            else:
-                thumbnail = item["thumbnailUrl"]
-            #thumbnail = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
+                else:
+                    thumbnail = item["thumbnailUrl"]
 
-            self.models.append(ModelInfo(
-                item["modelId"],
-                item.get('modelTitle') or item.get('modelFileName'),
-                item['attributionUrl'],
-                item["ownerUsername"],
-                item["license"],
-                item["domain"],
-                item["scope"],
-                item.get("originalFileType"),
-                (((self.CurrentPage - 1) * 8) + I)
-            ))
+                self.models.append(ModelInfo(
+                    item["modelId"],
+                    item.get('modelTitle') or item.get('modelFileName'),
+                    item['attributionUrl'],
+                    item["ownerUsername"],
+                    item["license"],
+                    item["domain"],
+                    item["scope"],
+                    item.get("originalFileType"),
+                    (((self.CurrentPage - 1) * 8) + I)
+                ))
 
-            try:
-                print(f'Fetching {thumbnail}')
-                filePath = urllib.request.urlretrieve(thumbnail)
-                filepath = os.path.join(item["modelId"], filePath[0])
-            except:
-                filePath = Path(__file__ + "\icons\placeholder.png")
-                filepath = os.path.join(item["modelId"], filePath)
 
-            try:
-                thumb = self.pcoll.load(item["modelId"], filepath, 'IMAGE')
-            except:
-                thumb = self.pcoll.load(
-                    item["modelId"]+str(I), filepath, 'IMAGE')
 
-            self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get(
-                "originalFileType"), thumb.icon_id, item["domain"], 0))
+                icon_path = os.path.join(temp_dir, item["modelId"])
+                if not os.path.exists(icon_path):
+                    os.makedirs(icon_path)
+                thumbnailPath = thumbnail.replace("%2F", "/")
+                thumbnailPath = thumbnail.replace("?", "/")
+                icon_path = os.path.join(icon_path, thumbnailPath.split('/')[-1])
+                if not os.path.exists(icon_path):
+                    try:
+                        print(f'Fetching {thumbnail}')
+                        filePath = urllib.request.urlretrieve(url=thumbnail, filename=icon_path)
+                        icon_path = os.path.join(item["modelId"], filePath[0])
+                    except Exception as e:
+                        print(e)
+                try:
+                    thumb = self.pcoll.load(item["modelId"], icon_path, 'IMAGE')
+                except:
+                    thumb = self.pcoll.load(
+                        item["modelId"]+str(I), icon_path, 'IMAGE')
 
-            if len(item["parts"]) > 0:
-                parts = item["parts"]
-                X = 1
-                for part in parts:
-                    print("Getting Thumbnail for {0}".format(part["modelId"]))
-                    self.partList.append(self.PartStruct(
-                        part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
+                self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get("originalFileType"), thumb.icon_id, item["domain"], 0))
 
-                    thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
-                        I, X, part["thumbnailUrl"], part["modelId"],)).start()
+                if len(item["parts"]) > 0:
+                    parts = item["parts"]
+                    X = 1
+                    for part in parts:
+                        print("Getting Thumbnail for {0}".format(part["modelId"]))
+                        self.partList.append(self.PartStruct(
+                                    part["modelId"], part["modelFileName"], part.get("originalFileType"), 0, part["domain"], X))
+                        
+                        thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
+                            I, X, part["thumbnailUrl"], part["modelId"],)).start()
 
-                    X += 1
+                        X += 1
 
-            title = item.get('modelTitle') or item.get('modelFileName')
-            self.modelList.append(self.ModelStruct(
-                modelTitle=title, partList=self.partList[:]))
+                title = item.get('modelTitle') or item.get('modelFileName')
+                self.modelList.append(self.ModelStruct(modelTitle=title, partList=self.partList[:]))
 
-            I += 1
+                I += 1
 
         try:
             ssl._create_default_https_context = old_context
