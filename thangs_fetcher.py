@@ -400,96 +400,103 @@ class ThangsFetcher():
         print("Search Completed!")
 
     def get_http_search(self):
-        self.searchType = "Text"
-        # Clean up temporary files from previous attempts
-        urllib.request.urlcleanup()
-        print("Started Search")
-        self.searching = True
-        self.failed = False
+        try:
+            self.searchType = "Text"
+            # Clean up temporary files from previous attempts
+            urllib.request.urlcleanup()
+            print("Started Search")
+            self.searching = True
+            self.failed = False
 
-        self.Directory = self.query
-        # Added
-        self.CurrentPage = self.PageNumber
+            self.Directory = self.query
+            # Added
+            self.CurrentPage = self.PageNumber
 
-        # Get the preview collection (defined in register func).
-        self.pcoll = self.preview_collections["main"]
+            # Get the preview collection (defined in register func).
+            self.pcoll = self.preview_collections["main"]
 
-        if self.CurrentPage == self.pcoll.Model_page:
-            if self.Directory == self.pcoll.Model_dir:
+            if self.CurrentPage == self.pcoll.Model_page:
+                if self.Directory == self.pcoll.Model_dir:
+                    self.searching = False
+                    self.search_callback()
+                    return
+                else:
+                    self.amplitude.send_amplitude_event("Text Search Started", event_properties={
+                        'searchTerm': self.query,
+                    })
+                    self.newSearch = True
+                    self.PageNumber = 1
+                    self.CurrentPage = 1
+
+            if self.Directory == "" or self.Directory.isspace():
                 self.searching = False
                 self.search_callback()
                 return
+
+            self.models.clear()
+
+            self.Directory = self.query
+            self.CurrentPage = self.PageNumber
+
+            # Get the preview collection (defined in register func).
+            self.pcoll = self.preview_collections["main"]
+
+            for pcoll in self.preview_collections.values():
+                bpy.utils.previews.remove(pcoll)
+            self.preview_collections.clear()
+
+            self.pcoll = bpy.utils.previews.new()
+            self.pcoll.Model_dir = ""
+            self.pcoll.Model = ()
+            self.pcoll.Model_page = self.CurrentPage
+
+            self.preview_collections["main"] = self.pcoll
+
+            self.pcoll = self.preview_collections["main"]
+
+            if self.newSearch == True:
+                try:
+                    response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm=" + str(urllib.parse.quote(self.query, safe='')) +
+                                            "&pageSize="+str(self.results_to_show)+"&collapse=true")
+                except Exception as e:
+                    print(e)
+                    self.failed = True
+                    self.newSearch = False
+                    self.searching = False
+                    return
             else:
-                self.amplitude.send_amplitude_event("Text Search Started", event_properties={
+                try:
+                    response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+str(urllib.parse.quote(self.query, safe='')) +
+                                            "&pageSize=" +
+                                            str(self.results_to_show) +
+                                            "&collapse=true",
+                                            headers={"x-thangs-searchmetadata": base64.b64encode(
+                                                json.dumps(self.searchMetaData).encode()).decode()},
+                                            )
+                except Exception as e:
+                    print(e)
+                    self.failed = True
+                    self.newSearch = False
+                    self.searching = False
+                    return
+
+            if response.status_code != 200:
+                self.amplitude.send_amplitude_event("Text Search - Failed", event_properties={
                     'searchTerm': self.query,
                 })
-                self.newSearch = True
-                self.PageNumber = 1
-                self.CurrentPage = 1
 
-        if self.Directory == "" or self.Directory.isspace():
-            self.searching = False
-            self.search_callback()
+            else:
+                responseData = response.json()
+                self.display_search_results(responseData)
             return
 
-        self.models.clear()
-
-        self.Directory = self.query
-        self.CurrentPage = self.PageNumber
-
-        # Get the preview collection (defined in register func).
-        self.pcoll = self.preview_collections["main"]
-
-        for pcoll in self.preview_collections.values():
-            bpy.utils.previews.remove(pcoll)
-        self.preview_collections.clear()
-
-        self.pcoll = bpy.utils.previews.new()
-        self.pcoll.Model_dir = ""
-        self.pcoll.Model = ()
-        self.pcoll.Model_page = self.CurrentPage
-
-        self.preview_collections["main"] = self.pcoll
-
-        self.pcoll = self.preview_collections["main"]
-
-        if self.newSearch == True:
-            try:
-                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm=" + str(urllib.parse.quote(self.query, safe='')) +
-                                        "&pageSize="+str(self.results_to_show)+"&collapse=true")
-            except Exception as e:
-                print(e)
-                self.failed = True
-                self.newSearch = False
-                self.searching = False
-                return
-        else:
-            try:
-                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+str(urllib.parse.quote(self.query, safe='')) +
-                                        "&pageSize=" +
-                                        str(self.results_to_show) +
-                                        "&collapse=true",
-                                        headers={"x-thangs-searchmetadata": base64.b64encode(
-                                            json.dumps(self.searchMetaData).encode()).decode()},
-                                        )
-            except Exception as e:
-                print(e)
-                self.failed = True
-                self.newSearch = False
-                self.searching = False
-                return
-
-        if response.status_code != 200:
-            self.amplitude.send_amplitude_event("Text Search - Failed", event_properties={
-                'searchTerm': self.query,
-            })
-
-        else:
-
-            responseData = response.json()
-            self.display_search_results(responseData)
-
-        return
+        except Exception as e:
+            print(e)
+            self.failed = True
+            self.newSearch = False
+            self.searching = False
+            self.search_callback
+            return None
 
     def display_stl_results(self, responseData, show_summary=True):
         temp_dir = os.path.join(
@@ -608,96 +615,104 @@ class ThangsFetcher():
         print("Search Completed!")
 
     def get_stl_search(self, stl_path):
-        self.searchType = "Object"
-        self.thangs_ui_mode = 'SEARCH'
-        self.selectionSearching = True
-        self.selectionEmpty = False
-        self.stl_callback()
-
-        print("Started STL Search")
-
-        self.CurrentPage = self.PageNumber
-
-        self.pcoll = self.preview_collections["main"]
-
-        self.models.clear()
-
-        self.Directory = self.query
-        self.CurrentPage = self.PageNumber
-
-        # Get the preview collection (defined in register func).
-        self.pcoll = self.preview_collections["main"]
-
-        for pcoll in self.preview_collections.values():
-            bpy.utils.previews.remove(pcoll)
-        self.preview_collections.clear()
-
-        self.pcoll = bpy.utils.previews.new()
-        self.pcoll.Model_dir = ""
-        self.pcoll.Model = ()
-        self.pcoll.Model_page = self.CurrentPage
-
-        self.preview_collections["main"] = self.pcoll
-
-        self.pcoll = self.preview_collections["main"]
-
-        headers = {
-            "Authorization": "Bearer "+self.bearer,
-        }
-
         try:
-            url_endpoint = str(
-                self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl"
-            print(url_endpoint)
-            response = requests.get(url_endpoint, headers=headers)
-            responseData = response.json()
+            self.searchType = "Object"
+            self.thangs_ui_mode = 'SEARCH'
+            self.selectionSearching = True
+            self.selectionEmpty = False
+            self.stl_callback()
 
-            # print(responseData)
-            signedUrl = responseData["signedUrl"]
-            new_Filename = responseData["newFileName"]
-        except:
-            print("URL BROKEN" + url_endpoint)
-            self.selectionSearching = False
-            self.searching = False
-            self.newSearch = False
-            self.selectionFailed = True
-            return
+            print("Started STL Search")
 
-        data = open(stl_path, 'rb').read()
+            self.CurrentPage = self.PageNumber
 
-        try:
-            putHeaders = {
-                "Content-Type": "model/stl",
+            self.pcoll = self.preview_collections["main"]
+
+            self.models.clear()
+
+            self.Directory = self.query
+            self.CurrentPage = self.PageNumber
+
+            # Get the preview collection (defined in register func).
+            self.pcoll = self.preview_collections["main"]
+
+            for pcoll in self.preview_collections.values():
+                bpy.utils.previews.remove(pcoll)
+            self.preview_collections.clear()
+
+            self.pcoll = bpy.utils.previews.new()
+            self.pcoll.Model_dir = ""
+            self.pcoll.Model = ()
+            self.pcoll.Model_page = self.CurrentPage
+
+            self.preview_collections["main"] = self.pcoll
+
+            self.pcoll = self.preview_collections["main"]
+
+            headers = {
+                "Authorization": "Bearer "+self.bearer,
             }
-            putRequest = requests.put(
-                url=signedUrl, data=data, headers=putHeaders)
-            print(putRequest.status_code)
 
-            #response = s.post(url, headers=headers, data=data)
-        except:
-            print("API Failed")
-            self.selectionSearching = False
-            self.searching = False
-            self.newSearch = False
-            self.selectionFailed = True
-            return
+            try:
+                url_endpoint = str(
+                    self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl"
+                print(url_endpoint)
+                response = requests.get(url_endpoint, headers=headers)
+                responseData = response.json()
 
-        print("Select Search Returned")
+                # print(responseData)
+                signedUrl = responseData["signedUrl"]
+                new_Filename = responseData["newFileName"]
+            except:
+                print("URL BROKEN" + url_endpoint)
+                self.selectionSearching = False
+                self.searching = False
+                self.newSearch = False
+                self.selectionFailed = True
+                return
 
-        try:
-            url = str(
-                self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath=" + new_Filename)
-            print(url)
+            data = open(stl_path, 'rb').read()
 
-            response = requests.get(url=url, headers=headers)
+            try:
+                putHeaders = {
+                    "Content-Type": "model/stl",
+                }
+                putRequest = requests.put(
+                    url=signedUrl, data=data, headers=putHeaders)
+                print(putRequest.status_code)
 
-            responseData = response.json()
-            responseData["searchMetadata"] = {}
-            self.display_stl_results(responseData, show_summary=True)
+                #response = s.post(url, headers=headers, data=data)
+            except:
+                print("API Failed")
+                self.selectionSearching = False
+                self.searching = False
+                self.newSearch = False
+                self.selectionFailed = True
+                return
+
+            print("Select Search Returned")
+
+            try:
+                url = str(
+                    self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath=" + new_Filename)
+                print(url)
+
+                response = requests.get(url=url, headers=headers)
+
+                responseData = response.json()
+                responseData["searchMetadata"] = {}
+                self.display_stl_results(responseData, show_summary=True)
+            except Exception as e:
+                print("Get Results Broke: ", e)
+                self.selectionSearching = False
+                self.searching = False
+                self.newSearch = False
+                self.selectionFailed = True
+                return
         except Exception as e:
-            print("Get Results Broke: ", e)
+            print(e)
             self.selectionSearching = False
             self.searching = False
             self.newSearch = False
             self.selectionFailed = True
-            return
+            return None
