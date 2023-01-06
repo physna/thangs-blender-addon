@@ -23,7 +23,6 @@ from requests.adapters import HTTPAdapter, Retry
 
 
 class ThangsFetcher():
-
     def __init__(self, callback=None, results_to_show=8, stl_callback=None):
         self.search_thread = None
         self.search_callback = callback

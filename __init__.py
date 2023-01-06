@@ -137,7 +137,6 @@ def import_model():
     tag_redraw_areas()
     return
 
-
 resultsToShow = 8
 
 initialize(bl_info["version"])
@@ -156,7 +155,6 @@ PageNumber = fetcher.PageNumber
 pcoll = fetcher.pcoll
 PageTotal = fetcher.PageTotal
 fetcher.thangs_ui_mode = 'SEARCH'
-
 
 enumHolders = []
 for x in range(resultsToShow):
