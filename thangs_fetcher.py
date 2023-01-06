@@ -142,7 +142,6 @@ class ThangsFetcher():
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
 
-        print(temp_dir)
         if act_obj:
             previous_mode = act_obj.mode  # Keep current mode
             # Keep already created
@@ -155,7 +154,7 @@ class ThangsFetcher():
                     bpy.ops.mesh.solidify()
                     bpy.ops.mesh.separate(type='SELECTED')
 
-        #            #Back to object mode
+                    # Back to object mode
                     bpy.ops.object.mode_set(mode='OBJECT')
 
                     bpy.context.active_object.select_set(False)
@@ -253,12 +252,7 @@ class ThangsFetcher():
             self.PageTotal = pageTotal
         # Add in event Code
 
-    def get_lazy_thumbs(self, I, X, thumbnail, modelID,):
-        temp_dir = os.path.join(
-            self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
-        if not os.path.exists(temp_dir):
-            os.makedirs(temp_dir)
-
+    def get_lazy_thumbs(self, I, X, thumbnail, modelID, temp_dir,):
         icon_path = os.path.join(temp_dir, modelID)
         if not os.path.exists(icon_path):
             os.makedirs(icon_path)
@@ -288,7 +282,6 @@ class ThangsFetcher():
             print(e + f" on Image {X}")
 
     def display_search_results(self, responseData, show_summary=True):
-        # print(responseData)
         temp_dir = os.path.join(
             self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
         if not os.path.exists(temp_dir):
@@ -372,7 +365,7 @@ class ThangsFetcher():
                         part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
 
                     thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
-                        I, X, part["thumbnailUrl"], part["modelId"],)).start()
+                        I, X, part["thumbnailUrl"], part["modelId"], temp_dir,)).start()
 
                     X += 1
 
@@ -499,6 +492,11 @@ class ThangsFetcher():
         return
 
     def display_stl_results(self, responseData, show_summary=True):
+        temp_dir = os.path.join(
+            self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
         items = responseData["results"]
         if self.newSearch == True:
             self.uuid = str(uuid.uuid4())
@@ -542,19 +540,26 @@ class ThangsFetcher():
                 (((self.CurrentPage - 1) * 8) + I)
             ))
 
-            try:
-                print(f'Fetching {thumbnail}')
-                filePath = urllib.request.urlretrieve(thumbnail)
-                filepath = os.path.join(item["modelId"], filePath[0])
-            except:
-                filePath = Path(__file__ + "\icons\placeholder.png")
-                filepath = os.path.join(item["modelId"], filePath)
+            icon_path = os.path.join(temp_dir, item["modelId"])
+            if not os.path.exists(icon_path):
+                os.makedirs(icon_path)
+            thumbnailPath = thumbnail.replace("%2F", "/").replace("?", "/")
+            icon_path = os.path.join(icon_path, thumbnailPath.split('/')[-1])
+            if not os.path.exists(icon_path):
+                try:
+                    print(f'Fetching {thumbnail}')
+                    filePath = urllib.request.urlretrieve(thumbnail, icon_path)
+                    icon_path = os.path.join(item["modelId"], filePath[0])
+                except Exception as e:
+                    print(e)
+                    filePath = Path(__file__ + "\icons\placeholder.png")
+                    icon_path = os.path.join(item["modelId"], filePath)
 
             try:
-                thumb = self.pcoll.load(item["modelId"], filepath, 'IMAGE')
+                thumb = self.pcoll.load(item["modelId"], icon_path, 'IMAGE')
             except:
                 thumb = self.pcoll.load(
-                    item["modelId"]+str(I), filepath, 'IMAGE')
+                    item["modelId"]+str(I), icon_path, 'IMAGE')
 
             self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get(
                 "originalFileType"), thumb.icon_id, item["domain"], 0))
@@ -568,7 +573,7 @@ class ThangsFetcher():
                         part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
 
                     thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
-                        I, X, part["thumbnailUrl"], part["modelId"],)).start()
+                        I, X, part["thumbnailUrl"], part["modelId"], temp_dir)).start()
 
                     X += 1
 
