@@ -137,6 +137,7 @@ def import_model():
     tag_redraw_areas()
     return
 
+
 resultsToShow = 8
 
 initialize(bl_info["version"])
@@ -149,6 +150,7 @@ thangs_config = ThangsConfig()
 thangs_login = ThangsLogin()
 thangs_api = get_thangs_api()
 execution_queue = thangs_api.execution_queue
+Origin = ""
 
 ButtonSearch = "Search"
 PageNumber = fetcher.PageNumber
@@ -972,9 +974,10 @@ def open_panel_timer():
 
 
 def heartbeat_timer():
+    global Origin
     log.info('sending thangs heartbeat')
     amplitude.send_amplitude_event(
-        "Thangs Blender Addon - Heartbeat", event_properties={})
+        "Thangs Blender Addon - Heartbeat", event_properties={'origin': Origin})
     return 300
 
 
@@ -1003,6 +1006,7 @@ def execute_queued_functions():
 
 def register():
     global fetcher
+    global Origin
     from bpy.types import WindowManager
     from bpy.props import (
         StringProperty,
@@ -1097,6 +1101,17 @@ def register():
         default="Search",
         update=startSearch
     )
+
+    try:
+        origin_location = os.path.join(
+            os.path.dirname(__file__), 'origin.json')
+        if os.path.exists(origin_location):
+            f = open(origin_location)
+            data = json.load(f)
+            Origin = data["origin"]
+            f.close()
+    except:
+        Origin = "Github"
 
     amplitude.deviceId = socket.gethostname().split(".")[0]
     amplitude.addon_version = bl_info["version"]
