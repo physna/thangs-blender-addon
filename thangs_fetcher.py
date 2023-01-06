@@ -8,11 +8,11 @@ import urllib.request
 import urllib.parse
 import threading
 import os
-import shutil
 import math
 import platform
 import ssl
 import socket
+import time
 
 from .model_info import ModelInfo
 from .thangs_events import ThangsEvents
@@ -142,7 +142,6 @@ class ThangsFetcher():
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
 
-        print(temp_dir)
         if act_obj:
             previous_mode = act_obj.mode  # Keep current mode
             # Keep already created
@@ -155,7 +154,7 @@ class ThangsFetcher():
                     bpy.ops.mesh.solidify()
                     bpy.ops.mesh.separate(type='SELECTED')
 
-        #            #Back to object mode
+                    # Back to object mode
                     bpy.ops.object.mode_set(mode='OBJECT')
 
                     bpy.context.active_object.select_set(False)
@@ -215,15 +214,16 @@ class ThangsFetcher():
             return True
         return False
 
-    def get_total_results(self, responseData):
+    def get_total_results(self, searchMetadata):
 
         print("Started Counting Results")
-        items = responseData["searchMetadata"]
+        items = searchMetadata
         self.totalModels = items['totalResults']
-        if math.ceil(self.totalModels/8) > 99:
+        pageTotal = math.ceil(self.totalModels/self.results_to_show)
+        if pageTotal > 99:
             self.PageTotal = 99
         else:
-            self.PageTotal = math.ceil(self.totalModels/8)
+            self.PageTotal = pageTotal
 
         if items['totalResults'] == 0:
             self.amplitude.send_amplitude_event("Text search - No Results", event_properties={
@@ -243,39 +243,50 @@ class ThangsFetcher():
             })
 
     def get_stl_results(self, items):
-        #if response.status_code != 200:
-        #    self.totalModels = 0
-        #    self.PageTotal = 0
         print("Started Counting Results")
-        #responseData = response.json()
         self.totalModels = len(items)
-        if math.ceil(self.totalModels/8) > 99:
+        pageTotal = math.ceil(self.totalModels/self.results_to_show)
+        if pageTotal > 99:
             self.PageTotal = 99
         else:
-            self.PageTotal = math.ceil(self.totalModels/8)
+            self.PageTotal = pageTotal
         # Add in event Code
 
-    def get_lazy_thumbs(self, I, X, thumbnail, modelID,):
-        try:
-            print(f'Fetching part {thumbnail}')
-            filePath = urllib.request.urlretrieve(thumbnail)
-            filepath = os.path.join(modelID, filePath[0])
-        except:
-            filePath = Path(__file__ + "\icons\placeholder.png")
-            filepath = os.path.join(modelID, filePath)
+    def get_lazy_thumbs(self, I, X, thumbnail, modelID, temp_dir,):
+        icon_path = os.path.join(temp_dir, modelID)
+        if not os.path.exists(icon_path):
+            os.makedirs(icon_path)
+
+        thumbnailPath = thumbnail.replace("%2F", "/").replace("?", "/")
+        icon_path = os.path.join(icon_path, thumbnailPath.split('/')[-1])
+
+        if not os.path.exists(icon_path):
+            try:
+                print(f'Fetching {thumbnail}')
+                filePath = urllib.request.urlretrieve(thumbnail, icon_path)
+                icon_path = os.path.join(modelID, filePath[0])
+            except Exception as e:
+                print(e)
+                filePath = Path(__file__ + "\icons\placeholder.png")
+                icon_path = os.path.join(modelID, filePath)
 
         try:
-            thumb = self.pcoll.load(modelID, filepath, 'IMAGE')
+            thumb = self.pcoll.load(modelID, icon_path, 'IMAGE')
         except:
-            thumb = self.pcoll.load(modelID+str(X), filepath, 'IMAGE')
+            thumb = self.pcoll.load(modelID+str(X), icon_path, 'IMAGE')
 
         try:
+            time.sleep(.25)
             self.modelList[I].parts[X].iconId = thumb.icon_id
-        except:
-            print("Thumbnail Doesn't Exist")
+        except Exception as e:
+            print(e + f" on Image {X}")
 
     def display_search_results(self, responseData, show_summary=True):
-        #print(responseData)
+        temp_dir = os.path.join(
+            self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
         items = responseData["results"]
         if self.newSearch == True:
             self.uuid = str(uuid.uuid4())
@@ -288,7 +299,7 @@ class ThangsFetcher():
 
             self.amplitude.send_thangs_event("Capture", data)
         if show_summary:
-            self.get_total_results(responseData)
+            self.get_total_results(responseData["searchMetadata"])
 
         # ugh
         old_context = ssl._create_default_https_context
@@ -297,22 +308,16 @@ class ThangsFetcher():
         self.modelList.clear()
         I = 0
         if self.searchType == "object":
-                self.selectionThumbnailGrab = True
-                self.stl_callback()
+            self.selectionThumbnailGrab = True
+            self.stl_callback()
         for item in items:
             self.partList.clear()
 
-            # if len(item["thumbnails"]) > 0:
-            #     thumbnail = item["thumbnails"][0]
-            # else:
-            model_id = item["modelId"]
-            # item["thumbnailUrl"]
-
             if len(item["thumbnails"]) > 0:
-                    thumbnail = item["thumbnails"][0]
+                thumbnail = item["thumbnails"][0]
             else:
                 thumbnail = item["thumbnailUrl"]
-            
+
             #thumbnail = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
 
             self.models.append(ModelInfo(
@@ -327,19 +332,26 @@ class ThangsFetcher():
                 (((self.CurrentPage - 1) * 8) + I)
             ))
 
-            try:
-                print(f'Fetching {thumbnail}')
-                filePath = urllib.request.urlretrieve(thumbnail)
-                filepath = os.path.join(item["modelId"], filePath[0])
-            except:
-                filePath = Path(__file__ + "\icons\placeholder.png")
-                filepath = os.path.join(item["modelId"], filePath)
+            icon_path = os.path.join(temp_dir, item["modelId"])
+            if not os.path.exists(icon_path):
+                os.makedirs(icon_path)
+            thumbnailPath = thumbnail.replace("%2F", "/").replace("?", "/")
+            icon_path = os.path.join(icon_path, thumbnailPath.split('/')[-1])
+            if not os.path.exists(icon_path):
+                try:
+                    print(f'Fetching {thumbnail}')
+                    filePath = urllib.request.urlretrieve(thumbnail, icon_path)
+                    icon_path = os.path.join(item["modelId"], filePath[0])
+                except Exception as e:
+                    print(e)
+                    filePath = Path(__file__ + "\icons\placeholder.png")
+                    icon_path = os.path.join(item["modelId"], filePath)
 
             try:
-                thumb = self.pcoll.load(item["modelId"], filepath, 'IMAGE')
+                thumb = self.pcoll.load(item["modelId"], icon_path, 'IMAGE')
             except:
                 thumb = self.pcoll.load(
-                    item["modelId"]+str(I), filepath, 'IMAGE')
+                    item["modelId"]+str(I), icon_path, 'IMAGE')
 
             self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get(
                 "originalFileType"), thumb.icon_id, item["domain"], 0))
@@ -353,7 +365,7 @@ class ThangsFetcher():
                         part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
 
                     thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
-                        I, X, part["thumbnailUrl"], part["modelId"],)).start()
+                        I, X, part["thumbnailUrl"], part["modelId"], temp_dir,)).start()
 
                     X += 1
 
@@ -388,98 +400,110 @@ class ThangsFetcher():
         print("Search Completed!")
 
     def get_http_search(self):
-        self.searchType = "Text"
-        # Clean up temporary files from previous attempts
-        urllib.request.urlcleanup()
-        print("Started Search")
-        self.searching = True
-        self.failed = False
+        try:
+            self.searchType = "Text"
+            # Clean up temporary files from previous attempts
+            urllib.request.urlcleanup()
+            print("Started Search")
+            self.searching = True
+            self.failed = False
 
-        self.Directory = self.query
-        # Added
-        self.CurrentPage = self.PageNumber
+            self.Directory = self.query
+            # Added
+            self.CurrentPage = self.PageNumber
 
-        # Get the preview collection (defined in register func).
-        self.pcoll = self.preview_collections["main"]
+            # Get the preview collection (defined in register func).
+            self.pcoll = self.preview_collections["main"]
 
-        if self.CurrentPage == self.pcoll.Model_page:
-            if self.Directory == self.pcoll.Model_dir:
+            if self.CurrentPage == self.pcoll.Model_page:
+                if self.Directory == self.pcoll.Model_dir:
+                    self.searching = False
+                    self.search_callback()
+                    return
+                else:
+                    self.amplitude.send_amplitude_event("Text Search Started", event_properties={
+                        'searchTerm': self.query,
+                    })
+                    self.newSearch = True
+                    self.PageNumber = 1
+                    self.CurrentPage = 1
+
+            if self.Directory == "" or self.Directory.isspace():
                 self.searching = False
                 self.search_callback()
                 return
-            else:
-                self.amplitude.send_amplitude_event("Text Search Started", event_properties={
-                                                        'searchTerm': self.query,
-                                                    })
-                self.newSearch = True
-                self.PageNumber = 1
-                self.CurrentPage = 1
 
-        if self.Directory == "" or self.Directory.isspace():
-            self.searching = False
-            self.search_callback()
+            self.models.clear()
+
+            self.Directory = self.query
+            self.CurrentPage = self.PageNumber
+
+            # Get the preview collection (defined in register func).
+            self.pcoll = self.preview_collections["main"]
+
+            for pcoll in self.preview_collections.values():
+                bpy.utils.previews.remove(pcoll)
+            self.preview_collections.clear()
+
+            self.pcoll = bpy.utils.previews.new()
+            self.pcoll.Model_dir = ""
+            self.pcoll.Model = ()
+            self.pcoll.Model_page = self.CurrentPage
+
+            self.preview_collections["main"] = self.pcoll
+
+            self.pcoll = self.preview_collections["main"]
+
+            if self.newSearch == True:
+                try:
+                    response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm=" + str(urllib.parse.quote(self.query, safe='')) +
+                                            "&pageSize="+str(self.results_to_show)+"&collapse=true")
+                except Exception as e:
+                    print(e)
+                    self.failed = True
+                    self.newSearch = False
+                    self.searching = False
+                    return
+            else:
+                try:
+                    response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+str(urllib.parse.quote(self.query, safe='')) +
+                                            "&pageSize=" +
+                                            str(self.results_to_show) +
+                                            "&collapse=true",
+                                            headers={"x-thangs-searchmetadata": base64.b64encode(
+                                                json.dumps(self.searchMetaData).encode()).decode()},
+                                            )
+                except Exception as e:
+                    print(e)
+                    self.failed = True
+                    self.newSearch = False
+                    self.searching = False
+                    return
+
+            if response.status_code != 200:
+                self.amplitude.send_amplitude_event("Text Search - Failed", event_properties={
+                    'searchTerm': self.query,
+                })
+
+            else:
+                responseData = response.json()
+                self.display_search_results(responseData)
             return
 
-        self.models.clear()
-
-        self.Directory = self.query
-        self.CurrentPage = self.PageNumber
-
-        # Get the preview collection (defined in register func).
-        self.pcoll = self.preview_collections["main"]
-
-        for pcoll in self.preview_collections.values():
-            bpy.utils.previews.remove(pcoll)
-        self.preview_collections.clear()
-
-        self.pcoll = bpy.utils.previews.new()
-        self.pcoll.Model_dir = ""
-        self.pcoll.Model = ()
-        self.pcoll.Model_page = self.CurrentPage
-
-        self.preview_collections["main"] = self.pcoll
-
-        self.pcoll = self.preview_collections["main"]
-
-        if self.newSearch == True:
-            try:
-                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+ str(urllib.parse.quote(self.query, safe='')) +
-                                        "&pageSize="+str(self.results_to_show)+"&collapse=true")
-            except Exception as e:
-                print(e)
-                self.failed = True
-                self.newSearch = False
-                self.searching = False
-                return
-        else:
-            try:
-                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+str(urllib.parse.quote(self.query, safe='')) +
-                    "&pageSize="+str(self.results_to_show)+"&collapse=true",
-                    headers={"x-thangs-searchmetadata": base64.b64encode(
-                        json.dumps(self.searchMetaData).encode()).decode()},
-                )
-            except Exception as e:
-                print(e)
-                self.failed = True
-                self.newSearch = False
-                self.searching = False
-                return
-
-        if response.status_code != 200:
-            self.amplitude.send_amplitude_event("Text Search - Failed", event_properties={
-                'searchTerm': self.query,
-            })
-
-        else:
-
-            responseData = response.json()
-            self.display_search_results(responseData)
-
-        return
-
+        except Exception as e:
+            print(e)
+            self.failed = True
+            self.newSearch = False
+            self.searching = False
+            self.search_callback
+            return None
 
     def display_stl_results(self, responseData, show_summary=True):
-        #print(responseData)
+        temp_dir = os.path.join(
+            self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
         items = responseData["results"]
         if self.newSearch == True:
             self.uuid = str(uuid.uuid4())
@@ -501,22 +525,15 @@ class ThangsFetcher():
         self.modelList.clear()
         I = 0
         if self.searchType == "object":
-                self.selectionThumbnailGrab = True
-                self.stl_callback()
+            self.selectionThumbnailGrab = True
+            self.stl_callback()
         for item in items[((self.CurrentPage-1)*8):(self.CurrentPage*8)]:
             self.partList.clear()
 
-            # if len(item["thumbnails"]) > 0:
-            #     thumbnail = item["thumbnails"][0]
-            # else:
-            model_id = item["modelId"]
-            # item["thumbnailUrl"]
-
             if len(item["thumbnails"]) > 0:
-                    thumbnail = item["thumbnails"][0]
+                thumbnail = item["thumbnails"][0]
             else:
                 thumbnail = item["thumbnailUrl"]
-            #thumbnail = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
 
             self.models.append(ModelInfo(
                 item["modelId"],
@@ -530,19 +547,26 @@ class ThangsFetcher():
                 (((self.CurrentPage - 1) * 8) + I)
             ))
 
-            try:
-                print(f'Fetching {thumbnail}')
-                filePath = urllib.request.urlretrieve(thumbnail)
-                filepath = os.path.join(item["modelId"], filePath[0])
-            except:
-                filePath = Path(__file__ + "\icons\placeholder.png")
-                filepath = os.path.join(item["modelId"], filePath)
+            icon_path = os.path.join(temp_dir, item["modelId"])
+            if not os.path.exists(icon_path):
+                os.makedirs(icon_path)
+            thumbnailPath = thumbnail.replace("%2F", "/").replace("?", "/")
+            icon_path = os.path.join(icon_path, thumbnailPath.split('/')[-1])
+            if not os.path.exists(icon_path):
+                try:
+                    print(f'Fetching {thumbnail}')
+                    filePath = urllib.request.urlretrieve(thumbnail, icon_path)
+                    icon_path = os.path.join(item["modelId"], filePath[0])
+                except Exception as e:
+                    print(e)
+                    filePath = Path(__file__ + "\icons\placeholder.png")
+                    icon_path = os.path.join(item["modelId"], filePath)
 
             try:
-                thumb = self.pcoll.load(item["modelId"], filepath, 'IMAGE')
+                thumb = self.pcoll.load(item["modelId"], icon_path, 'IMAGE')
             except:
                 thumb = self.pcoll.load(
-                    item["modelId"]+str(I), filepath, 'IMAGE')
+                    item["modelId"]+str(I), icon_path, 'IMAGE')
 
             self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get(
                 "originalFileType"), thumb.icon_id, item["domain"], 0))
@@ -556,7 +580,7 @@ class ThangsFetcher():
                         part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
 
                     thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
-                        I, X, part["thumbnailUrl"], part["modelId"],)).start()
+                        I, X, part["thumbnailUrl"], part["modelId"], temp_dir)).start()
 
                     X += 1
 
@@ -591,96 +615,104 @@ class ThangsFetcher():
         print("Search Completed!")
 
     def get_stl_search(self, stl_path):
-        self.searchType = "Object"
-        self.thangs_ui_mode = 'SEARCH'
-        self.selectionSearching = True
-        self.selectionEmpty = False
-        self.stl_callback()
-
-        print("Started STL Search")
-
-        self.CurrentPage = self.PageNumber
-
-        self.pcoll = self.preview_collections["main"]
-
-        self.models.clear()
-
-        self.Directory = self.query
-        self.CurrentPage = self.PageNumber
-
-        # Get the preview collection (defined in register func).
-        self.pcoll = self.preview_collections["main"]
-
-        for pcoll in self.preview_collections.values():
-            bpy.utils.previews.remove(pcoll)
-        self.preview_collections.clear()
-
-        self.pcoll = bpy.utils.previews.new()
-        self.pcoll.Model_dir = ""
-        self.pcoll.Model = ()
-        self.pcoll.Model_page = self.CurrentPage
-
-        self.preview_collections["main"] = self.pcoll
-
-        self.pcoll = self.preview_collections["main"]
-
-        headers = {
-            "Authorization": "Bearer "+self.bearer,
-        }
-
         try:
-            url_endpoint = str(
-                self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl"
-            print(url_endpoint)
-            response = requests.get(url_endpoint, headers=headers)
-            responseData = response.json()
+            self.searchType = "Object"
+            self.thangs_ui_mode = 'SEARCH'
+            self.selectionSearching = True
+            self.selectionEmpty = False
+            self.stl_callback()
 
-            # print(responseData)
-            signedUrl = responseData["signedUrl"]
-            new_Filename = responseData["newFileName"]
-        except:
-            print("URL BROKEN" + url_endpoint)
-            self.selectionSearching = False
-            self.searching = False
-            self.newSearch = False
-            self.selectionFailed = True
-            return
+            print("Started STL Search")
 
-        data = open(stl_path, 'rb').read()
+            self.CurrentPage = self.PageNumber
 
-        try:
-            putHeaders = {
-                "Content-Type": "model/stl",
+            self.pcoll = self.preview_collections["main"]
+
+            self.models.clear()
+
+            self.Directory = self.query
+            self.CurrentPage = self.PageNumber
+
+            # Get the preview collection (defined in register func).
+            self.pcoll = self.preview_collections["main"]
+
+            for pcoll in self.preview_collections.values():
+                bpy.utils.previews.remove(pcoll)
+            self.preview_collections.clear()
+
+            self.pcoll = bpy.utils.previews.new()
+            self.pcoll.Model_dir = ""
+            self.pcoll.Model = ()
+            self.pcoll.Model_page = self.CurrentPage
+
+            self.preview_collections["main"] = self.pcoll
+
+            self.pcoll = self.preview_collections["main"]
+
+            headers = {
+                "Authorization": "Bearer "+self.bearer,
             }
-            putRequest = requests.put(
-                url=signedUrl, data=data, headers=putHeaders)
-            print(putRequest.status_code)
 
-            #response = s.post(url, headers=headers, data=data)
-        except:
-            print("API Failed")
-            self.selectionSearching = False
-            self.searching = False
-            self.newSearch = False
-            self.selectionFailed = True
-            return
+            try:
+                url_endpoint = str(
+                    self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl"
+                print(url_endpoint)
+                response = requests.get(url_endpoint, headers=headers)
+                responseData = response.json()
 
-        print("Select Search Returned")
+                # print(responseData)
+                signedUrl = responseData["signedUrl"]
+                new_Filename = responseData["newFileName"]
+            except:
+                print("URL BROKEN" + url_endpoint)
+                self.selectionSearching = False
+                self.searching = False
+                self.newSearch = False
+                self.selectionFailed = True
+                return
 
-        try:
-            url = str(
-                self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath=" + new_Filename)
-            print(url)
+            data = open(stl_path, 'rb').read()
 
-            response = requests.get(url=url, headers=headers)
+            try:
+                putHeaders = {
+                    "Content-Type": "model/stl",
+                }
+                putRequest = requests.put(
+                    url=signedUrl, data=data, headers=putHeaders)
+                print(putRequest.status_code)
 
-            responseData = response.json()
-            responseData["searchMetadata"] = {}
-            self.display_stl_results(responseData, show_summary=True)
+                #response = s.post(url, headers=headers, data=data)
+            except:
+                print("API Failed")
+                self.selectionSearching = False
+                self.searching = False
+                self.newSearch = False
+                self.selectionFailed = True
+                return
+
+            print("Select Search Returned")
+
+            try:
+                url = str(
+                    self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath=" + new_Filename)
+                print(url)
+
+                response = requests.get(url=url, headers=headers)
+
+                responseData = response.json()
+                responseData["searchMetadata"] = {}
+                self.display_stl_results(responseData, show_summary=True)
+            except Exception as e:
+                print("Get Results Broke: ", e)
+                self.selectionSearching = False
+                self.searching = False
+                self.newSearch = False
+                self.selectionFailed = True
+                return
         except Exception as e:
-            print("Get Results Broke: ", e)
+            print(e)
             self.selectionSearching = False
             self.searching = False
             self.newSearch = False
             self.selectionFailed = True
-            return
+            return None
