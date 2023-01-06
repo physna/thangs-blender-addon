@@ -160,3 +160,7 @@ cython_debug/
 .idea/
 .build/
 thangs-blender-addon.zip
+bearer.json
+thangs-blender-addon_updater
+firstOpen.json
+.vscode/*

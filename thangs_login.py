@@ -1,10 +1,13 @@
-import uuid, webbrowser, requests, threading
+import uuid
+import webbrowser
+import requests
+import threading
 
-from time import sleep 
+from time import sleep
 from .config import get_config, ThangsConfig
 
-GRANT_CHECK_INTERVAL_SECONDS=0.5 # 500 milliseconds
-MAX_ATTEMPTS=300 # 5 minutes worth
+GRANT_CHECK_INTERVAL_SECONDS = 0.5  # 500 milliseconds
+MAX_ATTEMPTS = 300  # 5 minutes worth
 BLENDER_IS_CLOSED = False
 
 
@@ -12,10 +15,12 @@ def stop_access_grant():
     global BLENDER_IS_CLOSED
     BLENDER_IS_CLOSED = True
 
+
 class ThangsLogin(threading.Thread):
     token = {}
     Thangs_Config = get_config()
     token_available = threading.Event()
+    event = None
 
     def __init__(self):
         super().__init__()
@@ -25,7 +30,7 @@ class ThangsLogin(threading.Thread):
     def startLoginFromBrowser(self):
         return self.start()
 
-    def run(self,*args,**kwargs):
+    def run(self, *args, **kwargs):
         global BLENDER_IS_CLOSED
         global MAX_ATTEMPTS
         codeChallengeId = self.authenticate()
@@ -36,6 +41,8 @@ class ThangsLogin(threading.Thread):
         while done == False and BLENDER_IS_CLOSED == False and attempts < MAX_ATTEMPTS:
             response = self.checkAccessGrant(codeChallengeId, attempts)
             print(attempts)
+            if self.event.is_set():
+                break
             if response.status_code == 200:
                 print("Successful Login")
                 done = True
@@ -43,20 +50,23 @@ class ThangsLogin(threading.Thread):
                 self.token = token.json()
                 self.token_available.set()
                 self.token_available.clear()
+                self.event = None
                 return
             elif response.status_code == 401:
                 print("Unsuccessful Login")
                 done = True
                 self.token_available.set()
                 self.token_available.clear()
+                self.event = None
                 return
-
             else:
                 attempts = attempts + 1
+
         if self.token == {}:
             print("Unsuccessful Login")
             self.token_available.set()
             self.token_available.clear()
+            self.event = None
 
     def apiAccessGrantUrl(self, codeChallengeId, attempts):
         return f"{self.config['url']}api/users/access-grant/{codeChallengeId}/check?attempts={attempts}"
@@ -64,7 +74,8 @@ class ThangsLogin(threading.Thread):
     def authenticate(self):
         codeChallengeId = uuid.uuid4()
 
-        webbrowser.open(f"{self.config['url']}profile/client-access-grant?verifierCode={codeChallengeId}&version=blender-addon&appName=Thangs+Blender+addon")
+        webbrowser.open(
+            f"{self.config['url']}profile/client-access-grant?verifierCode={codeChallengeId}&version=blender-addon&appName=Thangs+Blender+addon")
 
         return codeChallengeId
 

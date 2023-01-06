@@ -16,6 +16,7 @@ from .thangs_login import ThangsLogin
 _thangs_api = None
 
 
+
 def get_thangs_api():
     global _thangs_api
     return _thangs_api
@@ -238,7 +239,7 @@ class ThangsApi:
                         done = int(100 * dl / total_length)
                         wm.progress_update(done)
                         print("Filedata:", done)
-
+                        
             self.downloaded_files_list.append(self.DownloadedFile(
                 partId=self.model.partId, partFileName=self.model.partFileName, downloadedFileName=filename))
             wm.progress_end()
@@ -253,75 +254,104 @@ class ThangsApi:
         self.run_in_main_thread(self.import_callback)
 
     def import_model(self):
-        self.failed = False
-        print("Starting File Import")
-
-        self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
-            'extension': self.model.fileType,
-            'domain': self.model.domain,
-        })
-
         try:
-            if self.file_extension == '.zip':
-                self.zipped_file_path = self.file_path
-                if self.unzip_archive():
-                    split_tup_top = os.path.splitext(self.model.partFileName)
-                    self.file_extension = split_tup_top[1]
-                    self.file_path = os.path.join(
-                        self.model_folder_path, self.model.partFileName)
+            self.failed = False
+            print("Starting File Import")
+
+            self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
+                'extension': self.model.fileType,
+                'domain': self.model.domain,
+            })
+
+            try:
+                if self.file_extension == '.zip':
+                    self.zipped_file_path = self.file_path
+                    if self.unzip_archive():
+                        split_tup_top = os.path.splitext(self.model.partFileName)
+                        self.file_extension = split_tup_top[1]
+                        self.file_path = os.path.join(
+                            self.model_folder_path, self.model.partFileName)
+                    else:
+                        raise Exception("Unzipping didn't complete")
+            except:
+                print('Unzip error')
+                self.failed = True
+                self.importing = False
+                return
+
+            print("File Path:", self.file_path)
+            print("File Extension:", self.file_extension)
+
+            try:
+                if self.file_extension == '.fbx':
+                    print('FBX Import')
+                    bpy.ops.import_scene.fbx(filepath=self.file_path)
+                elif self.file_extension == '.obj':
+                    print('OBJ Import')
+                    bpy.ops.import_scene.obj(filepath=self.file_path)
+                elif self.file_extension == '.glb' or self.file_extension == '.gltf':
+                    print('GLTF/GLB Import')
+                    bpy.ops.import_scene.gltf(filepath=self.file_path, import_pack_images=True, merge_vertices=False,
+                                              import_shading='NORMALS', guess_original_bind_pose=True, bone_heuristic='TEMPERANCE')
+                elif self.file_extension == '.usdz':
+                    print('USDZ Import')
+                    bpy.ops.wm.usd_import(filepath=self.file_path,
+                                          import_cameras=True,
+                                          import_curves=True,
+                                          import_lights=True,
+                                          import_materials=True,
+                                          import_meshes=True,
+                                          import_volumes=True,
+                                          scale=1.0,
+                                          read_mesh_uvs=True,
+                                          read_mesh_colors=False,
+                                          import_subdiv=False,
+                                          import_instance_proxies=True,
+                                          import_visible_only=True,
+                                          import_guide=False,
+                                          import_proxy=True,
+                                          import_render=True,
+                                          set_frame_range=True,
+                                          relative_path=True,
+                                          create_collection=False,
+                                          light_intensity_scale=1.0,
+                                          mtl_name_collision_mode='MAKE_UNIQUE',
+                                          import_usd_preview=True,
+                                          set_material_blend=True)
                 else:
-                    raise Exception("Unzipping didn't complete")
-        except:
-            print('Unzip error')
-            self.failed = True
+                    print('STL Import')
+                    bpy.ops.import_mesh.stl(filepath=self.file_path)
+            except Exception as e:
+                print('Failed to Import')
+                print(e)
+                self.failed = True
+                self.importing = False
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
+                    'extension': self.model.fileType,
+                    'domain': self.model.domain,
+                    'success': False,
+                    'exception': e,
+                })
+                return
+
+            self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
+                'extension': self.model.fileType,
+                'domain': self.model.domain,
+                'success': True,
+            })
+                return
+
+            self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
+                'extension': self.model.fileType,
+                'domain': self.model.domain,
+                'success': True,
+            })
+
+            print("Imported")
+
             self.importing = False
             return
-
-        print("File Path:", self.file_path)
-        print("File Extension:", self.file_extension)
-
-        try:
-            if self.file_extension == '.fbx':
-                print('FBX Import')
-                bpy.ops.import_scene.fbx(filepath=self.file_path)
-            elif self.file_extension == '.obj':
-                print('OBJ Import')
-                bpy.ops.import_scene.obj(filepath=self.file_path)
-            elif self.file_extension == '.glb' or self.file_extension == '.gltf':
-                print('GLTF/GLB Import')
-                bpy.ops.import_scene.gltf(filepath=self.file_path, import_pack_images=True, merge_vertices=False,
-                                          import_shading='NORMALS', guess_original_bind_pose=True, bone_heuristic='TEMPERANCE')
-            elif self.file_extension == '.usdz':
-                print('USDZ Import')
-                bpy.ops.wm.usd_import(filepath=self.file_path,
-                                      import_cameras=True,
-                                      import_curves=True,
-                                      import_lights=True,
-                                      import_materials=True,
-                                      import_meshes=True,
-                                      import_volumes=True,
-                                      scale=1.0,
-                                      read_mesh_uvs=True,
-                                      read_mesh_colors=False,
-                                      import_subdiv=False,
-                                      import_instance_proxies=True,
-                                      import_visible_only=True,
-                                      import_guide=False,
-                                      import_proxy=True,
-                                      import_render=True,
-                                      set_frame_range=True,
-                                      relative_path=True,
-                                      create_collection=False,
-                                      light_intensity_scale=1.0,
-                                      mtl_name_collision_mode='MAKE_UNIQUE',
-                                      import_usd_preview=True,
-                                      set_material_blend=True)
-            else:
-                print('STL Import')
-                bpy.ops.import_mesh.stl(filepath=self.file_path)
         except Exception as e:
-            print('Failed to Import')
-            print(e)
             self.failed = True
             self.importing = False
             self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
@@ -331,17 +361,6 @@ class ThangsApi:
                 'exception': e,
             })
             return
-
-        self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
-            'extension': self.model.fileType,
-            'domain': self.model.domain,
-            'success': True,
-        })
-
-        print("Imported")
-
-        self.importing = False
-        return
 
     def unzip_archive(self):
         if os.path.exists(self.zipped_file_path):
@@ -364,7 +383,6 @@ class ThangsApi:
             for file in files:
                 self.downloaded_files_list.append(self.DownloadedFile(
                     partId=self.model.partId, partFileName=self.model.partFileName, downloadedFileName=file))
-
             return True
         else:
             print('Archive doesn\'t exist')
