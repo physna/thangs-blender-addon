@@ -16,7 +16,6 @@ from .thangs_login import ThangsLogin
 _thangs_api = None
 
 
-
 def get_thangs_api():
     global _thangs_api
     return _thangs_api
@@ -239,7 +238,7 @@ class ThangsApi:
                         done = int(100 * dl / total_length)
                         wm.progress_update(done)
                         print("Filedata:", done)
-                        
+
             self.downloaded_files_list.append(self.DownloadedFile(
                 partId=self.model.partId, partFileName=self.model.partFileName, downloadedFileName=filename))
             wm.progress_end()
@@ -267,7 +266,8 @@ class ThangsApi:
                 if self.file_extension == '.zip':
                     self.zipped_file_path = self.file_path
                     if self.unzip_archive():
-                        split_tup_top = os.path.splitext(self.model.partFileName)
+                        split_tup_top = os.path.splitext(
+                            self.model.partFileName)
                         self.file_extension = split_tup_top[1]
                         self.file_path = os.path.join(
                             self.model_folder_path, self.model.partFileName)
@@ -332,13 +332,6 @@ class ThangsApi:
                     'success': False,
                     'exception': e,
                 })
-                return
-
-            self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
-                'extension': self.model.fileType,
-                'domain': self.model.domain,
-                'success': True,
-            })
                 return
 
             self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
