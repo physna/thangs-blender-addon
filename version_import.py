@@ -13,6 +13,7 @@ ReturnObject = Return()
 
 def VerisonImport(file_extension, file_path):
     try:
+        print(bpy.app.version)
         if bpy.app.version < (2, 80, 0):
             if file_extension == '.fbx':
                 print('FBX Import')
