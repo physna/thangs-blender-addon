@@ -254,7 +254,6 @@ class ThangsApi:
         self.run_in_main_thread(self.import_callback)
 
     def import_model(self):
-        Blender_Version = bpy.app.version
         try:
             self.failed = False
             print("Starting File Import")
@@ -284,64 +283,14 @@ class ThangsApi:
             print("File Path:", self.file_path)
             print("File Extension:", self.file_extension)
 
-            TestObject = None
+            ImportObject = None
             try:
-                TestObject = VerisonImport(self.file_extension, self.file_path)
-            # try:
-            #     if self.file_extension == '.fbx':
-            #         print('FBX Import')
-            #         bpy.ops.import_scene.fbx(filepath=self.file_path)
-            #     elif self.file_extension == '.obj':
-            #         print('OBJ Import')
-            #         bpy.ops.import_scene.obj(filepath=self.file_path)
-            #     elif self.file_extension == '.glb' or self.file_extension == '.gltf':s
-            #         print('GLTF/GLB Import')
-            #         bpy.ops.import_scene.gltf(filepath=self.file_path, import_pack_images=True, merge_vertices=False,
-            #                                   import_shading='NORMALS', guess_original_bind_pose=True, bone_heuristic='TEMPERANCE')
-            #     elif self.file_extension == '.usdz':
-            #         print('USDZ Import')
-            #         bpy.ops.wm.usd_import(filepath=self.file_path,
-            #                               import_cameras=True,
-            #                               import_curves=True,
-            #                               import_lights=True,
-            #                               import_materials=True,
-            #                               import_meshes=True,
-            #                               import_volumes=True,
-            #                               scale=1.0,
-            #                               read_mesh_uvs=True,
-            #                               read_mesh_colors=False,
-            #                               import_subdiv=False,
-            #                               import_instance_proxies=True,
-            #                               import_visible_only=True,
-            #                               import_guide=False,
-            #                               import_proxy=True,
-            #                               import_render=True,
-            #                               set_frame_range=True,
-            #                               relative_path=True,
-            #                               create_collection=False,
-            #                               light_intensity_scale=1.0,
-            #                               mtl_name_collision_mode='MAKE_UNIQUE',
-            #                               import_usd_preview=True,
-            #                               set_material_blend=True)
-            #     else:
-            #         print('STL Import')
-            #         bpy.ops.import_mesh.stl(filepath=self.file_path)
-            # except Exception as e:
-            #     print('Failed to Import')
-            #     print(e)
-            #     self.failed = True
-            #     self.importing = False
-            #     self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
-            #         'extension': self.model.fileType,
-            #         'domain': self.model.domain,
-            #         'success': False,
-            #         'exception': e,
-            #     })
-            #     return
+                ImportObject = VerisonImport(
+                    self.file_extension, self.file_path)
             except Exception as e:
                 print('Failed to Import')
-                self.failed = TestObject.failed
-                self.importing = TestObject.importing
+                self.failed = ImportObject.failed
+                self.importing = ImportObject.importing
                 self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
                     'extension': self.model.fileType,
                     'domain': self.model.domain,
@@ -377,7 +326,6 @@ class ThangsApi:
             try:
                 zip_ref = zipfile.ZipFile(self.zipped_file_path, 'r')
                 extract_dir = os.path.dirname(self.zipped_file_path)
-
                 zip_ref.extractall(extract_dir)
                 zip_ref.close()
             except zipfile.BadZipFile:
