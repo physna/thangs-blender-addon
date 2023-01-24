@@ -12,7 +12,7 @@ import queue
 from .config import get_config
 from .thangs_events import ThangsEvents
 from .thangs_login import ThangsLogin
-from .version_import import VerisonImport
+from .model_importer import import_model
 
 _thangs_api = None
 
@@ -283,14 +283,14 @@ class ThangsApi:
             print("File Path:", self.file_path)
             print("File Extension:", self.file_extension)
 
-            ImportObject = None
+            import_result = None
             try:
-                ImportObject = VerisonImport(
+                import_result = import_model(
                     self.file_extension, self.file_path)
             except Exception as e:
                 print('Failed to Import')
-                self.failed = ImportObject.failed
-                self.importing = ImportObject.importing
+                self.failed = import_result.failed
+                self.importing = import_result.importing
                 self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
                     'extension': self.model.fileType,
                     'domain': self.model.domain,

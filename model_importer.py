@@ -1,15 +1,15 @@
 import bpy
 
 
-class Return:
+class ImportResult:
     def __init__(self) -> None:
         self.failed = False
         self.importing = True
         pass
 
 
-def VerisonImport(file_extension, file_path):
-    ReturnObject = Return()
+def import_model(file_extension, file_path):
+    ReturnObject = ImportResult()
     try:
         if file_extension == '.fbx':
             print('FBX Import')
@@ -72,5 +72,5 @@ def VerisonImport(file_extension, file_path):
     except:
         ReturnObject.failed = True
         ReturnObject.importing = False
-        return ReturnObject
+
     return ReturnObject
