@@ -653,8 +653,9 @@ class ThangsFetcher():
             }
 
             try:
+                isDevOrStaging = 'true' if any([x in os.path.basename(self.Thangs_Config.config_path) for x in ["dev_", "staging_"]]) else 'false'
                 url_endpoint = str(
-                    self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl"
+                    self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl&sendContentLengthRangeHeader="+isDevOrStaging
                 print(url_endpoint)
                 response = requests.get(url_endpoint, headers=headers)
                 responseData = response.json()
@@ -673,9 +674,15 @@ class ThangsFetcher():
             data = open(stl_path, 'rb').read()
 
             try:
-                putHeaders = {
-                    "Content-Type": "model/stl",
-                }
+                if isDevOrStaging == 'true':
+                    putHeaders = {
+                        "Content-Type": "model/stl",
+                        "X-Goog-Content-Length-Range": "1,250000000"
+                    }
+                else:
+                    putHeaders = {
+                        "Content-Type": "model/stl",
+                    }
                 putRequest = requests.put(
                     url=signedUrl, data=data, headers=putHeaders)
                 print(putRequest.status_code)
