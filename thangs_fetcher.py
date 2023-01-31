@@ -655,7 +655,8 @@ class ThangsFetcher():
             try:
                 isDevOrStaging = 'true' if any([x in os.path.basename(self.Thangs_Config.config_path) for x in ["dev_", "staging_"]]) else 'false'
                 url_endpoint = str(
-                    self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl&sendContentLengthRangeHeader="+isDevOrStaging                print(url_endpoint)
+                    self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl&sendContentLengthRangeHeader="+isDevOrStaging
+                print(url_endpoint)
                 response = requests.get(url_endpoint, headers=headers)
                 responseData = response.json()
 
