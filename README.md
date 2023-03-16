@@ -10,10 +10,11 @@ The Thangs Blender addon integrates the search functionality of [Thangs.com](htt
 
 ## Install
 
-- Get Thangs Blender Addon on [Blender Market](https://www.blendermarket.com/products/thangs-blender-addon) or [Gumroad](https://randyhucker.gumroad.com/l/thangs-blender-addon)
-- Open Blender, then go to Edit > Preferences > Add-ons > Install and then find the zip file
+1. Get Thangs Blender Addon on [Blender Market](https://www.blendermarket.com/products/thangs-blender-addon), [Gumroad](https://randyhucker.gumroad.com/l/thangs-blender-addon), or [download the latest release from GitHub](https://github.com/physna/thangs-blender-addon/releases/download/v0.2.8/thangs-blender-addon.zip)
+1. Open Blender, then go to Edit > Preferences > Add-ons > Install
+1. Select your downloaded Thangs Blender Addon zip file
+1. Click the checkbox next to the `Thangs Model Search` addon to enable it in Blender
 
-(You can also download for free on the [releases page](https://github.com/physna/thangs-blender-addon/releases))
 
 ![Thangs-Breeze_3](https://user-images.githubusercontent.com/105221281/184414452-2c7913d5-4a20-47ca-a31b-125a21067523.gif)
 
