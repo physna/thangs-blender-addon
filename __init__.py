@@ -27,6 +27,7 @@ from .thangs_events import ThangsEvents
 from .config import ThangsConfig, initialize
 from .thangs_importer import initialize_thangs_api, get_thangs_api
 from threading import Event
+from .api_clients import thangs_file_sync_client
 
 log = logging.getLogger(__name__)
 
@@ -337,6 +338,37 @@ class SearchBySelect(bpy.types.Operator):
         stl_path = fetcher.selectionSearch(bpy.context)
         search_thread = threading.Thread(
             target=self.stl_login_user, args=(_context, stl_path,)).start()
+        return {'FINISHED'}
+
+
+class SyncButton(bpy.types.Operator):
+    """Sync Model"""
+    bl_idname = "sync.model"
+    bl_label = "Sync Model"
+    bl_options = {'INTERNAL'}
+
+    def execute(self, _context):
+        if not bpy.context.blend_data.is_saved:
+            # TODO need an error message to the user here
+            return
+
+        # TODO need to check is_dirty here and warn of unsaved changes
+
+        # TODO this needs to not be so hacky
+        bearer_location = os.path.join(
+            os.path.dirname(__file__), 'bearer.json')
+        f = open(bearer_location)
+        data = json.load(f)
+        token = data["bearer"]
+        filename = bpy.path.basename(bpy.context.blend_data.filepath)
+        sync_client = thangs_file_sync_client.ThangsFileSyncClient()
+        upload_urls = sync_client.get_upload_urls(token, [filename])
+
+        print(upload_urls)
+
+        sync_client.upload_current_blend_file(token, upload_urls[0]['signedUrl'])
+        sync_client.create_model_from_current_blend_file(token, filename, upload_urls[0]['newFileName'])
+        #fetcher.get_stl_search(stl_path)
         return {'FINISHED'}
 
 
@@ -913,6 +945,19 @@ class MeshSearch(View3DPanel, bpy.types.Panel):
             row = col.row()
             row.label(text="Geo-Search info!")
 
+class SyncPanel(View3DPanel, bpy.types.Panel):
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "VIEW3D_PT_thangs_sync"
+    bl_label = "Thangs Sync"
+
+    def draw(self, context):
+        layout = self.layout
+        wm = context.window_manager
+
+        col = layout.column(align=True)
+        row = col.row()
+        row.operator(SyncButton.bl_idname,
+                     text="Sync Model", icon='NONE')
 
 def draw_menu(self, context):
     layout = self.layout
@@ -1042,6 +1087,7 @@ def register():
 
     bpy.utils.register_class(MeshSearch)
     bpy.utils.register_class(TextSearch)
+    bpy.utils.register_class(SyncPanel)
     bpy.utils.register_class(THANGS_OT_search_invoke)
     bpy.utils.register_class(SearchButton)
     bpy.utils.register_class(IncPageChange)
@@ -1054,6 +1100,7 @@ def register():
     bpy.utils.register_class(BrowseToLicenseOperator)
     bpy.utils.register_class(BrowseToCreatorOperator)
     bpy.utils.register_class(SearchBySelect)
+    bpy.utils.register_class(SyncButton)
     bpy.utils.register_class(BrowseToModelOperator)
     bpy.types.VIEW3D_MT_object_context_menu.append(draw_menu)
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(draw_menu)
@@ -1149,6 +1196,7 @@ def unregister():
 
     bpy.utils.unregister_class(MeshSearch)
     bpy.utils.unregister_class(TextSearch)
+    bpy.utils.unregister_class(SyncPanel)
     bpy.utils.unregister_class(THANGS_OT_search_invoke)
     bpy.utils.unregister_class(SearchButton)
     bpy.utils.unregister_class(IncPageChange)
@@ -1161,6 +1209,7 @@ def unregister():
     bpy.utils.unregister_class(BrowseToLicenseOperator)
     bpy.utils.unregister_class(BrowseToCreatorOperator)
     bpy.utils.unregister_class(SearchBySelect)
+    bpy.utils.unregister_class(SyncButton)
     bpy.utils.unregister_class(BrowseToModelOperator)
     bpy.types.VIEW3D_MT_object_context_menu.remove(draw_menu)
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(draw_menu)

@@ -20,7 +20,7 @@ class ThangsConfig(object):
     def __init__(self, version=None):
         self.config_obj = configparser.ConfigParser()
         self.config_path = os.path.join(
-            os.path.dirname(__file__), 'config.ini')
+            os.path.dirname(__file__), 'dev_config.ini')
         self.config_obj.read(self.config_path)
         self.thangs_config = self.config_obj['thangs']
         self.version = str(version)
