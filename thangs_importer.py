@@ -144,7 +144,7 @@ class ThangsApi:
             webbrowser.open(self.LicenseURL, new=0, autoraise=True)
 
         print("Downloading...")
-        self.amplitude.send_amplitude_event("Thangs Blender Addon - download model model started", event_properties={
+        self.amplitude.send_amplitude_event("Thangs Blender Addon - download model started", event_properties={
             'extension': self.model.fileType,
             'domain': self.model.domain,
         })
@@ -165,10 +165,11 @@ class ThangsApi:
                 if response.status_code == 429:
                     self.import_limit = True
                     self.importing = False
-                    self.amplitude.send_amplitude_event("Thangs Blender Addon - download model model failed",
+                    self.amplitude.send_amplitude_event("Thangs Blender Addon - download model failed",
                                                         event_properties={
                                                             'extension': self.model.fileType,
                                                             'domain': self.model.domain,
+                                                            'exception': str(e),
                                                         })
                     return
                 elif response.status_code == 403:
@@ -177,20 +178,22 @@ class ThangsApi:
                     try:
                         response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
                         response.raise_for_status()
-                    except:
+                    except Exception as ex:
                         self.importing = False
-                        self.amplitude.send_amplitude_event("Thangs Blender Addon - download model model failed",
+                        self.amplitude.send_amplitude_event("Thangs Blender Addon - download model failed",
                                                             event_properties={
                                                                 'extension': self.model.fileType,
                                                                 'domain': self.model.domain,
+                                                                'exception': str(ex),
                                                             })
                         return
                 else:
                     self.importing = False
-                    self.amplitude.send_amplitude_event("Thangs Blender Addon - download model model failed",
+                    self.amplitude.send_amplitude_event("Thangs Blender Addon - download model failed",
                                                         event_properties={
                                                             'extension': self.model.fileType,
                                                             'domain': self.model.domain,
+                                                            'exception': str(e),
                                                         })
                     return
             self.import_limit = False
@@ -204,16 +207,17 @@ class ThangsApi:
             try:
                 r = requests.get(modelURL, stream=True)
                 r.raise_for_status()
-                self.amplitude.send_amplitude_event("Thangs Blender Addon - download model model success",
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - download model success",
                                                     event_properties={
                                                         'extension': self.model.fileType,
                                                         'domain': self.model.domain,
                                                     })
             except requests.HTTPError as e:
-                self.amplitude.send_amplitude_event("Thangs Blender Addon - download model model failed",
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - download model failed",
                                                     event_properties={
                                                         'extension': self.model.fileType,
                                                         'domain': self.model.domain,
+                                                        'exception': str(e),
                                                     })
                 self.importing = False
                 return
@@ -293,6 +297,7 @@ class ThangsApi:
                 'extension': self.model.fileType,
                 'domain': self.model.domain,
                 'success': False,
+                'exception': str(e),
             })
             self.failed = True
             self.importing = False
@@ -339,7 +344,7 @@ class ThangsApi:
             else:
                 print('STL Import')
                 bpy.ops.import_mesh.stl(filepath=self.file_path)
-        except:
+        except Exception as e:
             print('Failed to Import')
             self.failed = True
             self.importing = False
@@ -347,7 +352,8 @@ class ThangsApi:
                     'extension': self.model.fileType,
                     'domain': self.model.domain,
                     'success': False,
-                })
+                    'exception': str(e),
+            })
             return
         
         self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
