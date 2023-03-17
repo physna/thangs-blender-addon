@@ -44,10 +44,13 @@ class ThangsFileSyncClient:
             'Authorization': f'Bearer {api_token}',
         }
 
-        json = {
+        json = [{
             'name': bpy.path.display_name_from_filepath(bpy.context.blend_data.filepath),
             'isPublic': False,
             'description': 'Uploaded by Thangs Blender',
+            'folderId': '',
+            'attachments': [],
+            'referenceFiles': [],
             'parts': [{
                 'originalFileName': filename,
                 'originalPartName': filename,
@@ -56,9 +59,8 @@ class ThangsFileSyncClient:
                 'isPrimary': True,
                 'name': filename,
                 'isPublic': False,
-
             }]
-        }
+        }]
         response = requests.post(url, headers=headers, json=json)
         response.raise_for_status()
         response_data = response.json()
