@@ -4,7 +4,7 @@ import requests
 import threading
 
 from time import sleep
-from .config import get_config, ThangsConfig
+from config import get_config
 
 GRANT_CHECK_INTERVAL_SECONDS = 0.5  # 500 milliseconds
 MAX_ATTEMPTS = 300  # 5 minutes worth
@@ -25,7 +25,7 @@ class ThangsLogin(threading.Thread):
     def __init__(self):
         super().__init__()
 
-        self.config = ThangsConfig().thangs_config
+        self.config = get_config().thangs_config
 
     def startLoginFromBrowser(self):
         return self.start()

@@ -5,15 +5,15 @@ import bpy
 import os
 from typing import List
 
-from .. import ThangsConfig
+from config import get_config
 
 
 class ThangsFileSyncClient:
     def __init__(self):
-        self.Thangs_Config = ThangsConfig()
+        self.thangs_config = get_config()
 
     def get_upload_urls(self, api_token: str, file_names: List[str]):
-        url = f'{self.Thangs_Config.thangs_config["url"]}api/models/upload-urls'
+        url = f'{self.thangs_config.thangs_config["url"]}api/models/upload-urls'
         headers = {
             'Authorization': f'Bearer {api_token}',
         }
@@ -39,7 +39,7 @@ class ThangsFileSyncClient:
 
     # TODO probably should be passing things in rather than assuming the current blend file, but for POC this is fine
     def create_model_from_current_blend_file(self, api_token: str, filename: str, new_file_name: str):
-        url = f'{self.Thangs_Config.thangs_config["url"]}api/models'
+        url = f'{self.thangs_config.thangs_config["url"]}api/models'
         headers = {
             'Authorization': f'Bearer {api_token}',
         }

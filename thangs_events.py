@@ -3,7 +3,7 @@ import requests
 import threading
 import logging
 
-from .config import get_config
+from config import get_config
 
 log = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ import webbrowser
 import json
 import queue
 
-from .config import get_config
+from config import get_config
 from .thangs_events import ThangsEvents
 from .thangs_login import ThangsLogin
 from .model_importer import import_model

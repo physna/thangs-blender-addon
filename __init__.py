@@ -1,36 +1,4 @@
 # <pep8 compliant>
-import bpy
-from bpy.types import (PropertyGroup,
-                       Operator,
-                       )
-from bpy.props import (StringProperty,
-                       BoolProperty,
-                       IntProperty
-                       )
-import bpy.utils.previews
-
-import webbrowser
-import urllib.parse
-import os
-import json
-import socket
-import platform
-import logging
-import threading
-import addon_utils
-
-from . import addon_updater_ops
-from urllib.request import urlopen
-from .thangs_login import ThangsLogin, stop_access_grant
-from .thangs_fetcher import ThangsFetcher
-from .thangs_events import ThangsEvents
-from .config import ThangsConfig, initialize
-from .thangs_importer import initialize_thangs_api, get_thangs_api
-from threading import Event
-from .api_clients import thangs_file_sync_client
-
-log = logging.getLogger(__name__)
-
 bl_info = {
     "name": "Thangs Model Search",
     "author": "Thangs",
@@ -45,6 +13,45 @@ bl_info = {
     "category": "Import/Export"
 }
 
+import os
+import sys
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(PROJECT_ROOT)
+print(PROJECT_ROOT)
+
+import bpy
+from bpy.types import (PropertyGroup,
+                       Operator,
+                       )
+from bpy.props import (StringProperty,
+                       BoolProperty,
+                       IntProperty
+                       )
+import bpy.utils.previews
+
+import webbrowser
+import urllib.parse
+import json
+import socket
+import platform
+import logging
+import threading
+import addon_utils
+
+from config import get_config, initialize
+initialize(bl_info["version"], __file__)
+
+from . import addon_updater_ops
+from urllib.request import urlopen
+from .thangs_login import ThangsLogin, stop_access_grant
+from .thangs_fetcher import ThangsFetcher
+from .thangs_events import ThangsEvents
+from .thangs_importer import initialize_thangs_api, get_thangs_api
+from threading import Event
+from api_clients import thangs_file_sync_client
+from services import thangs_login_service
+
+log = logging.getLogger(__name__)
 
 @addon_updater_ops.make_annotations
 class DemoPreferences(bpy.types.AddonPreferences):
@@ -141,13 +148,12 @@ def import_model():
 
 resultsToShow = 8
 
-initialize(bl_info["version"])
 initialize_thangs_api(callback=import_model)
 fetcher = ThangsFetcher(callback=on_complete_search,
                         results_to_show=resultsToShow,
                         stl_callback=redraw_search)
 amplitude = ThangsEvents()
-thangs_config = ThangsConfig()
+thangs_config = get_config()
 thangs_login = ThangsLogin()
 thangs_api = get_thangs_api()
 execution_queue = thangs_api.execution_queue
@@ -355,16 +361,11 @@ class SyncButton(bpy.types.Operator):
         # TODO need to check is_dirty here and warn of unsaved changes
 
         # TODO this needs to not be so hacky
-        bearer_location = os.path.join(
-            os.path.dirname(__file__), 'bearer.json')
-        f = open(bearer_location)
-        data = json.load(f)
-        token = data["bearer"]
+        login_service = thangs_login_service.ThangsLoginService()
+        token = login_service.get_api_token()
         filename = bpy.path.basename(bpy.context.blend_data.filepath)
         sync_client = thangs_file_sync_client.ThangsFileSyncClient()
         upload_urls = sync_client.get_upload_urls(token, [filename])
-
-        print(upload_urls)
 
         sync_client.upload_current_blend_file(token, upload_urls[0]['signedUrl'])
         sync_client.create_model_from_current_blend_file(token, filename, upload_urls[0]['newFileName'])

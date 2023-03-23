@@ -16,7 +16,7 @@ import time
 
 from .model_info import ModelInfo
 from .thangs_events import ThangsEvents
-from .config import ThangsConfig
+from .config import get_config
 from .thangs_importer import get_thangs_api, Utils, Config
 from pathlib import Path
 from requests.adapters import HTTPAdapter, Retry
@@ -57,7 +57,7 @@ class ThangsFetcher():
         self.selectionEmpty = False
         self.selectionThumbnailGrab = False
 
-        self.Thangs_Config = ThangsConfig()
+        self.Thangs_Config = get_config()
         self.Thangs_Utils = Utils()
         self.Config = Config()
         self.amplitude = ThangsEvents()
