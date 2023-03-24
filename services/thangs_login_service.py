@@ -16,6 +16,7 @@ class ThangsLoginService:
     __MAX_ATTEMPTS = 600  # 5 minutes worth
 
     def __init__(self):
+        # TODO remove all other places that cache the token
         self.__cached_token = None
         self.__login_client = thangs_login_client.ThangsLoginClient()
 

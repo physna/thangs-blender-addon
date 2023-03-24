@@ -48,8 +48,7 @@ from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from .thangs_importer import initialize_thangs_api, get_thangs_api
 from threading import Event
-from api_clients import thangs_file_sync_client
-from services import thangs_login_service
+from services import ThangsSyncService
 
 log = logging.getLogger(__name__)
 
@@ -360,16 +359,8 @@ class SyncButton(bpy.types.Operator):
 
         # TODO need to check is_dirty here and warn of unsaved changes
 
-        # TODO this needs to not be so hacky
-        login_service = thangs_login_service.ThangsLoginService()
-        token = login_service.get_api_token()
-        filename = bpy.path.basename(bpy.context.blend_data.filepath)
-        sync_client = thangs_file_sync_client.ThangsFileSyncClient()
-        upload_urls = sync_client.get_upload_urls(token, [filename])
-
-        sync_client.upload_current_blend_file(token, upload_urls[0]['signedUrl'])
-        sync_client.create_model_from_current_blend_file(token, filename, upload_urls[0]['newFileName'])
-        #fetcher.get_stl_search(stl_path)
+        sync_service = ThangsSyncService()
+        threading.Thread(target=sync_service.sync_current_blender_file).start()
         return {'FINISHED'}
 
 

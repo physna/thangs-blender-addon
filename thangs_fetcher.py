@@ -19,11 +19,14 @@ from .thangs_events import ThangsEvents
 from .config import get_config
 from .thangs_importer import get_thangs_api, Utils, Config
 from pathlib import Path
+from services import ThangsLoginService
 from requests.adapters import HTTPAdapter, Retry
 
 
 class ThangsFetcher():
     def __init__(self, callback=None, results_to_show=8, stl_callback=None):
+        self.login_service = ThangsLoginService()
+
         self.search_thread = None
         self.search_callback = callback
         self.stl_callback = stl_callback
@@ -34,7 +37,6 @@ class ThangsFetcher():
         self.pcoll = ""
         self.query = ""
         self.uuid = ""
-        self.bearer = ""
         self.searchType = ""
 
         self.models = []
@@ -96,7 +98,6 @@ class ThangsFetcher():
         self.pcoll = ""
         self.query = ""
         self.uuid = ""
-        self.bearer = ""
 
         self.models = []
         self.partList = []
@@ -648,8 +649,9 @@ class ThangsFetcher():
 
             self.pcoll = self.preview_collections["main"]
 
+            # TODO need to handle unauthorized requests somewhere in here
             headers = {
-                "Authorization": "Bearer "+self.bearer,
+                "Authorization": "Bearer " + self.login_service.get_api_token(),
             }
 
             try:
