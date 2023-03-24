@@ -7,6 +7,7 @@ from .config import get_config
 
 log = logging.getLogger(__name__)
 
+
 class ThangsEvents(object):
     def __init__(self):
         self.deviceId = ""
@@ -39,7 +40,8 @@ class ThangsEvents(object):
                           )
 
     def send_amplitude_event(self, event_name, event_properties=None):
-        print(f"Running {event_name}")
+        if event_name != "Thangs Blender Addon - Heartbeat" and event_name != "Thangs Blender Addon - Opened":
+            print(f"Running {event_name}")
         threading.Thread(
             target=self._send_amplitude_event,
             args=(event_name, event_properties)

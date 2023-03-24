@@ -5,13 +5,16 @@ import os
 log = logging.getLogger(__name__)
 _thangs_config = None
 
+
 def get_config():
     global _thangs_config
     return _thangs_config
 
+
 def initialize(version):
     global _thangs_config
     _thangs_config = ThangsConfig(version)
+
 
 class ThangsConfig(object):
     def __init__(self, version=None):
