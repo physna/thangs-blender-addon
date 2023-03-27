@@ -158,6 +158,10 @@ class ThangsApi:
             webbrowser.open(self.LicenseURL, new=0, autoraise=True)
 
         print("Downloading...")
+        self.amplitude.send_amplitude_event("Thangs Blender Addon - download model started", event_properties={
+            'extension': self.model.fileType,
+            'domain': self.model.domain,
+        })
 
         self.model_folder_path = os.path.join(
             Config.THANGS_MODEL_DIR, self.model.partId)
@@ -177,24 +181,43 @@ class ThangsApi:
             print("URL:", self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(
                 self.model.partId)+"/download-url")
             try:
-                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(
-                    self.model.partId)+"/download-url", headers=headers)
-            except:
+                response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
+                response.raise_for_status()
+            except Exception as e:
                 if response.status_code == 429:
                     self.import_limit = True
                     self.importing = False
+                    self.amplitude.send_amplitude_event("Thangs Blender Addon - download model failed",
+                                                        event_properties={
+                                                            'extension': self.model.fileType,
+                                                            'domain': self.model.domain,
+                                                            'exception': str(e),
+                                                        })
                     return
                 elif response.status_code == 403:
                     self.refresh_bearer()
                     headers = {"Authorization": "Bearer "+self.bearer, }
                     try:
-                        response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(
-                            self.model.partId)+"/download-url", headers=headers)
-                    except:
+                        response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
+                        response.raise_for_status()
+                    except Exception as ex:
                         self.importing = False
+                        self.amplitude.send_amplitude_event("Thangs Blender Addon - download model failed",
+                                                            event_properties={
+                                                                'extension': self.model.fileType,
+                                                                'domain': self.model.domain,
+                                                                'exception': str(ex),
+                                                            })
                         return
-                self.importing = False
-                return
+                else:
+                    self.importing = False
+                    self.amplitude.send_amplitude_event("Thangs Blender Addon - download model failed",
+                                                        event_properties={
+                                                            'extension': self.model.fileType,
+                                                            'domain': self.model.domain,
+                                                            'exception': str(e),
+                                                        })
+                    return
             self.import_limit = False
             responseData = response.json()
             modelURL = responseData["downloadUrl"]
@@ -203,7 +226,23 @@ class ThangsApi:
                 print('Url is None')
                 return
 
-            r = requests.get(modelURL, stream=True)
+            try:
+                r = requests.get(modelURL, stream=True)
+                r.raise_for_status()
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - download model success",
+                                                    event_properties={
+                                                        'extension': self.model.fileType,
+                                                        'domain': self.model.domain,
+                                                    })
+            except requests.HTTPError as e:
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - download model failed",
+                                                    event_properties={
+                                                        'extension': self.model.fileType,
+                                                        'domain': self.model.domain,
+                                                        'exception': str(e),
+                                                    })
+                self.importing = False
+                return
 
             urlDecoded = urllib.parse.unquote(modelURL)
 
@@ -255,70 +294,44 @@ class ThangsApi:
 
     def import_model(self):
         try:
-            self.failed = False
-            print("Starting File Import")
-
-            self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
-                'extension': self.model.fileType,
-                'domain': self.model.domain,
-            })
-
-            try:
-                if self.file_extension == '.zip':
-                    self.zipped_file_path = self.file_path
-                    if self.unzip_archive():
-                        split_tup_top = os.path.splitext(
-                            self.model.partFileName)
-                        self.file_extension = split_tup_top[1]
-                        self.file_path = os.path.join(
-                            self.model_folder_path, self.model.partFileName)
-                    else:
-                        raise Exception("Unzipping didn't complete")
-            except:
-                print('Unzip error')
-                self.failed = True
-                self.importing = False
-                return
-
-            print("File Path:", self.file_path)
-            print("File Extension:", self.file_extension)
-
-            import_result = None
-            try:
-                import_result = import_model(
-                    self.file_extension, self.file_path)
-            except Exception as e:
-                print('Failed to Import')
-                self.failed = import_result.failed
-                self.importing = import_result.importing
-                self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
-                    'extension': self.model.fileType,
-                    'domain': self.model.domain,
-                    'success': False,
-                    'exception': e,
-                })
-                return
-
-            self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
-                'extension': self.model.fileType,
-                'domain': self.model.domain,
-                'success': True,
-            })
-
-            print("Imported")
-
-            self.importing = False
-            return
+            if self.file_extension == '.zip':
+                self.zipped_file_path = self.file_path
+                if self.unzip_archive():
+                    split_tup_top = os.path.splitext(self.model.partFileName)
+                    self.file_extension = split_tup_top[1]
+                    self.file_path = os.path.join(self.temp_dir, self.model.partFileName)
+                else:
+                    raise Exception("Unzipping didn't complete")
         except Exception as e:
-            self.failed = True
-            self.importing = False
+            print('Unzip error')
             self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
                 'extension': self.model.fileType,
                 'domain': self.model.domain,
                 'success': False,
-                'exception': e,
+                'exception': str(e),
             })
+            self.failed = True
+            self.importing = False
             return
+        
+        print("File Path:", self.file_path)
+        print("File Extension:", self.file_extension)
+
+        import_result = None
+        try:
+            import_result = import_model(
+                self.file_extension, self.file_path)
+        except Exception as e:
+            print('Failed to Import')
+            self.failed = import_result.failed
+            self.importing = import_result.importing
+            self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
+                'extension': self.model.fileType,
+                'domain': self.model.domain,
+                'success': False,
+                'exception': str(e),
+        })
+        return
 
     def unzip_archive(self):
         if os.path.exists(self.zipped_file_path):
