@@ -1,18 +1,12 @@
+import json
 import bpy
 import urllib
-import threading
-
-from config import get_config
-from api_clients import thangs_login_client
-from time import sleep
-from typing import Optional
 
 from .thangs_login_service import ThangsLoginService
 from api_clients import ThangsFileSyncClient
 
-
 class ThangsSyncService:
-    __model_id = None
+    __SYNC_DATA_BLOCK_NAME__ = 'thangs_blender_addon_sync_data'
 
     def __init__(self):
         self.__login_service = ThangsLoginService()
@@ -23,8 +17,13 @@ class ThangsSyncService:
         filename = bpy.path.basename(bpy.context.blend_data.filepath)
         sync_client = ThangsFileSyncClient()
 
-        # TODO gonna need an if block to handle model id later
-        upload_urls = sync_client.get_upload_urls(token, [filename], ThangsSyncService.__model_id)
+        model_id = None
+        if bpy.data.texts.find(ThangsSyncService.__SYNC_DATA_BLOCK_NAME__) != -1:
+            sync_data_block = bpy.data.texts[ThangsSyncService.__SYNC_DATA_BLOCK_NAME__]
+            sync_data = json.loads(sync_data_block.as_string())
+            model_id = sync_data['model_id']
+
+        upload_urls = sync_client.get_upload_urls(token, [filename], model_id)
 
         encoded_upload_url = upload_urls[0]['signedUrl']
         query_string_index = encoded_upload_url.index('?X-Goog-Algorithm')
@@ -33,10 +32,21 @@ class ThangsSyncService:
         upload_url = upload_url_base + upload_url_query_string
 
         sync_client.upload_current_blend_file(token, upload_url)
-        if ThangsSyncService.__model_id:
-            sync_client.update_model_from_current_blend_file(token, upload_urls[0]['newFileName'], ThangsSyncService.__model_id)
+        if model_id:
+            sync_client.update_model_from_current_blend_file(token, upload_urls[0]['newFileName'], model_id)
         else:
             model_ids = sync_client.create_model_from_current_blend_file(token, filename, upload_urls[0]['newFileName'])
             model_id = model_ids[0]
-            # TODO should be saving this to a datablock
-            ThangsSyncService.__model_id = model_id
+
+        sync_data_block = None
+        if bpy.data.texts.find(ThangsSyncService.__SYNC_DATA_BLOCK_NAME__) != -1:
+            sync_data_block = bpy.data.texts[ThangsSyncService.__SYNC_DATA_BLOCK_NAME__]
+        else:
+            sync_data_block = bpy.data.texts.new(ThangsSyncService.__SYNC_DATA_BLOCK_NAME__)
+
+        sync_data = {
+            'model_id': model_id
+        }
+
+        sync_data_block.from_string(json.dumps(sync_data))
+        bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
