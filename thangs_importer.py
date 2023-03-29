@@ -175,8 +175,7 @@ class ThangsApi:
                     return
                 elif response.status_code == 401 or response.status_code == 403:
                     try:
-                        if not self.login_service.get_api_token():
-                            self.login_service.login_user()
+                        self.login_service.login_user()
                         headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
                         response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
                         response.raise_for_status()

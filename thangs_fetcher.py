@@ -648,7 +648,8 @@ class ThangsFetcher():
 
             self.pcoll = self.preview_collections["main"]
 
-            # TODO need to handle unauthorized requests somewhere in here
+            if not self.login_service.get_api_token():
+                self.login_service.login_user()
             headers = {
                 "Authorization": "Bearer " + self.login_service.get_api_token(),
             }
@@ -659,19 +660,40 @@ class ThangsFetcher():
                     self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl&sendContentLengthRangeHeader="+isDevOrStaging
                 print(url_endpoint)
                 response = requests.get(url_endpoint, headers=headers)
-                responseData = response.json()
+                response.raise_for_status()
+            except Exception as e:
+                if response.status_code == 401 or response.status_code == 403:
+                    try:
+                        self.login_service.login_user()
+                        headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
+                        response = requests.get(url_endpoint, headers=headers)
+                        response.raise_for_status()
+                    except Exception as ex:
+                        self.selectionSearching = False
+                        self.searching = False
+                        self.newSearch = False
+                        self.selectionFailed = True
+                        self.amplitude.send_amplitude_event("Thangs Blender Addon - geo search get upload url failed",
+                                                            event_properties={
+                                                                'exception': str(ex),
+                                                            })
+                        return
+                else:
+                    print("URL BROKEN" + url_endpoint)
+                    self.amplitude.send_amplitude_event("Thangs Blender Addon - geo search get upload url failed",
+                                                        event_properties={
+                                                            'exception': str(e),
+                                                        })
+                    self.selectionSearching = False
+                    self.searching = False
+                    self.newSearch = False
+                    self.selectionFailed = True
+                    return
 
-                # print(responseData)
-                signedUrl = responseData["signedUrl"]
-                new_Filename = responseData["newFileName"]
-            except:
-                print("URL BROKEN" + url_endpoint)
-                self.selectionSearching = False
-                self.searching = False
-                self.newSearch = False
-                self.selectionFailed = True
-                return
+            responseData = response.json()
 
+            signedUrl = responseData["signedUrl"]
+            new_Filename = responseData["newFileName"]
             data = open(stl_path, 'rb').read()
 
             try:
@@ -689,8 +711,12 @@ class ThangsFetcher():
                 print(putRequest.status_code)
 
                 #response = s.post(url, headers=headers, data=data)
-            except:
+            except Exception as e:
                 print("API Failed")
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - geo search upload stl to storage failed",
+                                                    event_properties={
+                                                        'exception': str(e),
+                                                    })
                 self.selectionSearching = False
                 self.searching = False
                 self.newSearch = False
@@ -705,17 +731,43 @@ class ThangsFetcher():
                 print(url)
 
                 response = requests.get(url=url, headers=headers)
-
-                responseData = response.json()
-                responseData["searchMetadata"] = {}
-                self.display_stl_results(responseData, show_summary=True)
+                response.raise_for_status()
             except Exception as e:
-                print("Get Results Broke: ", e)
-                self.selectionSearching = False
-                self.searching = False
-                self.newSearch = False
-                self.selectionFailed = True
-                return
+                second_attempt_succeeded = False
+                if response:
+                    if response.status_code == 401 or response.status_code == 403:
+                        try:
+                            self.login_service.login_user()
+                            headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
+                            response = requests.get(url=url, headers=headers)
+                            response.raise_for_status()
+                            second_attempt_succeeded = True
+                        except Exception as ex:
+                            self.selectionSearching = False
+                            self.searching = False
+                            self.newSearch = False
+                            self.selectionFailed = True
+                            self.amplitude.send_amplitude_event("Thangs Blender Addon - geo search get search results failed",
+                                                                event_properties={
+                                                                    'exception': str(ex),
+                                                                })
+                            return
+
+                if not second_attempt_succeeded:
+                    print("Get Results Broke: ", e)
+                    self.amplitude.send_amplitude_event("Thangs Blender Addon - geo search get search results failed",
+                                                        event_properties={
+                                                            'exception': str(e),
+                                                        })
+                    self.selectionSearching = False
+                    self.searching = False
+                    self.newSearch = False
+                    self.selectionFailed = True
+                    return
+
+            responseData = response.json()
+            responseData["searchMetadata"] = {}
+            self.display_stl_results(responseData, show_summary=True)
         except Exception as e:
             print(e)
             self.selectionSearching = False
