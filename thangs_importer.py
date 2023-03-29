@@ -11,8 +11,8 @@ import queue
 
 from config import get_config
 from .thangs_events import ThangsEvents
-from .thangs_login import ThangsLogin
 from .model_importer import import_model
+from services import ThangsLoginService
 
 _thangs_api = None
 
@@ -91,6 +91,8 @@ class ThangsApi:
         self.Thangs_Config = get_config()
         self.amplitude = ThangsEvents()
 
+        self.login_service = ThangsLoginService()
+
         self.amplitude.deviceId = socket.gethostname().split(".")[0]
         self.amplitude.deviceOs = platform.system()
         self.amplitude.deviceVer = platform.release()
@@ -104,7 +106,6 @@ class ThangsApi:
 
         self.deviceId = ""
         self.LicenseURL = ""
-        self.bearer = ""
 
         self.model = None
         self.downloaded_files_list = []
@@ -119,30 +120,6 @@ class ThangsApi:
 
     def run_in_main_thread(self, function):
         self.execution_queue.put(function)
-
-    def refresh_bearer(self):
-        thangs_login_import = ThangsLogin()
-        bearer_location = os.path.join(
-            os.path.dirname(__file__), 'bearer.json')
-        os.remove(bearer_location)
-        f = open(bearer_location, "x")
-
-        thangs_login_import.startLoginFromBrowser()
-        print("Waiting on Login")
-        thangs_login_import.token_available.wait()
-        print("Setting Bearer")
-        bearer = {
-            'bearer': str(thangs_login_import.token["TOKEN"]),
-        }
-        print("Dumping")
-        with open(bearer_location, 'w') as json_file:
-            json.dump(bearer, json_file)
-
-        f = open(bearer_location)
-        data = json.load(f)
-        self.bearer = data["bearer"]
-        f.close()
-        return
 
     def handle_download(self, part, LicenseURL):
         self.model = part
@@ -173,7 +150,7 @@ class ThangsApi:
                 break
 
         if not fileExists:
-            headers = {"Authorization": "Bearer "+self.bearer, }
+            headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
             print("URL:", self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(
                 self.model.partId)+"/download-url")
             try:
@@ -185,8 +162,8 @@ class ThangsApi:
                     self.importing = False
                     return
                 elif response.status_code == 403:
-                    self.refresh_bearer()
-                    headers = {"Authorization": "Bearer "+self.bearer, }
+                    # TODO re-login user here, should also check for 401s
+                    headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
                     try:
                         response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(
                             self.model.partId)+"/download-url", headers=headers)

@@ -43,11 +43,9 @@ initialize(bl_info["version"], __file__)
 
 from . import addon_updater_ops
 from urllib.request import urlopen
-from .thangs_login import ThangsLogin, stop_access_grant
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from .thangs_importer import initialize_thangs_api, get_thangs_api
-from threading import Event
 from services import ThangsSyncService
 
 log = logging.getLogger(__name__)
@@ -153,7 +151,6 @@ fetcher = ThangsFetcher(callback=on_complete_search,
                         stl_callback=redraw_search)
 amplitude = ThangsEvents()
 thangs_config = get_config()
-thangs_login = ThangsLogin()
 thangs_api = get_thangs_api()
 execution_queue = thangs_api.execution_queue
 Origin = ""
@@ -268,77 +265,29 @@ class SearchBySelect(bpy.types.Operator):
     def stl_login_user(self, _context, stl_path):
         global thangs_api
         global fetcher
-        global thangs_login
 
         print("Starting Login: Search by Select")
-        bearer_location = os.path.join(
-            os.path.dirname(__file__), 'bearer.json')
-        print(bearer_location)
-        if not os.path.exists(bearer_location):
-            print("Creating Bearer.json")
-            f = open(bearer_location, "x")
-        # check if size of file is 0
-
         try:
-            print("Top of Try")
-            if os.stat(bearer_location).st_size == 0:
-                print("Json was empty")
-                thangs_login.startLoginFromBrowser()
-                print("Waiting on Login")
-                thangs_login.token_available.wait()
-                print("Setting Bearer")
-                bearer = {
-                    'bearer': str(thangs_login.token["TOKEN"]),
-                }
-                print("Dumping")
-                with open(bearer_location, 'w') as json_file:
-                    json.dump(bearer, json_file)
-
-            print("After Dump")
-            f = open(bearer_location)
-            data = json.load(f)
-            fetcher.bearer = data["bearer"]
-            thangs_api.bearer = data["bearer"]
-            f.close()
-
+            # TODO make sure we are logged in here
             print("Before STL Search")
             print("Act Obj")
             print(stl_path)
             fetcher.get_stl_search(stl_path)
         except Exception as e:
+            # TODO this belongs more in the login service
             print("Error with Logging In:", e)
             thangs_api.importing = False
             thangs_api.searching = False
             thangs_api.failed = True
             tag_redraw_areas()
-            try:
-                f.close()
-                os.remove(bearer_location)
-            except:
-                print("File couldn't be removed.")
         return
 
     def execute(self, _context):
-        global thangs_login
         global search_thread
 
         fetcher.selectionEmpty = False
         fetcher.selectionFailed = False
 
-        if thangs_login.event != None:
-            print("Stopping Login")
-            thangs_login.event.set()
-            try:
-                thangs_login.join()
-            except:
-                pass
-            try:
-                search_thread.join()
-            except:
-                pass
-            thangs_login = ThangsLogin()
-
-        thangs_login.event = Event()
         print("Starting Login and MeshSearch")
         stl_path = fetcher.selectionSearch(bpy.context)
         search_thread = threading.Thread(
@@ -409,75 +358,29 @@ class ImportModelOperator(Operator):
         description="Model License",
     )
 
+    # TODO this is a horrible name for what this actually does
     def login_user(self, _context, LicenseUrl, modelIndex, partIndex):
         global thangs_api
         global fetcher
-        global thangs_login
 
         print("Starting Login: Import Model")
-        bearer_location = os.path.join(
-            os.path.dirname(__file__), 'bearer.json')
-        print(bearer_location)
-        if not os.path.exists(bearer_location):
-            print("Creating Bearer.json")
-            f = open(bearer_location, "x")
-        # check if size of file is 0
         try:
-            print("Top of Try")
-            if os.stat(bearer_location).st_size == 0:
-                print("Json was empty")
-                thangs_login.startLoginFromBrowser()
-                print("Waiting on Login")
-                thangs_login.token_available.wait()
-                print("Setting Bearer")
-                bearer = {
-                    'bearer': str(thangs_login.token["TOKEN"]),
-                }
-                print("Dumping")
-                with open(bearer_location, 'w') as json_file:
-                    json.dump(bearer, json_file)
-
-            print("After Dump")
-            f = open(bearer_location)
-            data = json.load(f)
-            fetcher.bearer = data["bearer"]
-            thangs_api.bearer = data["bearer"]
-            f.close()
-            print("Before Import")
+            # TODO ensure we are logged in here
             thangs_api.handle_download(
                 fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
             Model_Event(modelIndex)
         except Exception as e:
+            # TODO this belongs more in the login service or something like that
             print("Error with Logging In:", e)
             thangs_api.importing = False
             thangs_api.searching = False
             thangs_api.failed = True
             tag_redraw_areas()
-            try:
-                f.close()
-                os.remove(bearer_location)
-            except:
-                print("File couldn't be removed.")
         return
 
     def execute(self, _context):
-        global thangs_login
-        global login_thread
-        if thangs_login.event != None:
-            print("Stopping Login")
-            thangs_login.event.set()
-            try:
-                thangs_login.join()
-            except:
-                pass
-            try:
-                login_thread.join()
-            except:
-                pass
-            thangs_login = ThangsLogin()
-        thangs_login.event = Event()
         print("Starting Login and Import")
-        login_thread = threading.Thread(target=self.login_user, args=(
+        threading.Thread(target=self.login_user, args=(
             _context, self.license_url, self.modelIndex, self.partIndex)).start()
         return {'FINISHED'}
 
@@ -1210,7 +1113,7 @@ def unregister():
         del bpy.types.Scene.my_tool
     addon_updater_ops.unregister()
 
-    stop_access_grant()
+    # TODO need a way to cleanup running threads here
     urllib.request.urlcleanup()
 
 

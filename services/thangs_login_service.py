@@ -36,6 +36,7 @@ class ThangsLoginService:
         data = json.load(bearer_file)
         return data["bearer"]
 
+    # TODO put this in a thread on it's own or something, make that cancellation event useful
     def login_user(self, cancellation_event: threading.Event) -> None:
         if self.__cached_token:
             self.__cached_token = None
