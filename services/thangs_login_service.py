@@ -36,8 +36,7 @@ class ThangsLoginService:
         data = json.load(bearer_file)
         return data["bearer"]
 
-    # TODO put this in a thread on it's own or something, make that cancellation event useful
-    def login_user(self, cancellation_event: threading.Event) -> None:
+    def login_user(self, cancellation_event: threading.Event = None) -> None:
         if self.__cached_token:
             self.__cached_token = None
 
@@ -46,7 +45,7 @@ class ThangsLoginService:
 
         attempts = 0
 
-        while attempts < ThangsLoginService.__MAX_ATTEMPTS and not cancellation_event.is_set():
+        while attempts < ThangsLoginService.__MAX_ATTEMPTS and not (cancellation_event and cancellation_event.is_set()):
             try:
                 sleep(self.__GRANT_CHECK_INTERVAL_SECONDS)
                 response = self.__login_client.check_access_grant(challenge_id, attempts)

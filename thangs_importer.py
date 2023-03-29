@@ -154,9 +154,11 @@ class ThangsApi:
                 break
 
         if not fileExists:
+            if not self.login_service.get_api_token():
+                self.login_service.login_user()
             headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
-            print("URL:", self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(
-                self.model.partId)+"/download-url")
+            print("URL:", self.Thangs_Config.thangs_config['url'] + "api/models/parts/" + str(
+                self.model.partId) + "/download-url")
             try:
                 response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
                 response.raise_for_status()
@@ -171,10 +173,11 @@ class ThangsApi:
                                                             'exception': str(e),
                                                         })
                     return
-                elif response.status_code == 403:
-                    # TODO re-login user here, should also check for 401s
-                    headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
+                elif response.status_code == 401 or response.status_code == 403:
                     try:
+                        if not self.login_service.get_api_token():
+                            self.login_service.login_user()
+                        headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
                         response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
                         response.raise_for_status()
                     except Exception as ex:
@@ -298,6 +301,9 @@ class ThangsApi:
         try:
             import_result = import_model(
                 self.file_extension, self.file_path)
+            print(import_result)
+            self.failed = import_result.failed
+            self.importing = import_result.importing
         except Exception as e:
             print('Failed to Import')
             self.failed = import_result.failed
@@ -307,7 +313,7 @@ class ThangsApi:
                 'domain': self.model.domain,
                 'success': False,
                 'exception': str(e),
-        })
+            })
         return
 
     def unzip_archive(self):

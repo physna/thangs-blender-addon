@@ -22,10 +22,10 @@ class ThangsLoginClient:
         self.thangs_config = get_config()
 
     def get_browser_authenticate_url(self, challenge_id: uuid.UUID) -> str:
-        return f"{self.thangs_config['url']}profile/client-access-grant?verifierCode={challenge_id}&version=blender-addon&appName=Thangs+Blender+addon"
+        return f"{self.thangs_config.thangs_config['url']}profile/client-access-grant?verifierCode={challenge_id}&version=blender-addon&appName=Thangs+Blender+addon"
 
     def check_access_grant(self, challenge_id: uuid.UUID, attempt: int) -> Optional[AccessGrant]:
-        check_grant_url = f"{self.thangs_config['url']}api/users/access-grant/{challenge_id}/check?attempts={attempt}"
+        check_grant_url = f"{self.thangs_config.thangs_config['url']}api/users/access-grant/{challenge_id}/check?attempts={attempt}"
         response = requests.get(check_grant_url)
         if response.status_code == 404:
             return None

@@ -16,11 +16,10 @@ import time
 
 from .model_info import ModelInfo
 from .thangs_events import ThangsEvents
-from .config import get_config
+from config import get_config
 from .thangs_importer import get_thangs_api, Utils, Config
 from pathlib import Path
 from services import ThangsLoginService
-from requests.adapters import HTTPAdapter, Retry
 
 
 class ThangsFetcher():
