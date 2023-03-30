@@ -39,7 +39,6 @@ class ThangsSyncService:
         sync_client.upload_file_to_storage(upload_url, bpy.context.blend_data.filepath)
 
         # TODO Upload reference files, need to do something to not reupload duplicate files
-        # TODO need to handle new files and not just updates (model id is None)
 
         image_upload_urls: List[UploadUrlResponse] = []
 
