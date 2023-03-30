@@ -268,7 +268,6 @@ class SearchBySelect(bpy.types.Operator):
 
         print("Starting Login: Search by Select")
         try:
-            # TODO make sure we are logged in here
             print("Before STL Search")
             print("Act Obj")
             print(stl_path)
@@ -365,7 +364,6 @@ class ImportModelOperator(Operator):
 
         print("Starting Login: Import Model")
         try:
-            # TODO ensure we are logged in here
             thangs_api.handle_download(
                 fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
             Model_Event(modelIndex)
