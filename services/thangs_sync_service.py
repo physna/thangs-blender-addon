@@ -3,8 +3,9 @@ import bpy
 import urllib
 import ntpath
 
+from typing import List
 from .thangs_login_service import ThangsLoginService
-from api_clients import ThangsFileSyncClient
+from api_clients import ThangsFileSyncClient, UploadUrlResponse
 
 class ThangsSyncService:
     __SYNC_DATA_BLOCK_NAME__ = 'thangs_blender_addon_sync_data'
@@ -39,7 +40,10 @@ class ThangsSyncService:
 
         # TODO Upload reference files, need to do something to not reupload duplicate files
         # TODO need to handle new files and not just updates (model id is None)
-        if model_id and len(bpy.data.images):
+
+        image_upload_urls: List[UploadUrlResponse] = []
+
+        if len(bpy.data.images):
             image_file_paths = set([i.filepath for i in bpy.data.images if i.filepath])
             if image_file_paths:
                 image_upload_urls = sync_client.get_upload_url_for_attachment_files(token, [ntpath.basename(i) for i in image_file_paths], model_id)
@@ -49,12 +53,13 @@ class ThangsSyncService:
                     upload_url_response = next((iuu for iuu in image_upload_urls if iuu['fileName'] == image_filename))
                     sync_client.upload_file_to_storage(upload_url_response['signedUrl'], bpy.path.abspath(image_path))
 
-                sync_client.update_thangs_model_details(token, model_id, [r['newFileName'] for r in image_upload_urls])
+                if model_id:
+                    sync_client.update_thangs_model_details(token, model_id, [r['newFileName'] for r in image_upload_urls])
 
         if model_id:
             sync_client.update_model_from_current_blend_file(token, upload_urls[0]['newFileName'], model_id)
         else:
-            model_ids = sync_client.create_model_from_current_blend_file(token, filename, upload_urls[0]['newFileName'])
+            model_ids = sync_client.create_model_from_current_blend_file(token, filename, upload_urls[0]['newFileName'], [r['newFileName'] for r in image_upload_urls])
             model_id = model_ids[0]
 
         sync_data_block = None

@@ -84,7 +84,7 @@ class ThangsFileSyncClient:
         return response_data
 
     # TODO probably should be passing things in rather than assuming the current blend file, but for POC this is fine
-    def create_model_from_current_blend_file(self, api_token: str, filename: str, new_file_name: str) -> List[int]:
+    def create_model_from_current_blend_file(self, api_token: str, filename: str, new_file_name: str, reference_files: List[str]) -> List[int]:
         url = f'{self.thangs_config.thangs_config["url"]}api/models'
         headers = {
             'Authorization': f'Bearer {api_token}',
@@ -96,7 +96,7 @@ class ThangsFileSyncClient:
             'description': 'Uploaded by Thangs Blender',
             'folderId': '',
             'attachments': [],
-            'referenceFiles': [],
+            'referenceFiles': [{'filename': r} for r in reference_files],
             'parts': [{
                 'originalFileName': filename,
                 'originalPartName': filename,
