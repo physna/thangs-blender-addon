@@ -205,6 +205,11 @@ def FirstPage():
     fetcher.search(fetcher.query)
     return None
 
+class View3DPanel:
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'TOOLS' if bpy.app.version < (2, 80, 0) else 'UI'
+    bl_category = 'Thangs'
+
 
 class SearchButton(bpy.types.Operator):
     """Searches Thangs for Meshes"""
@@ -293,24 +298,63 @@ class SearchBySelect(bpy.types.Operator):
             target=self.stl_login_user, args=(_context, stl_path,)).start()
         return {'FINISHED'}
 
+class THANGS_BLENDER_ADDON_PT_sync_panel(View3DPanel, bpy.types.Panel):
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname = "thangs_blender_addon.sync_panel"
+    bl_label = "Thangs Sync"
 
-class SyncButton(bpy.types.Operator):
+    def draw(self, context):
+        layout = self.layout
+
+        label_column = layout.column(align=True)
+        label_column.label(text=context.scene.thangs_blender_addon_sync_panel_status_message)
+
+        col = layout.column(align=True)
+        row = col.row()
+        row.operator(THANGS_BLENDER_ADDON_OT_sync_button.bl_idname,
+                     text="Sync Model", icon='NONE')
+
+class THANGS_BLENDER_ADDON_OT_sync_button(bpy.types.Operator):
     """Sync Model"""
-    bl_idname = "sync.model"
+    bl_idname = "thangs_blender_addon.sync_button"
     bl_label = "Sync Model"
     bl_options = {'INTERNAL'}
 
-    def execute(self, _context):
+    def invoke(self, context, event):
         if not bpy.context.blend_data.is_saved:
-            # TODO need an error message to the user here
-            return
+            return bpy.ops.thangs_blender_addon.sync_button('INVOKE_DEFAULT')
 
+    def execute(self, _context):
         # TODO need to check is_dirty here and warn of unsaved changes
 
         sync_service = ThangsSyncService()
         threading.Thread(target=sync_service.sync_current_blender_file).start()
         return {'FINISHED'}
 
+class THANGS_BLENDER_ADDON_OT_sync_unsaved_file_dialog(bpy.types.Operator):
+    """Unsaved file dialog when syncing"""
+    bl_idname = "thangs_blender_addon.sync_button"
+    bl_label = "Unsaved File"
+    bl_options = {'INTERNAL'}
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_popup(self)
+
+    def draw(self, context):
+        layout = self.layout
+        label_row = layout.row()
+        label_row.label(text="Current file has not been saved.")
+        label_row2 = layout.row()
+        label_row2.label(text="Please save before syncing to Thangs.")
+        save_button_row = layout.row()
+        save_button_row.operator('wm.save_as_mainfile', text='Save')
 
 def Model_Event(position):
     model = fetcher.models[position]
@@ -493,12 +537,6 @@ class THANGS_OT_search_invoke(Operator):
         fetcher.thangs_ui_mode = self.next_mode
         context.area.tag_redraw()
         return {'FINISHED'}
-
-
-class View3DPanel:
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS' if bpy.app.version < (2, 80, 0) else 'UI'
-    bl_category = 'Thangs'
 
 
 class TextSearch(View3DPanel, bpy.types.Panel):
@@ -838,20 +876,6 @@ class MeshSearch(View3DPanel, bpy.types.Panel):
             row = col.row()
             row.label(text="Geo-Search info!")
 
-class SyncPanel(View3DPanel, bpy.types.Panel):
-    bl_options = {'DEFAULT_CLOSED'}
-    bl_idname = "VIEW3D_PT_thangs_sync"
-    bl_label = "Thangs Sync"
-
-    def draw(self, context):
-        layout = self.layout
-        wm = context.window_manager
-
-        col = layout.column(align=True)
-        row = col.row()
-        row.operator(SyncButton.bl_idname,
-                     text="Sync Model", icon='NONE')
-
 def draw_menu(self, context):
     layout = self.layout
     layout.separator()
@@ -980,7 +1004,6 @@ def register():
 
     bpy.utils.register_class(MeshSearch)
     bpy.utils.register_class(TextSearch)
-    bpy.utils.register_class(SyncPanel)
     bpy.utils.register_class(THANGS_OT_search_invoke)
     bpy.utils.register_class(SearchButton)
     bpy.utils.register_class(IncPageChange)
@@ -993,10 +1016,14 @@ def register():
     bpy.utils.register_class(BrowseToLicenseOperator)
     bpy.utils.register_class(BrowseToCreatorOperator)
     bpy.utils.register_class(SearchBySelect)
-    bpy.utils.register_class(SyncButton)
     bpy.utils.register_class(BrowseToModelOperator)
     bpy.types.VIEW3D_MT_object_context_menu.append(draw_menu)
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(draw_menu)
+
+    bpy.utils.register_class(THANGS_BLENDER_ADDON_PT_sync_panel)
+    bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_sync_button)
+    bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_sync_unsaved_file_dialog)
+    bpy.types.Scene.thangs_blender_addon_sync_panel_status_message = StringProperty(name='ThangsSyncAddonSyncPanelStatusMessage', default='')
 
     def dropdown_properties_item_set(index):
         def handler(self, context):
@@ -1089,7 +1116,6 @@ def unregister():
 
     bpy.utils.unregister_class(MeshSearch)
     bpy.utils.unregister_class(TextSearch)
-    bpy.utils.unregister_class(SyncPanel)
     bpy.utils.unregister_class(THANGS_OT_search_invoke)
     bpy.utils.unregister_class(SearchButton)
     bpy.utils.unregister_class(IncPageChange)
@@ -1102,10 +1128,16 @@ def unregister():
     bpy.utils.unregister_class(BrowseToLicenseOperator)
     bpy.utils.unregister_class(BrowseToCreatorOperator)
     bpy.utils.unregister_class(SearchBySelect)
-    bpy.utils.unregister_class(SyncButton)
     bpy.utils.unregister_class(BrowseToModelOperator)
     bpy.types.VIEW3D_MT_object_context_menu.remove(draw_menu)
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(draw_menu)
+
+    if hasattr(bpy.types.Scene, 'thangs_blender_addon_sync_panel_status_message'):
+        del bpy.types.Scene.thangs_blender_addon_sync_panel_status_message
+
+    bpy.utils.unregister_class(THANGS_BLENDER_ADDON_OT_sync_unsaved_file_dialog)
+    bpy.utils.unregister_class(THANGS_BLENDER_ADDON_OT_sync_button)
+    bpy.utils.unregister_class(THANGS_BLENDER_ADDON_PT_sync_panel)
 
     if hasattr(bpy.types.Scene, 'my_tool'):
         del bpy.types.Scene.my_tool

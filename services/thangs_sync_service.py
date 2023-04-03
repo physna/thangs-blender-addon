@@ -2,6 +2,7 @@ import json
 import bpy
 import urllib
 import ntpath
+import datetime
 
 from typing import List
 from .thangs_login_service import ThangsLoginService
@@ -14,6 +15,9 @@ class ThangsSyncService:
         self.__login_service = ThangsLoginService()
 
     def sync_current_blender_file(self):
+        # TODO this shouldn't live here but it's good enough for a test
+        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model'
+
         # TODO this needs to not be so hacky
         # TODO need to handle 401s, 403s
         token = self.__login_service.get_api_token()
@@ -73,3 +77,5 @@ class ThangsSyncService:
 
         sync_data_block.from_string(json.dumps(sync_data))
         bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
+
+        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = f'Successfully synced at {datetime.datetime.now()}'
