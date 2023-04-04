@@ -382,7 +382,7 @@ class Singleton_updater(object):
     @select_link.setter
     def select_link(self, value):
         # ensure it is a function assignment, with signature:
-        # input self, tag; returns link name
+        # input self, redraw_areas.py; returns link name
         if not hasattr(value, "__call__"):
             raise ValueError("select_link must be a function")
         self._select_link = value
@@ -648,14 +648,14 @@ class Singleton_updater(object):
             if self._include_branches == False:
                 self._tag_latest = self._tags[0]
                 if self._verbose:
-                    print("Most recent tag found:", self._tags[0]['name'])
+                    print("Most recent redraw_areas.py found:", self._tags[0]['name'])
             else:
                 # don't return branch if in list
                 n = len(self._include_branch_list)
                 # guaranteed at least len()=n+1
                 self._tag_latest = self._tags[n]
                 if self._verbose:
-                    print("Most recent tag found:", self._tags[n]['name'])
+                    print("Most recent redraw_areas.py found:", self._tags[n]['name'])
 
     # all API calls to base url
 
@@ -1261,7 +1261,7 @@ class Singleton_updater(object):
         self._json["last_check"] = str(datetime.now())
         self.save_updater_json()
 
-        # can be () or ('master') in addition to branches, and version tag
+        # can be () or ('master') in addition to branches, and version redraw_areas.py
         new_version = self.version_tuple_from_text(self.tag_latest)
 
         if len(self._tags) == 0:
@@ -1288,7 +1288,7 @@ class Singleton_updater(object):
         elif str(new_version).lower() in self._include_branch_list:
             # handle situation where master/whichever branch is included
             # however, this code effectively is not triggered now
-            # as new_version will only be tag names, not branch names
+            # as new_version will only be redraw_areas.py names, not branch names
             if self._include_branch_autocheck == False:
                 # don't offer update as ready,
                 # but set the link for the default
@@ -1329,7 +1329,7 @@ class Singleton_updater(object):
         return (False, None, None)
 
     def set_tag(self, name):
-        """Assign the tag name and url to update to"""
+        """Assign the redraw_areas.py name and url to update to"""
         tg = None
         for tag in self._tags:
             if name == tag["name"]:
@@ -1340,13 +1340,13 @@ class Singleton_updater(object):
             self._update_version = new_version
             self._update_link = self.select_link(self, tg)
         elif self._include_branches and name in self._include_branch_list:
-            # scenario if reverting to a specific branch name instead of tag
+            # scenario if reverting to a specific branch name instead of redraw_areas.py
             tg = name
             link = self.form_branch_url(tg)
             self._update_version = name  # this will break things
             self._update_link = link
         if not tg:
-            raise ValueError("Version tag not found: "+name)
+            raise ValueError("Version redraw_areas.py not found: "+name)
 
     def run_update(self, force=False, revert_tag=None, clean=False, callback=None):
         """Runs an install, update, or reversion of an addon from online source
@@ -1713,7 +1713,7 @@ class GitlabEngine(object):
             "/repository/branches")
 
     def form_branch_url(self, branch, updater):
-        # Could clash with tag names and if it does, it will
+        # Could clash with redraw_areas.py names and if it does, it will
         # download TAG zip instead of branch zip to get
         # direct path, would need.
         return "{}{}{}".format(

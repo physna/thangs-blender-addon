@@ -5,6 +5,7 @@ from .save_new_file_and_sync_button import THANGS_BLENDER_ADDON_OT_sync_save_new
 from .dirty_file_dialog import THANGS_BLENDER_ADDON_OT_sync_dirty_file_dialog
 from .save_dirty_button import THANGS_BLENDER_ADDON_OT_sync_save_dirty_button
 from .skip_save_dirty_button import THANGS_BLENDER_ADDON_OT_sync_skip_save_dirty_button
+from .open_synced_model_in_thangs import THANGS_BLENDER_ADDON_OT_open_synced_model_in_thangs
 
 def register():
     import bpy
@@ -15,14 +16,17 @@ def register():
     bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_sync_skip_save_dirty_button)
     bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_sync_save_dirty_button)
     bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_sync_save_new_file_and_sync_button)
+    bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_open_synced_model_in_thangs)
     bpy.types.Scene.thangs_blender_addon_sync_panel_status_message = bpy.props.StringProperty(
         name='ThangsSyncAddonSyncPanelStatusMessage', default='')
 
 def unregister():
     import bpy
-    if hasattr(bpy.types.Scene, 'thangs_blender_addon_sync_panel_status_message'):
-        del bpy.types.Scene.thangs_blender_addon_sync_panel_status_message
 
+    if hasattr(bpy.types.Scene, 'thangs_blender_addon_sync_panel_last_sync_time'):
+        del bpy.types.Scene.thangs_blender_addon_sync_panel_last_sync_time
+
+    bpy.utils.unregister_class(THANGS_BLENDER_ADDON_OT_open_synced_model_in_thangs)
     bpy.utils.unregister_class(THANGS_BLENDER_ADDON_OT_sync_save_new_file_and_sync_button)
     bpy.utils.unregister_class(THANGS_BLENDER_ADDON_OT_sync_skip_save_dirty_button)
     bpy.utils.unregister_class(THANGS_BLENDER_ADDON_OT_sync_save_dirty_button)
