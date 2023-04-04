@@ -46,7 +46,8 @@ from urllib.request import urlopen
 from .thangs_fetcher import ThangsFetcher
 from .thangs_events import ThangsEvents
 from .thangs_importer import initialize_thangs_api, get_thangs_api
-from services import ThangsSyncService
+from UI.common import View3DPanel
+from UI.sync import register as sync_register, unregister as sync_unregister
 
 log = logging.getLogger(__name__)
 
@@ -205,11 +206,6 @@ def FirstPage():
     fetcher.search(fetcher.query)
     return None
 
-class View3DPanel:
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS' if bpy.app.version < (2, 80, 0) else 'UI'
-    bl_category = 'Thangs'
-
 
 class SearchButton(bpy.types.Operator):
     """Searches Thangs for Meshes"""
@@ -296,120 +292,6 @@ class SearchBySelect(bpy.types.Operator):
         stl_path = fetcher.selectionSearch(bpy.context)
         search_thread = threading.Thread(
             target=self.stl_login_user, args=(_context, stl_path,)).start()
-        return {'FINISHED'}
-
-class THANGS_BLENDER_ADDON_PT_sync_panel(View3DPanel, bpy.types.Panel):
-    bl_options = {'DEFAULT_CLOSED'}
-    bl_idname = "thangs_blender_addon.sync_panel"
-    bl_label = "Thangs Sync"
-
-    def draw(self, context):
-        layout = self.layout
-
-        label_column = layout.column(align=True)
-        label_column.label(text=context.scene.thangs_blender_addon_sync_panel_status_message)
-
-        col = layout.column(align=True)
-        row = col.row()
-        row.operator(THANGS_BLENDER_ADDON_OT_sync_button.bl_idname,
-                     text="Sync Model", icon='NONE')
-
-class THANGS_BLENDER_ADDON_OT_sync_button(bpy.types.Operator):
-    """Sync Model"""
-    bl_idname = "thangs_blender_addon.sync_button"
-    bl_label = "Sync Model"
-    bl_options = {'INTERNAL'}
-
-    def invoke(self, context, event):
-        if not bpy.context.blend_data.is_saved:
-            return bpy.ops.thangs_blender_addon.sync_unsaved_file_dialog('INVOKE_DEFAULT')
-
-        if bpy.context.blend_data.is_dirty:
-            return bpy.ops.thangs_blender_addon.sync_dirty_file_dialog('INVOKE_DEFAULT')
-
-    def execute(self, _context):
-        # TODO should probably move all the threading fun into the service
-        sync_service = ThangsSyncService()
-        threading.Thread(target=sync_service.sync_current_blender_file).start()
-        return {'FINISHED'}
-
-class THANGS_BLENDER_ADDON_OT_sync_unsaved_file_dialog(bpy.types.Operator):
-    """Unsaved file dialog when syncing"""
-    bl_idname = "thangs_blender_addon.sync_unsaved_file_dialog"
-    bl_label = "Unsaved File"
-    bl_options = {'INTERNAL'}
-
-    @classmethod
-    def poll(cls, context):
-        return True
-
-    def execute(self, context):
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_popup(self)
-
-    def draw(self, context):
-        layout = self.layout
-        label_row = layout.row()
-        label_row.label(text="Current file has not been saved.")
-        label_row2 = layout.row()
-        label_row2.label(text="Please save before syncing to Thangs.")
-        save_button_row = layout.row()
-        # TODO may want to make this start syncing after saving
-        save_button_row.operator('wm.save_as_mainfile', text='Save')
-
-class THANGS_BLENDER_ADDON_OT_sync_dirty_file_dialog(bpy.types.Operator):
-    """Dirty file dialog when syncing"""
-    bl_idname = "thangs_blender_addon.sync_dirty_file_dialog"
-    bl_label = "Unsaved Changes"
-    bl_options = {'INTERNAL'}
-
-    @classmethod
-    def poll(cls, context):
-        return True
-
-    def execute(self, context):
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_popup(self)
-
-    def draw(self, context):
-        layout = self.layout
-        label_row = layout.row()
-        label_row.label(text="Current file has changes that have not been saved.")
-        label_row2 = layout.row()
-        label_row2.label(text="Do you want to save before syncing?")
-        save_button_row = layout.row()
-        save_and_sync_column = save_button_row.column(align=True)
-        save_and_sync_column.operator(THANGS_BLENDER_ADDON_OT_sync_save_dirty_button.bl_idname)
-        skip_save_and_sync_column = save_button_row.column(align=True)
-        skip_save_and_sync_column.operator(THANGS_BLENDER_ADDON_OT_sync_skip_save_dirty_button.bl_idname)
-
-class THANGS_BLENDER_ADDON_OT_sync_save_dirty_button(bpy.types.Operator):
-    """Save a dirty file operator before syncing"""
-    bl_idname = "thangs_blender_addon.sync_save_dirty_button"
-    bl_label = "Save & Sync"
-    bl_options = {'INTERNAL'}
-
-    def execute(self, _context):
-        bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
-        # TODO should probably move all the threading fun into the service
-        sync_service = ThangsSyncService()
-        threading.Thread(target=sync_service.sync_current_blender_file).start()
-        return {'FINISHED'}
-
-class THANGS_BLENDER_ADDON_OT_sync_skip_save_dirty_button(bpy.types.Operator):
-    """Save a dirty file operator before syncing"""
-    bl_idname = "thangs_blender_addon.sync_save_dirty_yes_button"
-    bl_label = "Sync Anyway"
-    bl_options = {'INTERNAL'}
-
-    def execute(self, _context):
-        # TODO should probably move all the threading fun into the service
-        sync_service = ThangsSyncService()
-        threading.Thread(target=sync_service.sync_current_blender_file).start()
         return {'FINISHED'}
 
 def Model_Event(position):
@@ -1076,13 +958,7 @@ def register():
     bpy.types.VIEW3D_MT_object_context_menu.append(draw_menu)
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(draw_menu)
 
-    bpy.utils.register_class(THANGS_BLENDER_ADDON_PT_sync_panel)
-    bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_sync_button)
-    bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_sync_unsaved_file_dialog)
-    bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_sync_dirty_file_dialog)
-    bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_sync_skip_save_dirty_button)
-    bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_sync_save_dirty_button)
-    bpy.types.Scene.thangs_blender_addon_sync_panel_status_message = StringProperty(name='ThangsSyncAddonSyncPanelStatusMessage', default='')
+    sync_register()
 
     def dropdown_properties_item_set(index):
         def handler(self, context):
@@ -1191,15 +1067,7 @@ def unregister():
     bpy.types.VIEW3D_MT_object_context_menu.remove(draw_menu)
     bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(draw_menu)
 
-    if hasattr(bpy.types.Scene, 'thangs_blender_addon_sync_panel_status_message'):
-        del bpy.types.Scene.thangs_blender_addon_sync_panel_status_message
-
-    bpy.utils.unregister_class(THANGS_BLENDER_ADDON_OT_sync_skip_save_dirty_button)
-    bpy.utils.unregister_class(THANGS_BLENDER_ADDON_OT_sync_save_dirty_button)
-    bpy.utils.unregister_class(THANGS_BLENDER_ADDON_OT_sync_dirty_file_dialog)
-    bpy.utils.unregister_class(THANGS_BLENDER_ADDON_OT_sync_unsaved_file_dialog)
-    bpy.utils.unregister_class(THANGS_BLENDER_ADDON_OT_sync_button)
-    bpy.utils.unregister_class(THANGS_BLENDER_ADDON_PT_sync_panel)
+    sync_unregister()
 
     if hasattr(bpy.types.Scene, 'my_tool'):
         del bpy.types.Scene.my_tool
