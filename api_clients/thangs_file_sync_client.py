@@ -9,6 +9,9 @@ class UploadUrlResponse(TypedDict):
     signedUrl: str
     newFileName: str
 
+class VersionModelResponse(TypedDict):
+    sha: str
+
 # TODO add typings in this file, especially for return values
 class ThangsFileSyncClient:
     def __init__(self):
@@ -110,9 +113,10 @@ class ThangsFileSyncClient:
         response = requests.post(url, headers=headers, json=json)
         response.raise_for_status()
         response_data = response.json()
+        print(response_data)
         return response_data
 
-    def update_model_from_current_blend_file(self, api_token: str, new_file_name: str, model_id: int):
+    def update_model_from_current_blend_file(self, api_token: str, new_file_name: str, model_id: int) -> VersionModelResponse:
         url = f'{self.thangs_config.thangs_config["url"]}api/v2/models/{model_id}'
         headers = {
             'Authorization': f'Bearer {api_token}',

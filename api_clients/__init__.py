@@ -1,2 +1,3 @@
 from .thangs_file_sync_client import ThangsFileSyncClient, UploadUrlResponse
 from .thangs_login_client import ThangsLoginClient
+from .thangs_models_client import ThangsModelsClient

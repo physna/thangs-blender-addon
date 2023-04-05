@@ -6,7 +6,7 @@ import datetime
 
 from typing import List, TypedDict
 from .thangs_login_service import ThangsLoginService
-from api_clients import ThangsFileSyncClient, UploadUrlResponse
+from api_clients import ThangsFileSyncClient, UploadUrlResponse, ThangsModelsClient
 # TODO I hate putting this in here, need to figure out how to separate the UI updates from the sync process
 from UI.common import redraw_areas
 
@@ -14,6 +14,8 @@ from UI.common import redraw_areas
 class SyncInfo(TypedDict):
     model_id: int
     last_sync_time: datetime.datetime
+    thumbnail_url: str
+    version_sha: str
 
 
 class ThangsSyncService:
@@ -24,7 +26,7 @@ class ThangsSyncService:
 
     def sync_current_blender_file(self):
         # TODO this shouldn't live here but it's good enough for a test
-        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 1 of 5)'
+        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 1 of 6)'
         redraw_areas()
 
         # TODO this needs to not be so hacky
@@ -41,7 +43,7 @@ class ThangsSyncService:
         # TODO Upload the blend file
         upload_urls = sync_client.get_upload_url_for_blend_file(token, [filename], model_id)
 
-        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 2 of 5)'
+        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 2 of 6)'
         redraw_areas()
 
         encoded_upload_url = upload_urls[0]['signedUrl']
@@ -55,7 +57,7 @@ class ThangsSyncService:
 
         # TODO Upload reference files, need to do something to not reupload duplicate files
 
-        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 3 of 5)'
+        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 3 of 6)'
         redraw_areas()
 
         image_upload_urls: List[UploadUrlResponse] = []
@@ -73,22 +75,32 @@ class ThangsSyncService:
                 if model_id:
                     sync_client.update_thangs_model_details(token, model_id, [r['newFileName'] for r in image_upload_urls])
 
-        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 4 of 5)'
+        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 4 of 6)'
         redraw_areas()
 
+        sha = '0000'
         if model_id:
-            sync_client.update_model_from_current_blend_file(token, upload_urls[0]['newFileName'], model_id)
+            version_response = sync_client.update_model_from_current_blend_file(token, upload_urls[0]['newFileName'], model_id)
+            sha = version_response['sha']
         else:
             model_ids = sync_client.create_model_from_current_blend_file(token, filename, upload_urls[0]['newFileName'], [r['newFileName'] for r in image_upload_urls])
             model_id = model_ids[0]
 
-        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 5 of 5)'
+        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 5 of 6)'
+        redraw_areas()
+
+        models_client = ThangsModelsClient()
+        model_data = models_client.get_model(token, model_id)
+
+        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 6 of 6)'
         redraw_areas()
 
         last_sync_time = datetime.datetime.utcnow()
         sync_data_to_save = SyncInfo()
         sync_data_to_save['model_id'] = model_id
         sync_data_to_save['last_sync_time'] = last_sync_time
+        sync_data_to_save['version_sha'] = sha
+        sync_data_to_save['thumbnail_url'] = model_data['parts'][0]['thumbnailUrl']
         self.save_sync_info_text_block(sync_data_to_save)
 
         bpy.context.scene.thangs_blender_addon_sync_panel_status_message = ''
@@ -115,6 +127,8 @@ class ThangsSyncService:
             sync_data = json.loads(sync_data_block.as_string())
             parsed_data = SyncInfo()
             parsed_data['model_id'] = sync_data['model_id']
+            parsed_data['thumbnail_url'] = sync_data['thumbnail_url']
+            parsed_data['version_sha'] = sync_data['version_sha']
             parsed_data['last_sync_time'] = self.convert_utc_timestamp_to_local(datetime.datetime.fromisoformat(sync_data['last_sync_time']))
             return parsed_data
 
