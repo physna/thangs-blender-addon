@@ -23,7 +23,6 @@ class GetModelResponse(TypedDict):
     parts: List[PartsResponse]
 
 
-# TODO add typings in this file, especially for return values
 class ThangsModelsClient:
     def __init__(self):
         self.thangs_config = get_config()

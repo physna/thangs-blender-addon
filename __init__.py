@@ -48,6 +48,7 @@ from .thangs_events import ThangsEvents
 from .thangs_importer import initialize_thangs_api, get_thangs_api
 from UI.common import View3DPanel
 from UI.sync import register as sync_register, unregister as sync_unregister
+from services import get_sync_service
 
 log = logging.getLogger(__name__)
 
@@ -1073,8 +1074,10 @@ def unregister():
         del bpy.types.Scene.my_tool
     addon_updater_ops.unregister()
 
-    # TODO need a way to cleanup running threads here
     urllib.request.urlcleanup()
+
+    sync_service = get_sync_service()
+    sync_service.cancel_running_sync_process()
 
 
 if __name__ == "__main__":

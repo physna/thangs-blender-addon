@@ -15,13 +15,11 @@ class VersionModelResponse(TypedDict):
     sha: str
 
 
-# TODO add typings in this file, especially for return values
 class ThangsFileSyncClient:
     def __init__(self):
         self.thangs_config = get_config()
 
-    def get_upload_url_for_blend_file(self, api_token: str, file_names: List[str], model_id: int = None) -> List[
-        UploadUrlResponse]:
+    def get_upload_url_for_blend_file(self, api_token: str, file_names: List[str], model_id: int = None) -> List[UploadUrlResponse]:
         url = f'{self.thangs_config.thangs_config["url"]}api/models/upload-urls'
         headers = {
             'Authorization': f'Bearer {api_token}',
@@ -38,8 +36,7 @@ class ThangsFileSyncClient:
         response_data = response.json()
         return response_data
 
-    def get_upload_url_for_attachment_files(self, api_token: str, file_names: List[str], model_id: int = None) -> List[
-        UploadUrlResponse]:
+    def get_upload_url_for_attachment_files(self, api_token: str, file_names: List[str], model_id: int = None) -> List[UploadUrlResponse]:
         url = f'{self.thangs_config.thangs_config["url"]}api/attachments/upload-urls'
         headers = {
             'Authorization': f'Bearer {api_token}',
@@ -73,7 +70,6 @@ class ThangsFileSyncClient:
             'Authorization': f'Bearer {api_token}',
         }
 
-        # TODO much of this needs to be passed in / grabbed from Thangs.  Good enough for PoC for now.
         json = {
             'name': name,
             'isPublic': is_public,
@@ -92,7 +88,6 @@ class ThangsFileSyncClient:
         response_data = response.json()
         return response_data
 
-    # TODO probably should be passing things in rather than assuming the current blend file, but for POC this is fine
     def create_model_from_current_blend_file(self, api_token: str, filename: str, new_file_name: str,
                                              reference_files: List[str], is_public: bool) -> List[int]:
         url = f'{self.thangs_config.thangs_config["url"]}api/models'
