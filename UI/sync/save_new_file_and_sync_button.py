@@ -1,6 +1,5 @@
 import bpy
-from services import get_sync_service
-from .sync_on_save_handler import supress_sync_on_save, enable_sync_on_save
+from services import get_sync_service, supress_sync_on_save, enable_sync_on_save
 
 
 class THANGS_BLENDER_ADDON_OT_sync_save_new_file_and_sync_button(bpy.types.Operator):
