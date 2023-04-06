@@ -6,6 +6,14 @@ from config import get_config
 # These are incomplete because we don't need the rest of it right now
 class PartsResponse(TypedDict):
     thumbnailUrl: str
+    name: str
+    description: str
+    material: str
+    weight: str
+    height: str
+    category: str
+    license: str
+    folderId: str
 
 
 class GetModelResponse(TypedDict):

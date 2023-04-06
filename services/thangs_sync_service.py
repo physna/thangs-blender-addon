@@ -45,6 +45,8 @@ class ThangsSyncService:
     def __reset_sync_process(self):
         self.__sync_thread = None
         self.__sync_thread_stop_event.clear()
+        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = ''
+        redraw_areas()
 
     def __sync_current_blender_file(self):
         if self.__sync_thread_stop_event.is_set():
@@ -114,10 +116,21 @@ class ThangsSyncService:
         if self.__sync_thread_stop_event.is_set():
             return
 
+        models_client = ThangsModelsClient()
         if model_id and details_need_updated:
+            pre_sync_model_data = models_client.get_model(token, model_id)
             sync_client.update_thangs_model_details(token, model_id,
                                                     [r['newFileName'] for r in image_upload_urls],
-                                                    bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model)
+                                                    bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model,
+                                                    pre_sync_model_data['name'],
+                                                    pre_sync_model_data['description'],
+                                                    pre_sync_model_data['material'],
+                                                    pre_sync_model_data['weight'],
+                                                    pre_sync_model_data['height'],
+                                                    pre_sync_model_data['category'],
+                                                    pre_sync_model_data['license'],
+                                                    pre_sync_model_data['folderId']
+                                                    )
 
         if self.__sync_thread_stop_event.is_set():
             return
@@ -139,7 +152,6 @@ class ThangsSyncService:
         bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 5 of 6)'
         redraw_areas()
 
-        models_client = ThangsModelsClient()
         model_data = models_client.get_model(token, model_id)
 
         bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 6 of 6)'
@@ -154,9 +166,6 @@ class ThangsSyncService:
         sync_data_to_save['is_public'] = bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model
         sync_data_to_save['thumbnail_url'] = model_data['parts'][0]['thumbnailUrl']
         self.save_sync_info_text_block(sync_data_to_save)
-
-        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = ''
-        redraw_areas()
 
         self.__reset_sync_process()
 

@@ -4,20 +4,24 @@ import os
 from typing import List, TypedDict
 from config import get_config
 
+
 class UploadUrlResponse(TypedDict):
     fileName: str
     signedUrl: str
     newFileName: str
 
+
 class VersionModelResponse(TypedDict):
     sha: str
+
 
 # TODO add typings in this file, especially for return values
 class ThangsFileSyncClient:
     def __init__(self):
         self.thangs_config = get_config()
 
-    def get_upload_url_for_blend_file(self, api_token: str, file_names: List[str], model_id: int = None) -> List[UploadUrlResponse]:
+    def get_upload_url_for_blend_file(self, api_token: str, file_names: List[str], model_id: int = None) -> List[
+        UploadUrlResponse]:
         url = f'{self.thangs_config.thangs_config["url"]}api/models/upload-urls'
         headers = {
             'Authorization': f'Bearer {api_token}',
@@ -34,7 +38,8 @@ class ThangsFileSyncClient:
         response_data = response.json()
         return response_data
 
-    def get_upload_url_for_attachment_files(self, api_token: str, file_names: List[str], model_id: int = None) -> List[UploadUrlResponse]:
+    def get_upload_url_for_attachment_files(self, api_token: str, file_names: List[str], model_id: int = None) -> List[
+        UploadUrlResponse]:
         url = f'{self.thangs_config.thangs_config["url"]}api/attachments/upload-urls'
         headers = {
             'Authorization': f'Bearer {api_token}',
@@ -60,7 +65,9 @@ class ThangsFileSyncClient:
             response = requests.put(url, headers=headers, data=file)
             response.raise_for_status()
 
-    def update_thangs_model_details(self, api_token: str, model_id: int, reference_files: List[str], is_public: bool) -> None:
+    def update_thangs_model_details(self, api_token: str, model_id: int, reference_files: List[str], is_public: bool,
+                                    name: str, description: str, material: str, weight: str, height: str, category: str,
+                                    model_license: str, folder_id: str) -> None:
         url = f'{self.thangs_config.thangs_config["url"]}api/models/{model_id}/details'
         headers = {
             'Authorization': f'Bearer {api_token}',
@@ -68,16 +75,15 @@ class ThangsFileSyncClient:
 
         # TODO much of this needs to be passed in / grabbed from Thangs.  Good enough for PoC for now.
         json = {
-            'name': bpy.path.display_name_from_filepath(bpy.context.blend_data.filepath),
+            'name': name,
             'isPublic': is_public,
-            'description': 'Uploaded by Thangs Blender',
-            'material': '',
-            'weight': '',
-            'height': '',
-            'category': '',
-            'license': '',
-            # TODO fix this
-            # 'folderId': None,
+            'description': description,
+            'material': material,
+            'weight': weight,
+            'height': height,
+            'category': category,
+            'license': model_license,
+            'folderId': folder_id,
             'attachments': [],
             'referenceFiles': [{'filename': r} for r in reference_files],
         }
@@ -87,7 +93,8 @@ class ThangsFileSyncClient:
         return response_data
 
     # TODO probably should be passing things in rather than assuming the current blend file, but for POC this is fine
-    def create_model_from_current_blend_file(self, api_token: str, filename: str, new_file_name: str, reference_files: List[str], is_public: bool) -> List[int]:
+    def create_model_from_current_blend_file(self, api_token: str, filename: str, new_file_name: str,
+                                             reference_files: List[str], is_public: bool) -> List[int]:
         url = f'{self.thangs_config.thangs_config["url"]}api/models'
         headers = {
             'Authorization': f'Bearer {api_token}',
@@ -116,7 +123,8 @@ class ThangsFileSyncClient:
         print(response_data)
         return response_data
 
-    def update_model_from_current_blend_file(self, api_token: str, new_file_name: str, model_id: int) -> VersionModelResponse:
+    def update_model_from_current_blend_file(self, api_token: str, new_file_name: str,
+                                             model_id: int) -> VersionModelResponse:
         url = f'{self.thangs_config.thangs_config["url"]}api/v2/models/{model_id}'
         headers = {
             'Authorization': f'Bearer {api_token}',
