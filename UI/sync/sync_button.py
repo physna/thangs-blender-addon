@@ -1,6 +1,5 @@
 import bpy
-import threading
-from services import ThangsSyncService
+from services import get_sync_service
 
 class THANGS_BLENDER_ADDON_OT_sync_button(bpy.types.Operator):
     """Sync Model"""
@@ -16,8 +15,7 @@ class THANGS_BLENDER_ADDON_OT_sync_button(bpy.types.Operator):
             return bpy.ops.thangs_blender_addon.sync_dirty_file_dialog('INVOKE_DEFAULT')
 
     def execute(self, _context):
-        # TODO should probably move all the threading fun into the service
-        sync_service = ThangsSyncService()
-        threading.Thread(target=sync_service.sync_current_blender_file).start()
+        sync_service = get_sync_service()
+        sync_service.start_sync_process()
         return {'FINISHED'}
 

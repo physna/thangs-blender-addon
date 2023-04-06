@@ -3,12 +3,14 @@ import bpy
 import urllib
 import ntpath
 import datetime
+import threading
 
 from typing import List, TypedDict
 from .thangs_login_service import ThangsLoginService
 from api_clients import ThangsFileSyncClient, UploadUrlResponse, ThangsModelsClient
 # TODO I hate putting this in here, need to figure out how to separate the UI updates from the sync process
 from UI.common import redraw_areas
+from UI.sync import supress_sync_on_save, enable_sync_on_save
 
 
 class SyncInfo(TypedDict):
@@ -16,6 +18,7 @@ class SyncInfo(TypedDict):
     last_sync_time: datetime.datetime
     thumbnail_url: str
     version_sha: str
+    sync_on_save: bool
 
 
 class ThangsSyncService:
@@ -24,7 +27,11 @@ class ThangsSyncService:
     def __init__(self):
         self.__login_service = ThangsLoginService()
 
-    def sync_current_blender_file(self):
+    def start_sync_process(self):
+        threading.Thread(target=self.sync_current_blender_file).start()
+        return
+
+    def __sync_current_blender_file(self):
         # TODO this shouldn't live here but it's good enough for a test
         bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 1 of 6)'
         redraw_areas()
@@ -100,6 +107,7 @@ class ThangsSyncService:
         sync_data_to_save['model_id'] = model_id
         sync_data_to_save['last_sync_time'] = last_sync_time
         sync_data_to_save['version_sha'] = sha
+        sync_data_to_save['sync_on_save'] = bpy.context.scene.thangs_blender_addon_sync_panel_sync_on_save
         sync_data_to_save['thumbnail_url'] = model_data['parts'][0]['thumbnailUrl']
         self.save_sync_info_text_block(sync_data_to_save)
 
@@ -116,7 +124,10 @@ class ThangsSyncService:
         sync_info['last_sync_time'] = sync_info['last_sync_time'].isoformat()
 
         sync_data_block.from_string(json.dumps(sync_info))
+
+        supress_sync_on_save()
         bpy.ops.wm.save_as_mainfile(filepath=bpy.data.filepath)
+        enable_sync_on_save()
 
     def remove_sync_info_text_block(self):
         bpy.data.texts.remove(bpy.data.texts[ThangsSyncService.__SYNC_DATA_BLOCK_NAME__])
@@ -129,6 +140,7 @@ class ThangsSyncService:
             parsed_data['model_id'] = sync_data['model_id']
             parsed_data['thumbnail_url'] = sync_data['thumbnail_url']
             parsed_data['version_sha'] = sync_data['version_sha']
+            parsed_data['sync_on_save'] = sync_data['sync_on_save']
             parsed_data['last_sync_time'] = self.convert_utc_timestamp_to_local(datetime.datetime.fromisoformat(sync_data['last_sync_time']))
             return parsed_data
 
@@ -136,3 +148,14 @@ class ThangsSyncService:
 
     def convert_utc_timestamp_to_local(self, timestamp):
         return timestamp.replace(tzinfo=datetime.timezone.utc).astimezone(tz=None)
+
+
+__sync_service__: ThangsSyncService = None
+
+def get_sync_service():
+    global __sync_service__
+
+    if not __sync_service__:
+        __sync_service__ = ThangsSyncService()
+
+    return __sync_service__

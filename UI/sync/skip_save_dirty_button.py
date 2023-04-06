@@ -1,6 +1,5 @@
 import bpy
-import threading
-from services import ThangsSyncService
+from services import get_sync_service
 
 
 class THANGS_BLENDER_ADDON_OT_sync_skip_save_dirty_button(bpy.types.Operator):
@@ -10,7 +9,6 @@ class THANGS_BLENDER_ADDON_OT_sync_skip_save_dirty_button(bpy.types.Operator):
     bl_options = {'INTERNAL'}
 
     def execute(self, _context):
-        # TODO should probably move all the threading fun into the service
-        sync_service = ThangsSyncService()
-        threading.Thread(target=sync_service.sync_current_blender_file).start()
+        sync_service = get_sync_service()
+        sync_service.start_sync_process()
         return {'FINISHED'}

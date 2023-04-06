@@ -1,9 +1,17 @@
 import bpy
 from UI.common import View3DPanel
-from services import ThangsSyncService, SyncInfo, get_thumbnail_service
+from services import get_sync_service, SyncInfo, get_thumbnail_service
 from .sync_button import THANGS_BLENDER_ADDON_OT_sync_button
 from .open_synced_model_in_thangs import THANGS_BLENDER_ADDON_OT_open_synced_model_in_thangs
 
+
+def update_sync_on_save(self, context):
+    print('update sync', self)
+    thangs_sync_service = get_sync_service()
+    sync_data = thangs_sync_service.get_sync_info_text_block()
+    if sync_data:
+        sync_data['sync_on_save'] = self.thangs_blender_addon_sync_panel_sync_on_save
+        thangs_sync_service.save_sync_info_text_block(sync_data)
 
 class THANGS_BLENDER_ADDON_PT_sync_panel(bpy.types.Panel, View3DPanel):
     bl_options = {'DEFAULT_CLOSED'}
@@ -11,7 +19,7 @@ class THANGS_BLENDER_ADDON_PT_sync_panel(bpy.types.Panel, View3DPanel):
     bl_label = "Thangs Sync"
 
     def __init__(self):
-        self.thangs_sync_service = ThangsSyncService()
+        self.thangs_sync_service = get_sync_service()
 
     def draw(self, context):
         layout = self.layout
@@ -40,6 +48,9 @@ class THANGS_BLENDER_ADDON_PT_sync_panel(bpy.types.Panel, View3DPanel):
                 last_sync_time_column = last_sync_time_row.column(align=True)
                 last_sync_time_column.alignment = 'RIGHT'
                 last_sync_time_column.label(text=sync_data['last_sync_time'].strftime('%x %X'))
+
+        sync_on_save_row = layout.row()
+        sync_on_save_row.prop(context.scene, 'thangs_blender_addon_sync_panel_sync_on_save')
 
         sync_button_row = layout.row()
         sync_button_row.operator(THANGS_BLENDER_ADDON_OT_sync_button.bl_idname, text="Sync Model", icon='NONE')
