@@ -6,7 +6,6 @@ from .open_synced_model_in_thangs import THANGS_BLENDER_ADDON_OT_open_synced_mod
 
 
 def update_sync_on_save(self, context):
-    print('update sync', self)
     thangs_sync_service = get_sync_service()
     sync_data = thangs_sync_service.get_sync_info_text_block()
     if sync_data:
@@ -15,7 +14,7 @@ def update_sync_on_save(self, context):
 
 class THANGS_BLENDER_ADDON_PT_sync_panel(bpy.types.Panel, View3DPanel):
     bl_options = {'DEFAULT_CLOSED'}
-    bl_idname = "thangs_blender_addon.sync_panel"
+    bl_idname = "THANGS_BLENDER_ADDON_PT_sync_panel"
     bl_label = "Thangs Sync"
 
     def __init__(self):
@@ -48,6 +47,9 @@ class THANGS_BLENDER_ADDON_PT_sync_panel(bpy.types.Panel, View3DPanel):
                 last_sync_time_column = last_sync_time_row.column(align=True)
                 last_sync_time_column.alignment = 'RIGHT'
                 last_sync_time_column.label(text=sync_data['last_sync_time'].strftime('%x %X'))
+
+        sync_on_save_row = layout.row()
+        sync_on_save_row.prop(context.scene, 'thangs_blender_addon_sync_panel_sync_as_public_model')
 
         sync_on_save_row = layout.row()
         sync_on_save_row.prop(context.scene, 'thangs_blender_addon_sync_panel_sync_on_save')

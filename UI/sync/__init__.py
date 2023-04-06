@@ -25,6 +25,8 @@ def register():
         name='ThangsSyncAddonSyncPanelStatusMessage', default='')
     bpy.types.Scene.thangs_blender_addon_sync_panel_sync_on_save = bpy.props.BoolProperty(
         name='Sync on Save', default=False, update=update_sync_on_save)
+    bpy.types.Scene.thangs_blender_addon_sync_panel_sync_as_public_model = bpy.props.BoolProperty(
+        name='Public Sharing', default=False)
 
     bpy.app.handlers.save_post.append(sync_on_save_handler)
 
@@ -33,6 +35,9 @@ def unregister():
     import bpy
 
     bpy.app.handlers.save_post.remove(sync_on_save_handler)
+
+    if hasattr(bpy.types.Scene, 'thangs_blender_addon_sync_panel_sync_as_public_model'):
+        del bpy.types.Scene.thangs_blender_addon_sync_panel_sync_as_public_model
 
     if hasattr(bpy.types.Scene, 'thangs_blender_addon_sync_panel_status_message'):
         del bpy.types.Scene.thangs_blender_addon_sync_panel_status_message

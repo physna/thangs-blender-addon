@@ -60,7 +60,7 @@ class ThangsFileSyncClient:
             response = requests.put(url, headers=headers, data=file)
             response.raise_for_status()
 
-    def update_thangs_model_details(self, api_token: str, model_id: int, reference_files: List[str]) -> None:
+    def update_thangs_model_details(self, api_token: str, model_id: int, reference_files: List[str], is_public: bool) -> None:
         url = f'{self.thangs_config.thangs_config["url"]}api/models/{model_id}/details'
         headers = {
             'Authorization': f'Bearer {api_token}',
@@ -69,7 +69,7 @@ class ThangsFileSyncClient:
         # TODO much of this needs to be passed in / grabbed from Thangs.  Good enough for PoC for now.
         json = {
             'name': bpy.path.display_name_from_filepath(bpy.context.blend_data.filepath),
-            'isPublic': False,
+            'isPublic': is_public,
             'description': 'Uploaded by Thangs Blender',
             'material': '',
             'weight': '',
@@ -87,7 +87,7 @@ class ThangsFileSyncClient:
         return response_data
 
     # TODO probably should be passing things in rather than assuming the current blend file, but for POC this is fine
-    def create_model_from_current_blend_file(self, api_token: str, filename: str, new_file_name: str, reference_files: List[str]) -> List[int]:
+    def create_model_from_current_blend_file(self, api_token: str, filename: str, new_file_name: str, reference_files: List[str], is_public: bool) -> List[int]:
         url = f'{self.thangs_config.thangs_config["url"]}api/models'
         headers = {
             'Authorization': f'Bearer {api_token}',
@@ -95,7 +95,7 @@ class ThangsFileSyncClient:
 
         json = [{
             'name': bpy.path.display_name_from_filepath(bpy.context.blend_data.filepath),
-            'isPublic': False,
+            'isPublic': is_public,
             'description': 'Uploaded by Thangs Blender',
             'folderId': '',
             'attachments': [],

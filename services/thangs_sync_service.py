@@ -19,6 +19,7 @@ class SyncInfo(TypedDict):
     thumbnail_url: str
     version_sha: str
     sync_on_save: bool
+    is_public: bool
 
 
 class ThangsSyncService:
@@ -59,9 +60,11 @@ class ThangsSyncService:
         sync_client = ThangsFileSyncClient()
 
         model_id = None
+        is_saved_as_public_model: bool = None
         sync_data = self.get_sync_info_text_block()
         if sync_data:
             model_id = sync_data['model_id']
+            is_saved_as_public_model = sync_data['is_public']
 
         upload_urls = sync_client.get_upload_url_for_blend_file(token, [filename], model_id)
 
@@ -88,7 +91,7 @@ class ThangsSyncService:
 
         # TODO need to do something to not reupload duplicate files
         image_upload_urls: List[UploadUrlResponse] = []
-
+        details_need_updated = False
         if len(bpy.data.images):
             image_file_paths = set([i.filepath for i in bpy.data.images if i.filepath])
             if image_file_paths:
@@ -103,12 +106,18 @@ class ThangsSyncService:
                     upload_url_response = next((iuu for iuu in image_upload_urls if iuu['fileName'] == image_filename))
                     sync_client.upload_file_to_storage(upload_url_response['signedUrl'], bpy.path.abspath(image_path))
 
-                if self.__sync_thread_stop_event.is_set():
-                    return
+                    details_need_updated = True
 
-                if model_id:
-                    sync_client.update_thangs_model_details(token, model_id,
-                                                            [r['newFileName'] for r in image_upload_urls])
+        if bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model != is_saved_as_public_model:
+            details_need_updated = True
+
+        if self.__sync_thread_stop_event.is_set():
+            return
+
+        if model_id and details_need_updated:
+            sync_client.update_thangs_model_details(token, model_id,
+                                                    [r['newFileName'] for r in image_upload_urls],
+                                                    bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model)
 
         if self.__sync_thread_stop_event.is_set():
             return
@@ -123,7 +132,8 @@ class ThangsSyncService:
             sha = version_response['sha']
         else:
             model_ids = sync_client.create_model_from_current_blend_file(token, filename, upload_urls[0]['newFileName'],
-                                                                         [r['newFileName'] for r in image_upload_urls])
+                                                                         [r['newFileName'] for r in image_upload_urls],
+                                                                         bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model)
             model_id = model_ids[0]
 
         bpy.context.scene.thangs_blender_addon_sync_panel_status_message = 'Syncing model (Step 5 of 6)'
@@ -141,6 +151,7 @@ class ThangsSyncService:
         sync_data_to_save['last_sync_time'] = last_sync_time
         sync_data_to_save['version_sha'] = sha
         sync_data_to_save['sync_on_save'] = bpy.context.scene.thangs_blender_addon_sync_panel_sync_on_save
+        sync_data_to_save['is_public'] = bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model
         sync_data_to_save['thumbnail_url'] = model_data['parts'][0]['thumbnailUrl']
         self.save_sync_info_text_block(sync_data_to_save)
 
@@ -176,6 +187,7 @@ class ThangsSyncService:
             parsed_data['thumbnail_url'] = sync_data['thumbnail_url']
             parsed_data['version_sha'] = sync_data['version_sha']
             parsed_data['sync_on_save'] = sync_data['sync_on_save']
+            parsed_data['is_public'] = sync_data['is_public']
             parsed_data['last_sync_time'] = self.convert_utc_timestamp_to_local(
                 datetime.datetime.fromisoformat(sync_data['last_sync_time']))
             return parsed_data
