@@ -309,3 +309,11 @@ def enable_sync_on_save():
     global __supress_sync_on_save_handler__
 
     __supress_sync_on_save_handler__ = False
+
+@persistent
+def reset_status_message_load_handler(self, context):
+    import bpy
+
+    if hasattr(bpy.context.scene, 'thangs_blender_addon_sync_panel_status_message'):
+        bpy.context.scene.thangs_blender_addon_sync_panel_status_message = ''
+

@@ -6,7 +6,7 @@ from .dirty_file_dialog import THANGS_BLENDER_ADDON_OT_sync_dirty_file_dialog
 from .save_dirty_button import THANGS_BLENDER_ADDON_OT_sync_save_dirty_button
 from .skip_save_dirty_button import THANGS_BLENDER_ADDON_OT_sync_skip_save_dirty_button
 from .open_synced_model_in_thangs import THANGS_BLENDER_ADDON_OT_open_synced_model_in_thangs
-from services import sync_on_save_handler
+from services import sync_on_save_handler, reset_status_message_load_handler
 
 
 def register():
@@ -20,7 +20,6 @@ def register():
     bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_sync_save_new_file_and_sync_button)
     bpy.utils.register_class(THANGS_BLENDER_ADDON_OT_open_synced_model_in_thangs)
 
-    # TODO reset these on load
     bpy.types.Scene.thangs_blender_addon_sync_panel_status_message = bpy.props.StringProperty(
         name='ThangsSyncAddonSyncPanelStatusMessage', default='')
     bpy.types.Scene.thangs_blender_addon_sync_panel_sync_on_save = bpy.props.BoolProperty(
@@ -29,11 +28,13 @@ def register():
         name='Public Sharing', default=False)
 
     bpy.app.handlers.save_post.append(sync_on_save_handler)
+    bpy.app.handlers.load_post.append(reset_status_message_load_handler)
 
 
 def unregister():
     import bpy
 
+    bpy.app.handlers.load_post.remove(reset_status_message_load_handler)
     bpy.app.handlers.save_post.remove(sync_on_save_handler)
 
     if hasattr(bpy.types.Scene, 'thangs_blender_addon_sync_panel_sync_as_public_model'):
