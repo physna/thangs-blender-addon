@@ -59,8 +59,17 @@ class ThangsFileSyncClient:
         }
         with open(file_path, 'rb') as file_contents:
             file = file_contents.read()
-            response = requests.put(url, headers=headers, data=file)
-            response.raise_for_status()
+            try:
+                response = requests.put(url, headers=headers, data=file)
+                response.raise_for_status()
+            except Exception as e:
+                # TODO log to amplitude here
+                try:
+                    response = requests.put(url, headers=headers, data=file)
+                    response.raise_for_status()
+                except Exception as e2:
+                    # TODO switch to amplitude here
+                    print(str(e2))
 
     def update_thangs_model_details(self, api_token: str, model_id: int, reference_files: List[str], is_public: bool,
                                     name: str, description: str, material: str, weight: str, height: str, category: str,

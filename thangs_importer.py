@@ -6,11 +6,10 @@ import shutil
 import platform
 import socket
 import webbrowser
-import json
 import queue
 
 from config import get_config
-from .thangs_events import ThangsEvents
+from api_clients import ThangsEvents
 from .model_importer import import_model
 from services import ThangsLoginService
 

@@ -6,7 +6,12 @@ from config import get_config
 # These are incomplete because we don't need the rest of it right now
 class PartsResponse(TypedDict):
     thumbnailUrl: str
+
+class GetModelResponse(TypedDict):
+    id: str
     name: str
+    isPublic: bool
+    parts: List[PartsResponse]
     description: str
     material: str
     weight: str
@@ -14,13 +19,6 @@ class PartsResponse(TypedDict):
     category: str
     license: str
     folderId: str
-
-
-class GetModelResponse(TypedDict):
-    id: str
-    name: str
-    isPublic: bool
-    parts: List[PartsResponse]
 
 
 class ThangsModelsClient:

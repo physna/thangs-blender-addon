@@ -44,7 +44,7 @@ initialize(bl_info["version"], __file__)
 from . import addon_updater_ops
 from urllib.request import urlopen
 from .thangs_fetcher import ThangsFetcher
-from .thangs_events import ThangsEvents
+from api_clients import ThangsEvents
 from .thangs_importer import initialize_thangs_api, get_thangs_api
 from UI.common import View3DPanel
 from UI.sync import register as sync_register, unregister as sync_unregister
@@ -913,7 +913,6 @@ def register():
         StringProperty,
         EnumProperty,
         IntProperty,
-        PointerProperty,
     )
     import bpy.utils.previews
 

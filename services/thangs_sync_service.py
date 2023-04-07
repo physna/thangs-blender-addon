@@ -4,6 +4,7 @@ import urllib
 import ntpath
 import datetime
 import threading
+import concurrent.futures
 
 from bpy.app.handlers import persistent
 from typing import List, TypedDict
@@ -82,7 +83,6 @@ class ThangsSyncService:
         upload_url_query_string = urllib.parse.unquote(encoded_upload_url[query_string_index:])
         upload_url = upload_url_base + upload_url_query_string
 
-        # TODO implement retries
         sync_client.upload_file_to_storage(upload_url, bpy.context.blend_data.filepath)
 
         if self.__sync_thread_stop_event.is_set():
@@ -99,16 +99,22 @@ class ThangsSyncService:
             if image_file_paths:
                 image_upload_urls = sync_client.get_upload_url_for_attachment_files(token, [ntpath.basename(i) for i in
                                                                                             image_file_paths], model_id)
-                # TODO should probably run these async with other upload calls so we can do them in parallel
-                for image_path in image_file_paths:
-                    if self.__sync_thread_stop_event.is_set():
-                        return
 
-                    image_filename = ntpath.basename(image_path)
-                    upload_url_response = next((iuu for iuu in image_upload_urls if iuu['fileName'] == image_filename))
-                    sync_client.upload_file_to_storage(upload_url_response['signedUrl'], bpy.path.abspath(image_path))
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    upload_futures: List[concurrent.futures.Future] = []
+                    for image_path in image_file_paths:
+                        if self.__sync_thread_stop_event.is_set():
+                            return
 
-                    details_need_updated = True
+                        image_filename = ntpath.basename(image_path)
+                        upload_url_response = next((iuu for iuu in image_upload_urls if iuu['fileName'] == image_filename))
+                        future = executor.submit(sync_client.upload_file_to_storage, upload_url_response['signedUrl'], bpy.path.abspath(image_path))
+                        upload_futures.append(future)
+
+                        details_need_updated = True
+
+                    for future in upload_futures:
+                        future.result()
 
         if bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model != is_saved_as_public_model:
             details_need_updated = True

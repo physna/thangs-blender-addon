@@ -1,5 +1,4 @@
 import bpy
-import threading
 import json
 import base64
 import requests
@@ -15,7 +14,7 @@ import socket
 import time
 
 from .model_info import ModelInfo
-from .thangs_events import ThangsEvents
+from api_clients import ThangsEvents
 from config import get_config
 from .thangs_importer import get_thangs_api, Utils, Config
 from pathlib import Path
