@@ -8,13 +8,11 @@ import urllib.parse
 import threading
 import os
 import math
-import platform
 import ssl
-import socket
 import time
 
 from .model_info import ModelInfo
-from api_clients import ThangsEvents
+from api_clients import get_thangs_events
 from config import get_config
 from .thangs_importer import get_thangs_api, Utils, Config
 from pathlib import Path
@@ -60,10 +58,7 @@ class ThangsFetcher():
         self.Thangs_Config = get_config()
         self.Thangs_Utils = Utils()
         self.Config = Config()
-        self.amplitude = ThangsEvents()
-        self.amplitude.deviceId = socket.gethostname().split(".")[0]
-        self.amplitude.deviceOs = platform.system()
-        self.amplitude.deviceVer = platform.release()
+        self.amplitude = get_thangs_events()
         self.thangs_api = get_thangs_api()
         self.results_to_show = results_to_show
         pass

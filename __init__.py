@@ -32,8 +32,6 @@ import bpy.utils.previews
 import webbrowser
 import urllib.parse
 import json
-import socket
-import platform
 import logging
 import threading
 import addon_utils
@@ -44,7 +42,7 @@ initialize(bl_info["version"], __file__)
 from . import addon_updater_ops
 from urllib.request import urlopen
 from .thangs_fetcher import ThangsFetcher
-from api_clients import ThangsEvents
+from api_clients import get_thangs_events
 from .thangs_importer import initialize_thangs_api, get_thangs_api
 from UI.common import View3DPanel
 from UI.sync import register as sync_register, unregister as sync_unregister
@@ -151,7 +149,7 @@ initialize_thangs_api(callback=import_model)
 fetcher = ThangsFetcher(callback=on_complete_search,
                         results_to_show=resultsToShow,
                         stl_callback=redraw_search)
-amplitude = ThangsEvents()
+amplitude = get_thangs_events()
 thangs_config = get_config()
 thangs_api = get_thangs_api()
 execution_queue = thangs_api.execution_queue
@@ -1014,11 +1012,6 @@ def register():
             f.close()
     except:
         Origin = "Github"
-
-    amplitude.deviceId = socket.gethostname().split(".")[0]
-    amplitude.addon_version = bl_info["version"]
-    amplitude.deviceOs = platform.system()
-    amplitude.deviceVer = platform.release()
 
     addon_updater_ops.register(bl_info)
 

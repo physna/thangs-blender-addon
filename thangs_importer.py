@@ -3,13 +3,11 @@ import os
 import urllib
 import requests
 import shutil
-import platform
-import socket
 import webbrowser
 import queue
 
 from config import get_config
-from api_clients import ThangsEvents
+from api_clients import get_thangs_events
 from .model_importer import import_model
 from services import ThangsLoginService
 
@@ -88,13 +86,10 @@ class ThangsApi:
     def __init__(self, callback=None):
         self.import_callback = callback
         self.Thangs_Config = get_config()
-        self.amplitude = ThangsEvents()
+        self.amplitude = get_thangs_events()
 
         self.login_service = ThangsLoginService()
 
-        self.amplitude.deviceId = socket.gethostname().split(".")[0]
-        self.amplitude.deviceOs = platform.system()
-        self.amplitude.deviceVer = platform.release()
         self.execution_queue = queue.Queue()
 
         self.headers = {}

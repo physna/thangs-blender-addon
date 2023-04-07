@@ -1,11 +1,15 @@
 import bpy
 from UI.common import View3DPanel
 from services import get_sync_service, SyncInfo, get_thumbnail_service
+from api_clients import get_thangs_events
 from .sync_button import THANGS_BLENDER_ADDON_OT_sync_button
 from .open_synced_model_in_thangs import THANGS_BLENDER_ADDON_OT_open_synced_model_in_thangs
 
 
 def update_sync_on_save(self, context):
+    get_thangs_events().send_amplitude_event("Thangs Blender Addon - sync on save toggled", event_properties={
+        'sync_on_save_is_on': self.thangs_blender_addon_sync_panel_sync_on_save
+    })
     thangs_sync_service = get_sync_service()
     sync_data = thangs_sync_service.get_sync_info_text_block()
     if sync_data:

@@ -1,20 +1,21 @@
 import requests
 import threading
 import logging
+import socket
+import platform
 
 from config import get_config
 
 log = logging.getLogger(__name__)
 
-
 class ThangsEvents(object):
     def __init__(self):
-        self.deviceId = ""
-        self.Thangs_Config = get_config()
-        self.ampURL = self.Thangs_Config.thangs_config['event_url']
-        self.addon_version = self.Thangs_Config.version
-        self.deviceVer = ""
-        self.deviceOs = ""
+        self.__Thangs_Config = get_config()
+        self.__ampURL = self.__Thangs_Config.thangs_config['event_url']
+        self.__addon_version = self.__Thangs_Config.version
+        self.__deviceId = socket.gethostname().split(".")[0]
+        self.__deviceOs = platform.system()
+        self.__deviceVer = platform.release()
         pass
 
     def send_thangs_event(self, event_type, event_properties=None):
@@ -26,16 +27,16 @@ class ThangsEvents(object):
 
     def _send_thangs_event(self, event_type, event_properties):
         if event_type == "Results":
-            requests.post(self.Thangs_Config.thangs_config['url']+"api/search/v1/result",
+            requests.post(self.__Thangs_Config.thangs_config['url']+"api/search/v1/result",
                           json=event_properties,
                           headers={},
                           )
 
         elif event_type == "Capture":
-            requests.post(self.Thangs_Config.thangs_config['url']+"api/search/v1/capture-text-search",
+            requests.post(self.__Thangs_Config.thangs_config['url']+"api/search/v1/capture-text-search",
                           json=event_properties,
                           headers={
-                              "x-device-id": self.deviceId},
+                              "x-device-id": self.__deviceId},
                           )
 
     def send_amplitude_event(self, event_name, event_properties=None):
@@ -50,11 +51,11 @@ class ThangsEvents(object):
     def _construct_event(self, event_name, event_properties):
         event = {
             'event_type': event_name,
-            'device_id': str(self.deviceId),
+            'device_id': str(self.__deviceId),
             'event_properties': {
-                'addon_version': str(self.addon_version),
-                'device_os': str(self.deviceOs),
-                'device_ver': str(self.deviceVer),
+                'addon_version': str(self.__addon_version),
+                'device_os': str(self.__deviceOs),
+                'device_ver': str(self.__deviceVer),
                 'source': "blender",
             }
         }
@@ -65,8 +66,21 @@ class ThangsEvents(object):
     def _send_amplitude_event(self, event_name, event_properties):
         event = self._construct_event(event_name, event_properties)
         try:
-            response = requests.post(self.ampURL, json={'events': [event]})
+            response = requests.post(self.__ampURL, json={'events': [event]})
             log.info('Sent amplitude event: ' + event_name + 'Response: ' + str(response.status_code) + " " +
                      response.headers['x-cloud-trace-context'])
         except Exception as e:
             print(e)
+
+
+__thangs_events__: ThangsEvents = None
+
+
+def get_thangs_events():
+    global __thangs_events__
+
+    if not __thangs_events__:
+        __thangs_events__ = ThangsEvents()
+
+    return __thangs_events__
+

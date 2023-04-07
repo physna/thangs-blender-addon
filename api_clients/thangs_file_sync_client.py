@@ -1,8 +1,10 @@
 import requests
 import bpy
 import os
+import pathlib
 from typing import List, TypedDict
 from config import get_config
+from .thangs_events import get_thangs_events
 
 
 class UploadUrlResponse(TypedDict):
@@ -17,10 +19,11 @@ class VersionModelResponse(TypedDict):
 
 class ThangsFileSyncClient:
     def __init__(self):
-        self.thangs_config = get_config()
+        self.__thangs_config = get_config()
+        self.__events_client = get_thangs_events()
 
     def get_upload_url_for_blend_file(self, api_token: str, file_names: List[str], model_id: int = None) -> List[UploadUrlResponse]:
-        url = f'{self.thangs_config.thangs_config["url"]}api/models/upload-urls'
+        url = f'{self.__thangs_config.thangs_config["url"]}api/models/upload-urls'
         headers = {
             'Authorization': f'Bearer {api_token}',
         }
@@ -37,7 +40,7 @@ class ThangsFileSyncClient:
         return response_data
 
     def get_upload_url_for_attachment_files(self, api_token: str, file_names: List[str], model_id: int = None) -> List[UploadUrlResponse]:
-        url = f'{self.thangs_config.thangs_config["url"]}api/attachments/upload-urls'
+        url = f'{self.__thangs_config.thangs_config["url"]}api/attachments/upload-urls'
         headers = {
             'Authorization': f'Bearer {api_token}',
         }
@@ -63,18 +66,20 @@ class ThangsFileSyncClient:
                 response = requests.put(url, headers=headers, data=file)
                 response.raise_for_status()
             except Exception as e:
-                # TODO log to amplitude here
                 try:
                     response = requests.put(url, headers=headers, data=file)
                     response.raise_for_status()
                 except Exception as e2:
-                    # TODO switch to amplitude here
-                    print(str(e2))
+                    get_thangs_events().send_amplitude_event("Thangs Blender Addon - failed uploading file to storage", event_properties={
+                        'extension': pathlib.Path(file_path).suffix,
+                        'exceptions': [str(e), str(e2)],
+                    })
+                    raise Exception('Failed to upload a file to storage')
 
     def update_thangs_model_details(self, api_token: str, model_id: int, reference_files: List[str], is_public: bool,
                                     name: str, description: str, material: str, weight: str, height: str, category: str,
                                     model_license: str, folder_id: str) -> None:
-        url = f'{self.thangs_config.thangs_config["url"]}api/models/{model_id}/details'
+        url = f'{self.__thangs_config.thangs_config["url"]}api/models/{model_id}/details'
         headers = {
             'Authorization': f'Bearer {api_token}',
         }
@@ -99,7 +104,7 @@ class ThangsFileSyncClient:
 
     def create_model_from_current_blend_file(self, api_token: str, filename: str, new_file_name: str,
                                              reference_files: List[str], is_public: bool) -> List[int]:
-        url = f'{self.thangs_config.thangs_config["url"]}api/models'
+        url = f'{self.__thangs_config.thangs_config["url"]}api/models'
         headers = {
             'Authorization': f'Bearer {api_token}',
         }
@@ -129,7 +134,7 @@ class ThangsFileSyncClient:
 
     def update_model_from_current_blend_file(self, api_token: str, new_file_name: str,
                                              model_id: int) -> VersionModelResponse:
-        url = f'{self.thangs_config.thangs_config["url"]}api/v2/models/{model_id}'
+        url = f'{self.__thangs_config.thangs_config["url"]}api/v2/models/{model_id}'
         headers = {
             'Authorization': f'Bearer {api_token}',
         }
