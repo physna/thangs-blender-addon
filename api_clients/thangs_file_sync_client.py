@@ -129,7 +129,6 @@ class ThangsFileSyncClient:
         response = requests.post(url, headers=headers, json=json)
         response.raise_for_status()
         response_data = response.json()
-        print(response_data)
         return response_data
 
     def update_model_from_current_blend_file(self, api_token: str, new_file_name: str,
@@ -148,5 +147,4 @@ class ThangsFileSyncClient:
         response = requests.put(url, headers=headers, json=json)
         response.raise_for_status()
         response_data = response.json()
-        print(response_data)
         return response_data

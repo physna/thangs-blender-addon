@@ -205,10 +205,17 @@ class ThangsSyncService:
         except requests.HTTPError as e:
             if e.response.status_code == 401:
                 self.__login_service.login_user()
-                self.start_sync_process()
+                self.__sync_current_blender_file()
             elif e.response.status_code == 403:
                 self.remove_sync_info_text_block()
                 self.__sync_current_blender_file()
+            else:
+                self.__events_client.send_amplitude_event("Thangs Blender Addon - sync failed", event_properties={
+                    'model_id': model_id,
+                    'is_public': bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model,
+                    'exception': str(e),
+                })
+                self.__set_ui_status_message('An error occurred')
         except Exception as e:
             self.__events_client.send_amplitude_event("Thangs Blender Addon - sync failed", event_properties={
                 'model_id': model_id,
