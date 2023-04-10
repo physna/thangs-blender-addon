@@ -22,7 +22,7 @@ class ThangsConfig(object):
         self.config_obj = configparser.ConfigParser()
         self.main_addon_file_location: str = main_addon_file_location
         self.config_path = os.path.join(
-            os.path.dirname(main_addon_file_location), 'dev_config.ini')
+            os.path.dirname(main_addon_file_location), 'config.ini')
         self.config_obj.read(self.config_path)
         self.thangs_config = self.config_obj['thangs']
         self.version = str(version)
