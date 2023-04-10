@@ -36,8 +36,12 @@ class ThangsSyncService:
     def start_sync_process(self):
         if self.__sync_thread:
             self.cancel_running_sync_process()
-        self.__sync_thread = threading.Thread(target=self.__sync_current_blender_file).start()
+        self.__sync_thread = threading.Thread(target=self.__sync_current_blender_file)
+        self.__sync_thread.start()
         return
+
+    def is_sync_process_running(self):
+        return self.__sync_thread is not None
 
     def cancel_running_sync_process(self):
         if self.__sync_thread:

@@ -8,6 +8,10 @@ class THANGS_BLENDER_ADDON_OT_sync_button(bpy.types.Operator):
     bl_label = "Sync Model"
     bl_options = {'INTERNAL'}
 
+    @classmethod
+    def poll(cls, context):
+        return not get_sync_service().is_sync_process_running()
+
     def invoke(self, context, event):
         get_thangs_events().send_amplitude_event("Thangs Blender Addon - sync initiated by clicking sync button")
         if not bpy.context.blend_data.is_saved:
