@@ -1,6 +1,6 @@
 # <pep8 compliant>
 bl_info = {
-    "name": "Thangs Model Search",
+    "name": "Thangs",
     "author": "Thangs",
     "version": (0, 2, 9),
     "blender": (3, 2, 0),
