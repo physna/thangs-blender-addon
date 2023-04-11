@@ -52,11 +52,12 @@ class THANGS_BLENDER_ADDON_PT_sync_panel(bpy.types.Panel, View3DPanel):
                 last_sync_time_column.alignment = 'RIGHT'
                 last_sync_time_column.label(text=sync_data['last_sync_time'].strftime('%x %X'))
 
-        sync_on_save_row = layout.row()
-        sync_on_save_row.prop(context.scene, 'thangs_blender_addon_sync_panel_sync_as_public_model')
+        if not self.thangs_sync_service.is_sync_process_running():
+            sync_on_save_row = layout.row()
+            sync_on_save_row.prop(context.scene, 'thangs_blender_addon_sync_panel_sync_as_public_model')
 
-        sync_on_save_row = layout.row()
-        sync_on_save_row.prop(context.scene, 'thangs_blender_addon_sync_panel_sync_on_save')
+            sync_on_save_row = layout.row()
+            sync_on_save_row.prop(context.scene, 'thangs_blender_addon_sync_panel_sync_on_save')
 
         sync_button_row = layout.row()
         sync_button_row.operator(THANGS_BLENDER_ADDON_OT_sync_button.bl_idname, text="Sync Model", icon='NONE')

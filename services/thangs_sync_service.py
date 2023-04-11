@@ -151,17 +151,21 @@ class ThangsSyncService:
             models_client = ThangsModelsClient()
             if model_id and details_need_updated:
                 pre_sync_model_data = models_client.get_model(token, model_id)
+                def get_optional_value(key: str):
+                    if key in pre_sync_model_data:
+                        return pre_sync_model_data[key]
+                    return ''
                 sync_client.update_thangs_model_details(token, model_id,
                                                         [r['newFileName'] for r in image_upload_urls],
                                                         bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model,
                                                         pre_sync_model_data['name'],
                                                         pre_sync_model_data['description'],
-                                                        pre_sync_model_data['material'],
-                                                        pre_sync_model_data['weight'],
-                                                        pre_sync_model_data['height'],
-                                                        pre_sync_model_data['category'],
-                                                        pre_sync_model_data['license'],
-                                                        pre_sync_model_data['folderId']
+                                                        get_optional_value('material'),
+                                                        get_optional_value('weight'),
+                                                        get_optional_value('height'),
+                                                        get_optional_value('category'),
+                                                        get_optional_value('license'),
+                                                        get_optional_value('folderId')
                                                         )
 
             if self.__sync_thread_stop_event.is_set():

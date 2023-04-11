@@ -84,6 +84,10 @@ class ThangsFileSyncClient:
             'Authorization': f'Bearer {api_token}',
         }
 
+        coalesced_folder_id = folder_id
+        if folder_id is None:
+            coalesced_folder_id = ''
+
         json = {
             'name': name,
             'isPublic': is_public,
@@ -93,7 +97,7 @@ class ThangsFileSyncClient:
             'height': height,
             'category': category,
             'license': model_license,
-            'folderId': folder_id,
+            'folderId': coalesced_folder_id,
             'attachments': [],
             'referenceFiles': [{'filename': r} for r in reference_files],
         }
