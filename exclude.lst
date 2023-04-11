@@ -4,3 +4,4 @@
 *.idea*
 *exclude.lst*
 *.build*
+*bearer.json*
