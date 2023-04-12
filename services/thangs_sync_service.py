@@ -123,7 +123,8 @@ class ThangsSyncService:
             image_upload_urls: List[UploadUrlResponse] = []
             details_need_updated = False
             if len(bpy.data.images):
-                image_file_paths = set([i.filepath for i in bpy.data.images if i.filepath])
+                non_null_image_file_paths = set([i.filepath for i in bpy.data.images if i.filepath])
+                image_file_paths = [fp for fp in non_null_image_file_paths if os.path.isfile(bpy.path.abspath(fp))]
                 if image_file_paths:
                     image_upload_urls = sync_client.get_upload_url_for_attachment_files(token, [ntpath.basename(i) for i in
                                                                                                 image_file_paths], model_id)
