@@ -13,7 +13,6 @@ class THANGS_BLENDER_ADDON_OT_open_synced_model_in_thangs(bpy.types.Operator):
 
     def execute(self, _context):
         thangs_config = get_config()
-        print('test', self.model_id)
         url = f'{thangs_config.thangs_config["url"]}m/{self.model_id}'
         webbrowser.open(url)
         return {'FINISHED'}

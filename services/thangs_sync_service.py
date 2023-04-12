@@ -1,4 +1,6 @@
 import json
+import os
+
 import bpy
 import urllib
 import ntpath
@@ -134,7 +136,10 @@ class ThangsSyncService:
 
                             image_filename = ntpath.basename(image_path)
                             upload_url_response = next((iuu for iuu in image_upload_urls if iuu['fileName'] == image_filename))
-                            future = executor.submit(sync_client.upload_file_to_storage, upload_url_response['signedUrl'], bpy.path.abspath(image_path))
+                            full_path = bpy.path.abspath(image_path)
+                            if not os.path.isfile(full_path):
+                                continue
+                            future = executor.submit(sync_client.upload_file_to_storage, upload_url_response['signedUrl'], full_path)
                             upload_futures.append(future)
 
                             details_need_updated = True
@@ -211,6 +216,7 @@ class ThangsSyncService:
             self.__clear_ui_status_message()
 
         except requests.HTTPError as e:
+            print(str(e))
             if e.response.status_code == 401:
                 self.__login_service.login_user()
                 self.__sync_current_blender_file()
@@ -225,6 +231,7 @@ class ThangsSyncService:
                 })
                 self.__set_ui_status_message('An error occurred')
         except Exception as e:
+            print(str(e))
             self.__events_client.send_amplitude_event("Thangs Blender Addon - sync failed", event_properties={
                 'model_id': model_id,
                 'is_public': bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model,
