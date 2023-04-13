@@ -17,7 +17,7 @@ The Thangs platform has served more than eleven million users and averages more 
 to share your work.
 
 This addon lets you upload your Blender model to Thangs without leaving Blender.  Take advantage of 
-Thangs's 3D Version Control system to keep track of the history of your model over time.
+Thangs's 3D version control system to keep track of the history of your model over time.
 
 Models are uploaded privately by default, but can be publicly shared if so desired.
 
