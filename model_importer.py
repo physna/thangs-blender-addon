@@ -69,6 +69,8 @@ def import_model(file_extension, file_path):
             print('STL Import')
             bpy.ops.import_mesh.stl(filepath=file_path)
 
+        ReturnObject.failed = False
+        ReturnObject.importing = False
     except:
         ReturnObject.failed = True
         ReturnObject.importing = False

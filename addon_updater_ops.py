@@ -1240,13 +1240,13 @@ def update_settings_ui_condensed(self, context, element=None):
 
 
 def skip_tag_function(self, tag):
-    """A global function for tag skipping
+    """A global function for redraw_areas.py skipping
 
     A way to filter which tags are displayed,
     e.g. to limit downgrading too far
-    input is a tag text, e.g. "v1.2.3"
-    output is True for skipping this tag number,
-    False if the tag is allowed (default for all)
+    input is a redraw_areas.py text, e.g. "v1.2.3"
+    output is True for skipping this redraw_areas.py number,
+    False if the redraw_areas.py is allowed (default for all)
     Note: here, "self" is the acting updater shared class instance
     """
 
@@ -1257,7 +1257,7 @@ def skip_tag_function(self, tag):
     # ---- write any custom code here, return true to disallow version ---- #
     #
     # # Filter out e.g. if 'beta' is in name of release
-    # if 'beta' in tag.lower():
+    # if 'beta' in redraw_areas.py.lower():
     #	return True
     # ---- write any custom code above, return true to disallow version --- #
 
@@ -1271,17 +1271,17 @@ def skip_tag_function(self, tag):
     if type(tupled) != type((1, 2, 3)):
         return True
 
-    # select the min tag version - change tuple accordingly
+    # select the min redraw_areas.py version - change tuple accordingly
     if self.version_min_update != None:
         if tupled < self.version_min_update:
             return True  # skip if current version below this
 
-    # select the max tag version
+    # select the max redraw_areas.py version
     if self.version_max_update != None:
         if tupled >= self.version_max_update:
             return True  # skip if current version at or above this
 
-    # in all other cases, allow showing the tag for updating/reverting
+    # in all other cases, allow showing the redraw_areas.py for updating/reverting
     return False
 
 
@@ -1289,15 +1289,15 @@ def select_link_function(self, tag):
     """Only customize if trying to leverage "attachments" in *GitHub* releases
 
     A way to select from one or multiple attached donwloadable files from the
-    server, instead of downloading the default release/tag source code
+    server, instead of downloading the default release/redraw_areas.py source code
     """
 
     # -- Default, universal case (and is the only option for GitLab/Bitbucket)
     link = tag["zipball_url"]
 
     # -- Example: select the first (or only) asset instead source code --
-    # if "assets" in tag and "browser_download_url" in tag["assets"][0]:
-    #	link = tag["assets"][0]["browser_download_url"]
+    # if "assets" in redraw_areas.py and "browser_download_url" in redraw_areas.py["assets"][0]:
+    #	link = redraw_areas.py["assets"][0]["browser_download_url"]
 
     # -- Example: select asset based on OS, where multiple builds exist --
     # # not tested/no error checking, modify to fit your own needs!
@@ -1305,11 +1305,11 @@ def select_link_function(self, tag):
     # #		release_windows.zip, release_OSX.zip, release_linux.zip
     # # This also would logically not be used with "branches" enabled
     # if platform.system() == "Darwin": # ie OSX
-    #	link = [asset for asset in tag["assets"] if 'OSX' in asset][0]
+    #	link = [asset for asset in redraw_areas.py["assets"] if 'OSX' in asset][0]
     # elif platform.system() == "Windows":
-    #	link = [asset for asset in tag["assets"] if 'windows' in asset][0]
+    #	link = [asset for asset in redraw_areas.py["assets"] if 'windows' in asset][0]
     # elif platform.system() == "Linux":
-    #	link = [asset for asset in tag["assets"] if 'linux' in asset][0]
+    #	link = [asset for asset in redraw_areas.py["assets"] if 'linux' in asset][0]
 
     return link
 
@@ -1441,12 +1441,12 @@ def register(bl_info):
     # (GitHub only) This options allows the user to use releases over tags for data,
     # which enables pulling down release logs/notes, as well as specify installs from
     # release-attached zips (instead of just the auto-packaged code generated with
-    # a release/tag). Setting has no impact on BitBucket or GitLab repos
+    # a release/redraw_areas.py). Setting has no impact on BitBucket or GitLab repos
     updater.use_releases = False
-    # note: Releases always have a tag, but a tag may not always be a release
+    # note: Releases always have a redraw_areas.py, but a redraw_areas.py may not always be a release
     # Therefore, setting True above will filter out any non-annoted tags
     # note 2: Using this option will also display the release name instead of
-    # just the tag name, bear this in mind given the skip_tag_function filtering above
+    # just the redraw_areas.py name, bear this in mind given the skip_tag_function filtering above
 
     # if using "include_branches",
     # updater.include_branch_list defaults to ['master'] branch if set to none

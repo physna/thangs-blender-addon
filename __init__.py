@@ -1,37 +1,6 @@
 # <pep8 compliant>
-import bpy
-from bpy.types import (PropertyGroup,
-                       Operator,
-                       )
-from bpy.props import (StringProperty,
-                       BoolProperty,
-                       IntProperty
-                       )
-import bpy.utils.previews
-
-import webbrowser
-import urllib.parse
-import os
-import json
-import socket
-import platform
-import logging
-import threading
-import addon_utils
-
-from . import addon_updater_ops
-from urllib.request import urlopen
-from .thangs_login import ThangsLogin, stop_access_grant
-from .thangs_fetcher import ThangsFetcher
-from .thangs_events import ThangsEvents
-from .config import ThangsConfig, initialize
-from .thangs_importer import initialize_thangs_api, get_thangs_api
-from threading import Event
-
-log = logging.getLogger(__name__)
-
 bl_info = {
-    "name": "Thangs Model Search",
+    "name": "Thangs",
     "author": "Thangs",
     "version": (0, 2, 9),
     "blender": (3, 2, 0),
@@ -44,6 +13,42 @@ bl_info = {
     "category": "Import/Export"
 }
 
+import os
+import sys
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(PROJECT_ROOT)
+print(PROJECT_ROOT)
+
+import bpy
+from bpy.types import (PropertyGroup,
+                       Operator,
+                       )
+from bpy.props import (StringProperty,
+                       BoolProperty,
+                       IntProperty
+                       )
+import bpy.utils.previews
+
+import webbrowser
+import urllib.parse
+import json
+import logging
+import threading
+import addon_utils
+
+from config import get_config, initialize
+initialize(bl_info["version"], __file__)
+
+from . import addon_updater_ops
+from urllib.request import urlopen
+from .thangs_fetcher import ThangsFetcher
+from api_clients import get_thangs_events
+from .thangs_importer import initialize_thangs_api, get_thangs_api
+from UI.common import View3DPanel
+from UI.sync import register as sync_register, unregister as sync_unregister
+from services import get_sync_service
+
+log = logging.getLogger(__name__)
 
 @addon_updater_ops.make_annotations
 class DemoPreferences(bpy.types.AddonPreferences):
@@ -140,14 +145,12 @@ def import_model():
 
 resultsToShow = 8
 
-initialize(bl_info["version"])
 initialize_thangs_api(callback=import_model)
 fetcher = ThangsFetcher(callback=on_complete_search,
                         results_to_show=resultsToShow,
                         stl_callback=redraw_search)
-amplitude = ThangsEvents()
-thangs_config = ThangsConfig()
-thangs_login = ThangsLogin()
+amplitude = get_thangs_events()
+thangs_config = get_config()
 thangs_api = get_thangs_api()
 execution_queue = thangs_api.execution_queue
 Origin = ""
@@ -262,83 +265,33 @@ class SearchBySelect(bpy.types.Operator):
     def stl_login_user(self, _context, stl_path):
         global thangs_api
         global fetcher
-        global thangs_login
 
         print("Starting Login: Search by Select")
-        bearer_location = os.path.join(
-            os.path.dirname(__file__), 'bearer.json')
-        print(bearer_location)
-        if not os.path.exists(bearer_location):
-            print("Creating Bearer.json")
-            f = open(bearer_location, "x")
-        # check if size of file is 0
-
         try:
-            print("Top of Try")
-            if os.stat(bearer_location).st_size == 0:
-                print("Json was empty")
-                thangs_login.startLoginFromBrowser()
-                print("Waiting on Login")
-                thangs_login.token_available.wait()
-                print("Setting Bearer")
-                bearer = {
-                    'bearer': str(thangs_login.token["TOKEN"]),
-                }
-                print("Dumping")
-                with open(bearer_location, 'w') as json_file:
-                    json.dump(bearer, json_file)
-
-            print("After Dump")
-            f = open(bearer_location)
-            data = json.load(f)
-            fetcher.bearer = data["bearer"]
-            thangs_api.bearer = data["bearer"]
-            f.close()
-
             print("Before STL Search")
             print("Act Obj")
             print(stl_path)
             fetcher.get_stl_search(stl_path)
         except Exception as e:
+            # TODO this belongs more in the login service
             print("Error with Logging In:", e)
             thangs_api.importing = False
             thangs_api.searching = False
             thangs_api.failed = True
             tag_redraw_areas()
-            try:
-                f.close()
-                os.remove(bearer_location)
-            except:
-                print("File couldn't be removed.")
         return
 
     def execute(self, _context):
-        global thangs_login
         global search_thread
 
         fetcher.selectionEmpty = False
         fetcher.selectionFailed = False
 
-        if thangs_login.event != None:
-            print("Stopping Login")
-            thangs_login.event.set()
-            try:
-                thangs_login.join()
-            except:
-                pass
-            try:
-                search_thread.join()
-            except:
-                pass
-            thangs_login = ThangsLogin()
-
-        thangs_login.event = Event()
         print("Starting Login and MeshSearch")
         stl_path = fetcher.selectionSearch(bpy.context)
         search_thread = threading.Thread(
             target=self.stl_login_user, args=(_context, stl_path,)).start()
         return {'FINISHED'}
-
 
 def Model_Event(position):
     model = fetcher.models[position]
@@ -385,75 +338,28 @@ class ImportModelOperator(Operator):
         description="Model License",
     )
 
+    # TODO this is a horrible name for what this actually does
     def login_user(self, _context, LicenseUrl, modelIndex, partIndex):
         global thangs_api
         global fetcher
-        global thangs_login
 
         print("Starting Login: Import Model")
-        bearer_location = os.path.join(
-            os.path.dirname(__file__), 'bearer.json')
-        print(bearer_location)
-        if not os.path.exists(bearer_location):
-            print("Creating Bearer.json")
-            f = open(bearer_location, "x")
-        # check if size of file is 0
         try:
-            print("Top of Try")
-            if os.stat(bearer_location).st_size == 0:
-                print("Json was empty")
-                thangs_login.startLoginFromBrowser()
-                print("Waiting on Login")
-                thangs_login.token_available.wait()
-                print("Setting Bearer")
-                bearer = {
-                    'bearer': str(thangs_login.token["TOKEN"]),
-                }
-                print("Dumping")
-                with open(bearer_location, 'w') as json_file:
-                    json.dump(bearer, json_file)
-
-            print("After Dump")
-            f = open(bearer_location)
-            data = json.load(f)
-            fetcher.bearer = data["bearer"]
-            thangs_api.bearer = data["bearer"]
-            f.close()
-            print("Before Import")
             thangs_api.handle_download(
                 fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
             Model_Event(modelIndex)
         except Exception as e:
+            # TODO this belongs more in the login service or something like that
             print("Error with Logging In:", e)
             thangs_api.importing = False
             thangs_api.searching = False
             thangs_api.failed = True
             tag_redraw_areas()
-            try:
-                f.close()
-                os.remove(bearer_location)
-            except:
-                print("File couldn't be removed.")
         return
 
     def execute(self, _context):
-        global thangs_login
-        global login_thread
-        if thangs_login.event != None:
-            print("Stopping Login")
-            thangs_login.event.set()
-            try:
-                thangs_login.join()
-            except:
-                pass
-            try:
-                login_thread.join()
-            except:
-                pass
-            thangs_login = ThangsLogin()
-        thangs_login.event = Event()
         print("Starting Login and Import")
-        login_thread = threading.Thread(target=self.login_user, args=(
+        threading.Thread(target=self.login_user, args=(
             _context, self.license_url, self.modelIndex, self.partIndex)).start()
         return {'FINISHED'}
 
@@ -568,12 +474,6 @@ class THANGS_OT_search_invoke(Operator):
         fetcher.thangs_ui_mode = self.next_mode
         context.area.tag_redraw()
         return {'FINISHED'}
-
-
-class View3DPanel:
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS' if bpy.app.version < (2, 80, 0) else 'UI'
-    bl_category = 'Thangs'
 
 
 class TextSearch(View3DPanel, bpy.types.Panel):
@@ -913,7 +813,6 @@ class MeshSearch(View3DPanel, bpy.types.Panel):
             row = col.row()
             row.label(text="Geo-Search info!")
 
-
 def draw_menu(self, context):
     layout = self.layout
     layout.separator()
@@ -1012,7 +911,6 @@ def register():
         StringProperty,
         EnumProperty,
         IntProperty,
-        PointerProperty,
     )
     import bpy.utils.previews
 
@@ -1040,7 +938,7 @@ def register():
     fetcher.preview_collections["main"] = fetcher.pcoll
     icon_collections["main"] = icons_dict
 
-    bpy.utils.register_class(MeshSearch)
+    # bpy.utils.register_class(MeshSearch)
     bpy.utils.register_class(TextSearch)
     bpy.utils.register_class(THANGS_OT_search_invoke)
     bpy.utils.register_class(SearchButton)
@@ -1055,8 +953,10 @@ def register():
     bpy.utils.register_class(BrowseToCreatorOperator)
     bpy.utils.register_class(SearchBySelect)
     bpy.utils.register_class(BrowseToModelOperator)
-    bpy.types.VIEW3D_MT_object_context_menu.append(draw_menu)
-    bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(draw_menu)
+    # bpy.types.VIEW3D_MT_object_context_menu.append(draw_menu)
+    # bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(draw_menu)
+
+    sync_register()
 
     def dropdown_properties_item_set(index):
         def handler(self, context):
@@ -1113,11 +1013,6 @@ def register():
     except:
         Origin = "Github"
 
-    amplitude.deviceId = socket.gethostname().split(".")[0]
-    amplitude.addon_version = bl_info["version"]
-    amplitude.deviceOs = platform.system()
-    amplitude.deviceVer = platform.release()
-
     addon_updater_ops.register(bl_info)
 
     bpy.app.timers.register(open_panel_timer)
@@ -1147,7 +1042,7 @@ def unregister():
     fetcher.preview_collections.clear()
     icon_collections.clear()
 
-    bpy.utils.unregister_class(MeshSearch)
+    # bpy.utils.unregister_class(MeshSearch)
     bpy.utils.unregister_class(TextSearch)
     bpy.utils.unregister_class(THANGS_OT_search_invoke)
     bpy.utils.unregister_class(SearchButton)
@@ -1162,15 +1057,19 @@ def unregister():
     bpy.utils.unregister_class(BrowseToCreatorOperator)
     bpy.utils.unregister_class(SearchBySelect)
     bpy.utils.unregister_class(BrowseToModelOperator)
-    bpy.types.VIEW3D_MT_object_context_menu.remove(draw_menu)
-    bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(draw_menu)
+    # bpy.types.VIEW3D_MT_object_context_menu.remove(draw_menu)
+    # bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(draw_menu)
+
+    sync_unregister()
 
     if hasattr(bpy.types.Scene, 'my_tool'):
         del bpy.types.Scene.my_tool
     addon_updater_ops.unregister()
 
-    stop_access_grant()
     urllib.request.urlcleanup()
+
+    sync_service = get_sync_service()
+    sync_service.cancel_running_sync_process()
 
 
 if __name__ == "__main__":

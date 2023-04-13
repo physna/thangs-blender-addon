@@ -3,16 +3,13 @@ import os
 import urllib
 import requests
 import shutil
-import platform
-import socket
 import webbrowser
-import json
 import queue
 
-from .config import get_config
-from .thangs_events import ThangsEvents
-from .thangs_login import ThangsLogin
+from config import get_config
+from api_clients import get_thangs_events
 from .model_importer import import_model
+from services import ThangsLoginService
 
 _thangs_api = None
 
@@ -89,11 +86,10 @@ class ThangsApi:
     def __init__(self, callback=None):
         self.import_callback = callback
         self.Thangs_Config = get_config()
-        self.amplitude = ThangsEvents()
+        self.amplitude = get_thangs_events()
 
-        self.amplitude.deviceId = socket.gethostname().split(".")[0]
-        self.amplitude.deviceOs = platform.system()
-        self.amplitude.deviceVer = platform.release()
+        self.login_service = ThangsLoginService()
+
         self.execution_queue = queue.Queue()
 
         self.headers = {}
@@ -104,7 +100,6 @@ class ThangsApi:
 
         self.deviceId = ""
         self.LicenseURL = ""
-        self.bearer = ""
 
         self.model = None
         self.downloaded_files_list = []
@@ -119,30 +114,6 @@ class ThangsApi:
 
     def run_in_main_thread(self, function):
         self.execution_queue.put(function)
-
-    def refresh_bearer(self):
-        thangs_login_import = ThangsLogin()
-        bearer_location = os.path.join(
-            os.path.dirname(__file__), 'bearer.json')
-        os.remove(bearer_location)
-        f = open(bearer_location, "x")
-
-        thangs_login_import.startLoginFromBrowser()
-        print("Waiting on Login")
-        thangs_login_import.token_available.wait()
-        print("Setting Bearer")
-        bearer = {
-            'bearer': str(thangs_login_import.token["TOKEN"]),
-        }
-        print("Dumping")
-        with open(bearer_location, 'w') as json_file:
-            json.dump(bearer, json_file)
-
-        f = open(bearer_location)
-        data = json.load(f)
-        self.bearer = data["bearer"]
-        f.close()
-        return
 
     def handle_download(self, part, LicenseURL):
         self.model = part
@@ -177,9 +148,11 @@ class ThangsApi:
                 break
 
         if not fileExists:
-            headers = {"Authorization": "Bearer "+self.bearer, }
-            print("URL:", self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(
-                self.model.partId)+"/download-url")
+            if not self.login_service.get_api_token():
+                self.login_service.login_user()
+            headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
+            print("URL:", self.Thangs_Config.thangs_config['url'] + "api/models/parts/" + str(
+                self.model.partId) + "/download-url")
             try:
                 response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
                 response.raise_for_status()
@@ -194,10 +167,10 @@ class ThangsApi:
                                                             'exception': str(e),
                                                         })
                     return
-                elif response.status_code == 403:
-                    self.refresh_bearer()
-                    headers = {"Authorization": "Bearer "+self.bearer, }
+                elif response.status_code == 401 or response.status_code == 403:
                     try:
+                        self.login_service.login_user()
+                        headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
                         response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
                         response.raise_for_status()
                     except Exception as ex:
@@ -321,6 +294,9 @@ class ThangsApi:
         try:
             import_result = import_model(
                 self.file_extension, self.file_path)
+            print(import_result)
+            self.failed = import_result.failed
+            self.importing = import_result.importing
         except Exception as e:
             print('Failed to Import')
             self.failed = import_result.failed
@@ -330,7 +306,7 @@ class ThangsApi:
                 'domain': self.model.domain,
                 'success': False,
                 'exception': str(e),
-        })
+            })
         return
 
     def unzip_archive(self):
