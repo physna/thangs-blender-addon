@@ -4,9 +4,19 @@
 
 ## Features
 
+### Search and Import models
+
 The Thangs Blender addon integrates the search functionality of [Thangs.com](https://thangs.com) into [Blender](http://www.blender.org). Discover models on Thangs and import them into Blender with just a few clicks!
 
 ![BlenderSearchGif](https://user-images.githubusercontent.com/105221281/201858553-192ad292-df0e-4e12-af07-9665b33a95bc.gif)
+
+### Upload your work to Thangs
+
+[Thangs.com](https://thangs.com) is a 3D platform for discovering, sharing, and collaborating with other creators
+on 3D models.  Upload your Blender model to Thangs without leaving Blender.  Take advantage of 
+Thangs 3D Version Control system to keep track of the history of your model over time.
+
+![sync-blender](https://user-images.githubusercontent.com/89785132/231832452-131daf23-1dd5-4d2e-81e9-4c8303e059a2.gif)
 
 ## Install
 
