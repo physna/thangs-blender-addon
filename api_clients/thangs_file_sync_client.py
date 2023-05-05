@@ -2,6 +2,7 @@ import requests
 import bpy
 import os
 import pathlib
+import asyncio
 from typing import List, TypedDict
 from config import get_config
 from .thangs_events import get_thangs_events
@@ -106,6 +107,98 @@ class ThangsFileSyncClient:
         response_data = response.json()
         return response_data
 
+    def create_asset_group(self, api_token: str, new_file_name: str,
+                           reference_files: List[str]) -> List[int]:
+        url = f'{self.__thangs_config.thangs_config["url"]}api/v2/models/assetGroup'
+        headers = {
+            'Authorization': f'Bearer {api_token}',
+        }
+
+        reference_files_no_prefix = []
+
+        for item in reference_files:
+            if item.startswith('uploads/attachments/'):
+                reference_files_no_prefix.append(
+                    item[len('uploads/attachments/'):])
+            else:
+                reference_files_no_prefix.append(item)
+
+        json = {
+            'assets': [{
+                'modelFiles': [new_file_name],
+                'supportingFiles': reference_files_no_prefix
+            }]
+        }
+
+        response = requests.post(url, headers=headers, json=json)
+        response.raise_for_status()
+        response_data = response.json()
+        return response_data
+
+    def poll_asset_group(self, api_token: str, asset_group_id: int):
+
+        async def retry(retry_attempt: int, time_to_retry: int):
+            if retry_attempt > 10:
+                time_to_retry = 5
+            print('Polling asset group. Attempt number', i,
+                  ' Waiting', time_to_retry, 'seconds to retry.')
+            await asyncio.sleep(time_to_retry)
+
+        retry_attempt = 130
+        time_to_retry = 2
+        for i in range(1, retry_attempt):
+            response = self.get_asset_group_status(api_token, asset_group_id)
+
+            if response.status_code != 200:
+                asyncio.run(retry(i, time_to_retry))
+            else:
+                response_data = response.json()
+                if response_data['isComplete'] == True:
+                    print('Asset group complete.')
+                    break
+                elif response_data['isComplete'] == False:
+                    asyncio.run(retry(i, time_to_retry))
+
+    def get_asset_group_status(self, api_token: str, asset_group_id: int):
+        url = f'{self.__thangs_config.thangs_config["url"]}api/v2/models/assetGroup/{asset_group_id}'
+        headers = {
+            'Authorization': f'Bearer {api_token}',
+        }
+
+        response = requests.get(url, headers=headers)
+
+        return response
+
+    def create_model_from_current_blend_file_with_asset_group(self, api_token: str, filename: str, new_file_name: str,
+                                                              reference_files: List[str], is_public: bool, asset_group_id: int) -> List[int]:
+        url = f'{self.__thangs_config.thangs_config["url"]}api/v2/models/assetGroup/{asset_group_id}/model'
+        headers = {
+            'Authorization': f'Bearer {api_token}',
+        }
+
+        json = [{
+            'name': bpy.path.display_name_from_filepath(bpy.context.blend_data.filepath),
+            'isPublic': is_public,
+            'description': 'Uploaded by Thangs Blender',
+            'folderId': '',
+            'attachments': [],
+            'referenceFiles': [{'filename': r} for r in reference_files],
+            'parts': [{
+                'originalFileName': filename,
+                'originalPartName': filename,
+                'filename': new_file_name,
+                'size': os.stat(bpy.context.blend_data.filepath).st_size,
+                'isPrimary': True,
+                'name': filename,
+                'isPublic': False,
+            }]
+        }]
+
+        response = requests.post(url, headers=headers, json=json)
+        response.raise_for_status()
+        response_data = response.json()
+        return response_data
+
     def create_model_from_current_blend_file(self, api_token: str, filename: str, new_file_name: str,
                                              reference_files: List[str], is_public: bool) -> List[int]:
         url = f'{self.__thangs_config.thangs_config["url"]}api/models'
@@ -130,6 +223,7 @@ class ThangsFileSyncClient:
                 'isPublic': False,
             }]
         }]
+
         response = requests.post(url, headers=headers, json=json)
         response.raise_for_status()
         response_data = response.json()

@@ -186,9 +186,17 @@ class ThangsSyncService:
                                                                                     model_id)
                 sha = version_response['sha']
             else:
-                model_ids = sync_client.create_model_from_current_blend_file(token, filename, upload_urls[0]['newFileName'],
-                                                                             [r['newFileName'] for r in image_upload_urls],
-                                                                             bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model)
+                asset_group_id = sync_client.create_asset_group(token, upload_urls[0]['newFileName'], [
+                                                                r['newFileName'] for r in image_upload_urls])
+
+                sync_client.poll_asset_group(
+                    token, asset_group_id['assetGroupId'])
+
+                model_ids = sync_client.create_model_from_current_blend_file_with_asset_group(token, filename, upload_urls[0]['newFileName'],
+                                                                                              [r['newFileName'] for r in image_upload_urls],
+                                                                                              bpy.context.scene.thangs_blender_addon_sync_panel_sync_as_public_model,
+                                                                                              asset_group_id['assetGroupId'])
+
                 model_id = model_ids[0]
 
             current_step = 5
