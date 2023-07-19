@@ -83,6 +83,13 @@ class ThangsSyncService:
                     return
 
             filename = bpy.path.basename(bpy.context.blend_data.filepath)
+            split_tup_top = os.path.splitext(filename)
+            file_extension = split_tup_top[1]
+            if file_extension != '.blend':
+                self.__set_ui_status_message(f'Upload error occurred. This is a blender backup file with extension [{file_extension}]. Please open a .blend file.')
+                self.__reset_sync_process()
+                return
+
             sync_client = ThangsFileSyncClient()
 
             is_saved_as_public_model: bool = None
