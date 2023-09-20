@@ -631,7 +631,6 @@ class TextSearch(View3DPanel, bpy.types.Panel):
                             props.url = modelURL + \
                                 "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                             props.modelIndex = z
-                            props.partIndex = fetcher.modelList[z].partSelected
                         else:
                             props = cell.operator(
                                 'wm.import_model', text="Import Model", icon='IMPORT')
