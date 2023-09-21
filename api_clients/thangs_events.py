@@ -44,7 +44,6 @@ class ThangsEvents(object):
                           )
 
     def send_amplitude_event(self, event_name, event_properties=None):
-        print('seinding event device ID:',str(self.__deviceId))
         if event_name != "Thangs Blender Addon - Heartbeat" and event_name != "Thangs Blender Addon - Opened":
             print(f"Running {event_name}")
         threading.Thread(
