@@ -2,7 +2,7 @@
 bl_info = {
     "name": "Thangs",
     "author": "Thangs",
-    "version": (0, 3, 1),
+    "version": (0, 3, 2),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs",
     "description": "Browse, import, and upload 3D models",
@@ -35,6 +35,7 @@ import json
 import logging
 import threading
 import addon_utils
+import time
 
 from config import get_config, initialize
 initialize(bl_info["version"], __file__)
@@ -345,9 +346,12 @@ class ImportModelOperator(Operator):
 
         print("Starting Login: Import Model")
         try:
+            thangs_api.download_end_time = None
+            thangs_api.download_start_time = time.time()
             thangs_api.handle_download(
                 fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
             Model_Event(modelIndex)
+            thangs_api.download_end_time = time.time()
         except Exception as e:
             # TODO this belongs more in the login service or something like that
             print("Error with Logging In:", e)
@@ -387,7 +391,7 @@ class BrowseToLicenseOperator(Operator):
 
 
 class BrowseToModelOperator(Operator):
-    """Open model in browser"""
+    """Open model in browser to download - Direct import unavailable"""
     bl_idname = "wm.browse_to_model"
     bl_label = ""
     bl_options = {'INTERNAL'}
@@ -598,7 +602,7 @@ class TextSearch(View3DPanel, bpy.types.Panel):
                         row = col.row()
                         row.label(text="{}".format(""), icon='APPEND_BLEND')
 
-                        if thangs_api.import_limit == True:
+                        if thangs_api.import_limit == True or model.download_path == None:
                             props = cell.operator(
                                 'wm.browse_to_model', text="%s" % model.title, icon='URL')
                             props.url = modelURL + \
@@ -625,13 +629,12 @@ class TextSearch(View3DPanel, bpy.types.Panel):
                         dropdown = row.prop(
                             mytool, "dropdown_Parts{}".format(z))
 
-                        if thangs_api.import_limit == True:
+                        if thangs_api.import_limit == True or model.download_path == None:
                             props = cell.operator(
                                 'wm.browse_to_model', text="%s" % model.title, icon='URL')
                             props.url = modelURL + \
                                 "/?utm_source=blender&utm_medium=referral&utm_campaign=blender_extender"
                             props.modelIndex = z
-                            props.partIndex = fetcher.modelList[z].partSelected
                         else:
                             props = cell.operator(
                                 'wm.import_model', text="Import Model", icon='IMPORT')

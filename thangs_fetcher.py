@@ -313,15 +313,20 @@ class ThangsFetcher():
 
             #thumbnail = f"https://thangs-thumbs-dot-gcp-and-physna.uc.r.appspot.com/convert/{model_id}.stl?source=phyndexer-production-headless-bucket"
 
+            download_path = None
+            if item.get("arLink", None) != None:
+                download_path = item.get("arLink", None).get("path", None)
+
             self.models.append(ModelInfo(
-                item["modelId"],
-                item.get('modelTitle') or item.get('modelFileName'),
-                item['attributionUrl'],
-                item["ownerUsername"],
-                item["license"],
-                item["domain"],
-                item["scope"],
-                item.get("originalFileType"),
+                item.get("modelId", None),
+                item.get("modelTitle", None) or item.get("modelFileName", None),
+                item.get("attributionUrl", None),
+                item.get("ownerUsername", None),
+                item.get("license", None),
+                item.get("domain", None),
+                item.get("scope", None),
+                item.get("originalFileType", None),
+                download_path,
                 (((self.CurrentPage - 1) * 8) + I)
             ))
 
