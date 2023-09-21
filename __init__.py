@@ -390,7 +390,7 @@ class BrowseToLicenseOperator(Operator):
 
 
 class BrowseToModelOperator(Operator):
-    """Open model in browser"""
+    """Open model in browser to download - Direct import unavailable"""
     bl_idname = "wm.browse_to_model"
     bl_label = ""
     bl_options = {'INTERNAL'}
@@ -601,7 +601,7 @@ class TextSearch(View3DPanel, bpy.types.Panel):
                         row = col.row()
                         row.label(text="{}".format(""), icon='APPEND_BLEND')
 
-                        if thangs_api.import_limit == True:
+                        if thangs_api.import_limit == True or model.download_path == None:
                             props = cell.operator(
                                 'wm.browse_to_model', text="%s" % model.title, icon='URL')
                             props.url = modelURL + \
@@ -628,7 +628,7 @@ class TextSearch(View3DPanel, bpy.types.Panel):
                         dropdown = row.prop(
                             mytool, "dropdown_Parts{}".format(z))
 
-                        if thangs_api.import_limit == True:
+                        if thangs_api.import_limit == True or model.download_path == None:
                             props = cell.operator(
                                 'wm.browse_to_model', text="%s" % model.title, icon='URL')
                             props.url = modelURL + \
