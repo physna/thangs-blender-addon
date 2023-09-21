@@ -346,6 +346,7 @@ class ImportModelOperator(Operator):
 
         print("Starting Login: Import Model")
         try:
+            thangs_api.download_end_time = None
             thangs_api.download_start_time = time.time()
             thangs_api.handle_download(
                 fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
