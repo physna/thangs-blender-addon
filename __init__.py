@@ -35,6 +35,7 @@ import json
 import logging
 import threading
 import addon_utils
+import time
 
 from config import get_config, initialize
 initialize(bl_info["version"], __file__)
@@ -345,9 +346,11 @@ class ImportModelOperator(Operator):
 
         print("Starting Login: Import Model")
         try:
+            thangs_api.download_start_time = time.time()
             thangs_api.handle_download(
                 fetcher.modelList[modelIndex].parts[partIndex], LicenseUrl,)
             Model_Event(modelIndex)
+            thangs_api.download_end_time = time.time()
         except Exception as e:
             # TODO this belongs more in the login service or something like that
             print("Error with Logging In:", e)

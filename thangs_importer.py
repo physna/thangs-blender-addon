@@ -5,6 +5,7 @@ import requests
 import shutil
 import webbrowser
 import queue
+import time
 
 from config import get_config
 from api_clients import get_thangs_events
@@ -103,6 +104,8 @@ class ThangsApi:
 
         self.model = None
         self.downloaded_files_list = []
+        self.download_start_time = None
+        self.download_end_time = None
         pass
 
     class DownloadedFile():
@@ -265,6 +268,10 @@ class ThangsApi:
 
         self.run_in_main_thread(self.import_callback)
 
+    def calc_duration(self, start_time, end_time):
+        if start_time == None or end_time == None: return 'error'
+        else: return end_time - start_time
+
     def import_model(self):
         try:
             if self.file_extension == '.zip':
@@ -299,14 +306,28 @@ class ThangsApi:
             self.importing = import_result.importing
         except Exception as e:
             print('Failed to Import')
+            download_model_duration_seconds = self.calc_duration(self.download_start_time, self.download_end_time)
+            import_model_duration_seconds = self.calc_duration(self.download_end_time, time.time()) 
             self.failed = import_result.failed
             self.importing = import_result.importing
             self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
                 'extension': self.model.fileType,
                 'domain': self.model.domain,
                 'success': False,
+                'download_model_duration_seconds': download_model_duration_seconds,
+                'import_model_duration_seconds': import_model_duration_seconds,
                 'exception': str(e),
             })
+        download_model_duration_seconds = self.calc_duration(self.download_start_time, self.download_end_time)
+        import_model_duration_seconds = self.calc_duration(self.download_end_time, time.time())
+        self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
+                'extension': self.model.fileType,
+                'domain': self.model.domain,
+                'success': True,
+                'download_model_duration_seconds': download_model_duration_seconds,
+                'import_model_duration_seconds': import_model_duration_seconds
+            })
+        
         return
 
     def unzip_archive(self):
