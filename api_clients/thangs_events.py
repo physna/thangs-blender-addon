@@ -16,8 +16,7 @@ class ThangsEvents(object):
         self.__Thangs_Config = get_config()
         self.__ampURL = self.__Thangs_Config.thangs_config['event_url']
         self.__addon_version = self.__Thangs_Config.version
-        self.__cached_deviceId = None
-        self.__deviceId = self.get_deviceId()
+        self.__deviceId = socket.gethostname().split(".")[0]
         self.__deviceOs = platform.system()
         self.__deviceVer = platform.release()
         pass
@@ -75,36 +74,6 @@ class ThangsEvents(object):
                      response.headers['x-cloud-trace-context'])
         except Exception as e:
             print(e)
-
-    def __get_device_id_json_file_location(self) -> str:
-        device_id_location = os.path.join(
-            os.path.dirname(get_config().main_addon_file_location), 'deviceId.json')
-        return device_id_location
-
-    def get_deviceId(self):
-        try:
-            if self.__cached_deviceId != None:
-                return self.__cached_deviceId
-            
-            if os.path.exists(self.__get_device_id_json_file_location()):
-                deviceId_location = self.__get_device_id_json_file_location()
-                deviceId_file = open(deviceId_location)
-                data = json.load(deviceId_file)
-                self.__cached_deviceId = data["deviceId"]
-                return self.__cached_deviceId
-            
-            self.__cached_deviceId = str(uuid.uuid4())
-            deviceId = {
-                'deviceId': self.__cached_deviceId,
-            }
-
-            with open(self.__get_device_id_json_file_location(), 'w') as json_file:
-                json.dump(deviceId, json_file)
-            return self.__cached_deviceId
-        except Exception as e:
-            print(e)
-            self.__cached_deviceId = socket.gethostname().split(".")[0]
-            return self.__cached_deviceId
 
 __thangs_events__: ThangsEvents = None
 
