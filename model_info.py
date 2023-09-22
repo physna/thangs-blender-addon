@@ -10,7 +10,8 @@ class ModelInfo(object):
             domain,
             scope,
             file_type,
-            search_index
+            download_path,
+            search_index,
     ):
         self.model_id = model_id
         self.title = title
@@ -20,4 +21,5 @@ class ModelInfo(object):
         self.domain = domain
         self.scope = scope
         self.file_type = file_type
+        self.download_path = download_path
         self.search_index = search_index
