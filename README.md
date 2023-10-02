@@ -25,13 +25,13 @@ Models are uploaded privately by default, but can be publicly shared if so desir
 
 ## Install
 
-1. Get Thangs Blender Addon on [Blender Market](https://www.blendermarket.com/products/thangs-blender-addon), [Gumroad](https://randyhucker.gumroad.com/l/thangs-blender-addon), or [download the latest release from GitHub](https://github.com/physna/thangs-blender-addon/releases/download/v0.2.8/thangs-blender-addon.zip)
+1. Get Thangs Blender Addon [download the latest release from GitHub](https://github.com/physna/thangs-blender-addon/releases/download/v0.2.8/thangs-blender-addon.zip)
 1. Open Blender, then go to Edit > Preferences > Add-ons > Install
 1. Select your downloaded Thangs Blender Addon zip file
-1. Click the checkbox next to the `Thangs Model Search` addon to enable it in Blender
+1. Click the checkbox next to the `Thangs` addon to enable it in Blender
 
 
-![Thangs-Breeze_3](https://user-images.githubusercontent.com/105221281/184414452-2c7913d5-4a20-47ca-a31b-125a21067523.gif)
+![Thangs-Addon](https://user-images.githubusercontent.com/105221281/184414452-2c7913d5-4a20-47ca-a31b-125a21067523.gif)
 
 ## Platforms
 
