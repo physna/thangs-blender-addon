@@ -8,7 +8,8 @@
 
 The Thangs Blender addon integrates the search functionality of [Thangs.com](https://thangs.com) into [Blender](http://www.blender.org). Discover models on Thangs and import them into Blender with just a few clicks!
 
-![BlenderSearchGif](https://user-images.githubusercontent.com/105221281/201858553-192ad292-df0e-4e12-af07-9665b33a95bc.gif)
+![blender_addon_search](https://github.com/physna/thangs-blender-addon/assets/89785132/4f644694-bf0c-41ee-ac20-8fef1b9ad958)
+
 
 ### Upload your work to Thangs
 
@@ -31,7 +32,8 @@ Models are uploaded privately by default, but can be publicly shared if so desir
 1. Click the checkbox next to the `Thangs` addon to enable it in Blender
 
 
-![Thangs-Addon](https://user-images.githubusercontent.com/105221281/184414452-2c7913d5-4a20-47ca-a31b-125a21067523.gif)
+![blender_addon_install](https://github.com/physna/thangs-blender-addon/assets/89785132/b02d4428-bf0c-4b65-87bb-a4b803ec2bb0)
+
 
 ## Platforms
 
