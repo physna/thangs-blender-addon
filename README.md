@@ -26,7 +26,7 @@ Models are uploaded privately by default, but can be publicly shared if so desir
 
 ## Install
 
-1. Get Thangs Blender Addon [download the latest release from GitHub](https://github.com/physna/thangs-blender-addon/releases/download/v0.2.8/thangs-blender-addon.zip)
+1. Get Thangs Blender Addon by downloading the zip file from [the latest release](https://github.com/physna/thangs-blender-addon/releases)
 1. Open Blender, then go to Edit > Preferences > Add-ons > Install
 1. Select your downloaded Thangs Blender Addon zip file
 1. Click the checkbox next to the `Thangs` addon to enable it in Blender
