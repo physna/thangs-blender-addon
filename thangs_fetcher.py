@@ -61,6 +61,8 @@ class ThangsFetcher():
         self.amplitude = get_thangs_events()
         self.thangs_api = get_thangs_api()
         self.results_to_show = results_to_show
+
+        self.cached_model_images = {}
         pass
 
     class PartStruct():
@@ -303,6 +305,7 @@ class ThangsFetcher():
         if self.searchType == "object":
             self.selectionThumbnailGrab = True
             self.stl_callback()
+
         for item in items:
             self.partList.clear()
 
@@ -330,26 +333,45 @@ class ThangsFetcher():
                 (((self.CurrentPage - 1) * 8) + I)
             ))
 
-            icon_path = os.path.join(temp_dir, item["modelId"])
-            if not os.path.exists(icon_path):
-                os.makedirs(icon_path)
-            thumbnailPath = thumbnail.replace("%2F", "/").replace("?", "/")
-            icon_path = os.path.join(icon_path, thumbnailPath.split('/')[-1])
-            if not os.path.exists(icon_path):
-                try:
-                    print(f'Fetching {thumbnail}')
-                    filePath = urllib.request.urlretrieve(thumbnail, icon_path)
-                    icon_path = os.path.join(item["modelId"], filePath[0])
-                except Exception as e:
-                    print(e)
-                    filePath = Path(__file__ + "\icons\placeholder.png")
-                    icon_path = os.path.join(item["modelId"], filePath)
+            model_images_folder = os.path.join(temp_dir, item["modelId"])
+            if not os.path.exists(model_images_folder):
+                os.makedirs(model_images_folder)
 
             try:
-                thumb = self.pcoll.load(item["modelId"], icon_path, 'IMAGE')
-            except:
-                thumb = self.pcoll.load(
-                    item["modelId"]+str(I), icon_path, 'IMAGE')
+                print("self.Thangs_Config.main_addon_file_location",self.Thangs_Config.main_addon_file_location)
+                cached_image_path = self.cached_model_images.get(item.get("modelId", None), None)
+                if cached_image_path != None and os.path.exists(cached_image_path):
+                    image_path = cached_image_path
+                else:
+                    print(f'Fetching {thumbnail}')
+                    image_path = os.path.join(model_images_folder, str(uuid.uuid4()))
+                    urllib.request.urlretrieve(thumbnail, image_path)
+                    self.cached_model_images[item["modelId"]] = image_path
+            except Exception as e:
+                print(e)
+                filePath = os.path.join(os.path.dirname(self.Thangs_Config.main_addon_file_location),"icons","placeholder.png")
+                image_path = os.path.join(item["modelId"], filePath)
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - Thumbnail Error",
+                                    event_properties={
+                                        'exception': str(e),
+                                        'model': item.get("modelTitle", None) or item.get("modelFileName", None),
+                                        'query': self.query,
+                                        'page': self.CurrentPage,
+                                        'function': 'fetch'
+                                    })
+
+            try:
+                thumb = self.pcoll.load(item["modelId"], image_path, 'IMAGE')
+                raise Exception
+            except Exception as e:
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - Thumbnail Error",
+                                                    event_properties={
+                                                        'exception': str(e),
+                                                        'model': item.get("modelTitle", None) or item.get("modelFileName", None),
+                                                        'query': self.query,
+                                                        'page': self.CurrentPage,
+                                                        'function': 'load'
+                                                    })
 
             self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get(
                 "originalFileType"), thumb.icon_id, item["domain"], 0))
