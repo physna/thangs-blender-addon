@@ -8,7 +8,8 @@
 
 The Thangs Blender addon integrates the search functionality of [Thangs.com](https://thangs.com) into [Blender](http://www.blender.org). Discover models on Thangs and import them into Blender with just a few clicks!
 
-![BlenderSearchGif](https://user-images.githubusercontent.com/105221281/201858553-192ad292-df0e-4e12-af07-9665b33a95bc.gif)
+![blender_addon_search](https://github.com/physna/thangs-blender-addon/assets/89785132/4f644694-bf0c-41ee-ac20-8fef1b9ad958)
+
 
 ### Upload your work to Thangs
 
@@ -25,13 +26,14 @@ Models are uploaded privately by default, but can be publicly shared if so desir
 
 ## Install
 
-1. Get Thangs Blender Addon on [Blender Market](https://www.blendermarket.com/products/thangs-blender-addon), [Gumroad](https://randyhucker.gumroad.com/l/thangs-blender-addon), or [download the latest release from GitHub](https://github.com/physna/thangs-blender-addon/releases/download/v0.2.8/thangs-blender-addon.zip)
+1. Get Thangs Blender Addon by downloading the zip file from [the latest release](https://github.com/physna/thangs-blender-addon/releases)
 1. Open Blender, then go to Edit > Preferences > Add-ons > Install
 1. Select your downloaded Thangs Blender Addon zip file
-1. Click the checkbox next to the `Thangs Model Search` addon to enable it in Blender
+1. Click the checkbox next to the `Thangs` addon to enable it in Blender
 
 
-![Thangs-Breeze_3](https://user-images.githubusercontent.com/105221281/184414452-2c7913d5-4a20-47ca-a31b-125a21067523.gif)
+![blender_addon_install](https://github.com/physna/thangs-blender-addon/assets/89785132/b02d4428-bf0c-4b65-87bb-a4b803ec2bb0)
+
 
 ## Platforms
 
