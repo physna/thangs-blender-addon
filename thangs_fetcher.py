@@ -361,7 +361,6 @@ class ThangsFetcher():
 
             try:
                 thumb = self.pcoll.load(item["modelId"], image_path, 'IMAGE')
-                raise Exception
             except Exception as e:
                 self.amplitude.send_amplitude_event("Thangs Blender Addon - Thumbnail Error",
                                                     event_properties={
