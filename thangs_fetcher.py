@@ -338,7 +338,6 @@ class ThangsFetcher():
                 os.makedirs(model_images_folder)
 
             try:
-                print("self.Thangs_Config.main_addon_file_location",self.Thangs_Config.main_addon_file_location)
                 cached_image_path = self.cached_model_images.get(item.get("modelId", None), None)
                 if cached_image_path != None and os.path.exists(cached_image_path):
                     image_path = cached_image_path
