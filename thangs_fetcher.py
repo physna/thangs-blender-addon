@@ -348,6 +348,7 @@ class ThangsFetcher():
                 print(e)
                 filePath = os.path.join(os.path.dirname(self.Thangs_Config.main_addon_file_location),"icons","placeholder.png")
                 image_path = os.path.join(item["modelId"], filePath)
+                self.cached_model_images[item["modelId"]] = image_path
                 self.amplitude.send_amplitude_event("Thangs Blender Addon - Thumbnail Error",
                                     event_properties={
                                         'exception': str(e),
