@@ -8,7 +8,7 @@ import json
 import os
 import bpy
 
-from config import get_config
+from config import get_config, get_api_token
 
 log = logging.getLogger(__name__)
 
@@ -71,7 +71,10 @@ class ThangsEvents(object):
     def _send_amplitude_event(self, event_name, event_properties):
         event = self._construct_event(event_name, event_properties)
         try:
-            response = requests.post(self.__ampURL, json={'events': [event]})
+            if get_api_token() == None:
+                response = requests.post(self.__ampURL, json={'events': [event]})
+            else:
+                response = requests.post(self.__ampURL, json={'events': [event]}, headers={'Authorization': "Bearer "+get_api_token()})
             log.info('Sent amplitude event: ' + event_name + 'Response: ' + str(response.status_code) + " " +
                      response.headers['x-cloud-trace-context'])
         except Exception as e:

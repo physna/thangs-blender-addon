@@ -13,7 +13,7 @@ import time
 
 from .model_info import ModelInfo
 from api_clients import get_thangs_events
-from config import get_config
+from config import get_config, get_api_token
 from .thangs_importer import get_thangs_api, Utils, Config
 from pathlib import Path
 from services import ThangsLoginService
@@ -339,6 +339,7 @@ class ThangsFetcher():
                 cached_image_path = self.cached_model_images.get(item.get("modelId", None), None)
                 if cached_image_path != None and os.path.exists(cached_image_path):
                     image_path = cached_image_path
+                    print(f'Loading cached thumbnail {image_path}')
                 else:
                     print(f'Fetching {thumbnail}')
                     image_path = os.path.join(model_images_folder, str(uuid.uuid4()))
@@ -361,6 +362,9 @@ class ThangsFetcher():
             try:
                 thumb = self.pcoll.load(item["modelId"], image_path, 'IMAGE')
             except Exception as e:
+                # AFAIK this covers an edge case where search results have duplicate models and also duplicate model ID's.
+                # The pcoll elements need to be unique so we're adding the index to the end of the model ID.
+                thumb = self.pcoll.load(item["modelId"]+str(I), image_path, 'IMAGE')
                 self.amplitude.send_amplitude_event("Thangs Blender Addon - Thumbnail Error",
                                                     event_properties={
                                                         'exception': str(e),
@@ -473,8 +477,8 @@ class ThangsFetcher():
 
             if self.newSearch == True:
                 try:
-                    response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm=" + str(urllib.parse.quote(self.query, safe='')) +
-                                            "&pageSize="+str(self.results_to_show)+"&collapse=true")
+                    response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v3/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm=" + str(urllib.parse.quote(self.query, safe='')) +
+                                            "&pageSize="+str(self.results_to_show)+"&collapse=true&freeModels=true")
                 except Exception as e:
                     print(e)
                     self.failed = True
@@ -483,10 +487,10 @@ class ThangsFetcher():
                     return
             else:
                 try:
-                    response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v2/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+str(urllib.parse.quote(self.query, safe='')) +
+                    response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/v3/search-by-text?page="+str(self.CurrentPage-1)+"&searchTerm="+str(urllib.parse.quote(self.query, safe='')) +
                                             "&pageSize=" +
                                             str(self.results_to_show) +
-                                            "&collapse=true",
+                                            "&collapse=true&freeModels=true",
                                             headers={"x-thangs-searchmetadata": base64.b64encode(
                                                 json.dumps(self.searchMetaData).encode()).decode()},
                                             )
@@ -666,10 +670,10 @@ class ThangsFetcher():
 
             self.pcoll = self.preview_collections["main"]
 
-            if not self.login_service.get_api_token():
+            if not get_api_token():
                 self.login_service.login_user()
             headers = {
-                "Authorization": "Bearer " + self.login_service.get_api_token(),
+                "Authorization": "Bearer " + get_api_token(),
             }
 
             try:
@@ -683,7 +687,7 @@ class ThangsFetcher():
                 if response.status_code == 401 or response.status_code == 403:
                     try:
                         self.login_service.login_user()
-                        headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
+                        headers = {"Authorization": "Bearer " + get_api_token(), }
                         response = requests.get(url_endpoint, headers=headers)
                         response.raise_for_status()
                     except Exception as ex:
@@ -756,7 +760,7 @@ class ThangsFetcher():
                     if response.status_code == 401 or response.status_code == 403:
                         try:
                             self.login_service.login_user()
-                            headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
+                            headers = {"Authorization": "Bearer " + get_api_token(), }
                             response = requests.get(url=url, headers=headers)
                             response.raise_for_status()
                             second_attempt_succeeded = True

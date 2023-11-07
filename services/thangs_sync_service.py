@@ -15,6 +15,7 @@ from .thangs_login_service import ThangsLoginService
 from api_clients import ThangsFileSyncClient, UploadUrlResponse, ThangsModelsClient, get_thangs_events
 # TODO I hate putting this in here, need to figure out how to separate the UI updates from the sync process
 from UI.common import redraw_areas
+from config import get_api_token
 
 
 class SyncInfo(TypedDict):
@@ -47,6 +48,7 @@ class ThangsSyncService:
 
     def cancel_running_sync_process(self):
         if self.__sync_thread:
+            print('cancel_running_sync_process')
             self.__sync_thread_stop_event.set()
             self.__sync_thread.join()
             self.__reset_sync_process()
@@ -75,10 +77,10 @@ class ThangsSyncService:
 
             self.__update_ui_current_step(current_step, total_steps)
 
-            token = self.__login_service.get_api_token()
+            token = get_api_token()
             if not token:
                 self.__login_service.login_user()
-                token = self.__login_service.get_api_token()
+                token = get_api_token()
                 if not token:
                     return
 
