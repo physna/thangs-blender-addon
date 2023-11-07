@@ -13,10 +13,12 @@ import time
 
 from .model_info import ModelInfo
 from api_clients import get_thangs_events
-from config import get_config, get_api_token
+from config import get_config
 from .thangs_importer import get_thangs_api, Utils, Config
 from pathlib import Path
 from services import ThangsLoginService, get_threading_service
+from login_token_cache import get_api_token
+
 
 
 class ThangsFetcher():

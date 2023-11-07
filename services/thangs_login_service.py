@@ -4,9 +4,9 @@ import json
 import webbrowser
 import requests
 
-from config import set_token, get_bearer_json_file_location, get_api_token
 from api_clients import thangs_login_client
 from time import sleep
+from login_token_cache import set_token, get_bearer_json_file_location, get_api_token
 
 class ThangsLoginService:
     __GRANT_CHECK_INTERVAL_SECONDS = 0.5  # 500 milliseconds

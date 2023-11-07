@@ -7,10 +7,12 @@ import webbrowser
 import queue
 import time
 
-from config import get_config, get_api_token
+from config import get_config
 from api_clients import get_thangs_events
 from .model_importer import import_model
 from services import ThangsLoginService, get_threading_service
+from login_token_cache import get_api_token
+
 
 _thangs_api = None
 

@@ -15,7 +15,7 @@ from .thangs_login_service import ThangsLoginService
 from api_clients import ThangsFileSyncClient, UploadUrlResponse, ThangsModelsClient, get_thangs_events
 # TODO I hate putting this in here, need to figure out how to separate the UI updates from the sync process
 from UI.common import redraw_areas
-from config import get_api_token
+from login_token_cache import get_api_token
 from .threading_service import get_threading_service
 
 

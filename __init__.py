@@ -40,6 +40,9 @@ import time
 from config import get_config, initialize
 initialize(bl_info["version"], __file__)
 
+from login_token_cache import initialize
+initialize(__file__)
+
 from . import addon_updater_ops
 from urllib.request import urlopen
 from .thangs_fetcher import ThangsFetcher

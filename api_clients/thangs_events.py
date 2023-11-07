@@ -8,7 +8,8 @@ import json
 import os
 import bpy
 
-from config import get_config, get_api_token
+from config import get_config
+from login_token_cache import get_api_token
 
 log = logging.getLogger(__name__)
 
