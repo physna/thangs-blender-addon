@@ -48,7 +48,6 @@ class ThangsSyncService:
 
     def cancel_running_sync_process(self):
         if self.__sync_thread:
-            print('cancel_running_sync_process')
             self.__sync_thread_stop_event.set()
             self.__sync_thread.join()
             self.__reset_sync_process()
