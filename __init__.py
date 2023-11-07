@@ -2,7 +2,7 @@
 bl_info = {
     "name": "Thangs",
     "author": "Thangs",
-    "version": (0, 3, 3),
+    "version": (0, 3, 4),
     "blender": (3, 2, 0),
     "location": "VIEW 3D > Tools > Thangs",
     "description": "Browse, import, and upload 3D models",
