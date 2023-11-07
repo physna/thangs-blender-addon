@@ -1024,8 +1024,7 @@ def register():
     bpy.app.timers.register(execute_queued_functions)
     bpy.app.timers.register(uninstall_old_version_timer)
 
-    global threading_service
-    threading_service = get_threading_service()
+    get_threading_service()
 
     log.info("Finished Register")
 
