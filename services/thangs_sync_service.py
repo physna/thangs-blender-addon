@@ -16,6 +16,7 @@ from api_clients import ThangsFileSyncClient, UploadUrlResponse, ThangsModelsCli
 # TODO I hate putting this in here, need to figure out how to separate the UI updates from the sync process
 from UI.common import redraw_areas
 from config import get_api_token
+from .threading_service import get_threading_service
 
 
 class SyncInfo(TypedDict):
@@ -78,7 +79,7 @@ class ThangsSyncService:
 
             token = get_api_token()
             if not token:
-                self.__login_service.login_user()
+                self.__login_service.login_user(get_threading_service().wrap_up_threads)
                 token = get_api_token()
                 if not token:
                     return
@@ -235,7 +236,7 @@ class ThangsSyncService:
         except requests.HTTPError as e:
             print(str(e))
             if e.response.status_code == 401:
-                self.__login_service.login_user()
+                self.__login_service.login_user(get_threading_service().wrap_up_threads)
                 self.__sync_current_blender_file()
             elif e.response.status_code == 403:
                 self.remove_sync_info_text_block()

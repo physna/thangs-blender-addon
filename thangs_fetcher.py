@@ -16,7 +16,7 @@ from api_clients import get_thangs_events
 from config import get_config, get_api_token
 from .thangs_importer import get_thangs_api, Utils, Config
 from pathlib import Path
-from services import ThangsLoginService
+from services import ThangsLoginService, get_threading_service
 
 
 class ThangsFetcher():
@@ -671,7 +671,7 @@ class ThangsFetcher():
             self.pcoll = self.preview_collections["main"]
 
             if not get_api_token():
-                self.login_service.login_user()
+                self.login_service.login_user(get_threading_service().wrap_up_threads)
             headers = {
                 "Authorization": "Bearer " + get_api_token(),
             }
@@ -686,7 +686,7 @@ class ThangsFetcher():
             except Exception as e:
                 if response.status_code == 401 or response.status_code == 403:
                     try:
-                        self.login_service.login_user()
+                        self.login_service.login_user(get_threading_service().wrap_up_threads)
                         headers = {"Authorization": "Bearer " + get_api_token(), }
                         response = requests.get(url_endpoint, headers=headers)
                         response.raise_for_status()
@@ -759,7 +759,7 @@ class ThangsFetcher():
                 if response:
                     if response.status_code == 401 or response.status_code == 403:
                         try:
-                            self.login_service.login_user()
+                            self.login_service.login_user(get_threading_service().wrap_up_threads)
                             headers = {"Authorization": "Bearer " + get_api_token(), }
                             response = requests.get(url=url, headers=headers)
                             response.raise_for_status()

@@ -10,7 +10,7 @@ import time
 from config import get_config, get_api_token
 from api_clients import get_thangs_events
 from .model_importer import import_model
-from services import ThangsLoginService
+from services import ThangsLoginService, get_threading_service
 
 _thangs_api = None
 
@@ -152,7 +152,7 @@ class ThangsApi:
 
         if not fileExists:
             if not get_api_token():
-                self.login_service.login_user()
+                self.login_service.login_user(get_threading_service().wrap_up_threads)
             headers = {"Authorization": "Bearer " + get_api_token(), }
             print("URL:", self.Thangs_Config.thangs_config['url'] + "api/models/parts/" + str(
                 self.model.partId) + "/download-url")
@@ -172,7 +172,7 @@ class ThangsApi:
                     return
                 elif response.status_code == 401 or response.status_code == 403:
                     try:
-                        self.login_service.login_user()
+                        self.login_service.login_user(get_threading_service().wrap_up_threads)
                         headers = {"Authorization": "Bearer " + get_api_token(), }
                         response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
                         response.raise_for_status()
