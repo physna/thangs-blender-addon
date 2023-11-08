@@ -46,9 +46,6 @@ class ThangsLoginService:
                 if e.response.status_code == 401:
                     print("Unsuccessful Login, 401 returned")
                     return
-                if e.response.status_code == 403:
-                    print("Login Denied, 403 returned")
-                    return
                 raise
 
         print("Unsuccessful Login, max attempts exceeded")

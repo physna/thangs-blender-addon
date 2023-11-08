@@ -240,7 +240,7 @@ class ThangsSyncService:
                 self.__sync_current_blender_file()
             elif e.response.status_code == 403:
                 self.remove_sync_info_text_block()
-                self.__sync_current_blender_file()
+                self.__clear_ui_status_message()
             else:
                 self.__events_client.send_amplitude_event("Thangs Blender Addon - sync failed", event_properties={
                     'model_id': model_id,

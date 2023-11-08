@@ -8,7 +8,7 @@ from config import get_config
 log = logging.getLogger(__name__)
 _login_token_cache = None
 
-def initialize(main_addon_file_location: str):
+def initialize_token(main_addon_file_location: str):
     global _login_token_cache
     _login_token_cache = LoginTokenCache(main_addon_file_location)
 
