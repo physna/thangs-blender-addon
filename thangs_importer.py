@@ -10,7 +10,9 @@ import time
 from config import get_config
 from api_clients import get_thangs_events
 from .model_importer import import_model
-from services import ThangsLoginService
+from services import ThangsLoginService, get_threading_service
+from login_token_cache import get_api_token
+
 
 _thangs_api = None
 
@@ -151,9 +153,9 @@ class ThangsApi:
                 break
 
         if not fileExists:
-            if not self.login_service.get_api_token():
-                self.login_service.login_user()
-            headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
+            if not get_api_token():
+                self.login_service.login_user(get_threading_service().wrap_up_threads)
+            headers = {"Authorization": "Bearer " + get_api_token(), }
             print("URL:", self.Thangs_Config.thangs_config['url'] + "api/models/parts/" + str(
                 self.model.partId) + "/download-url")
             try:
@@ -172,8 +174,8 @@ class ThangsApi:
                     return
                 elif response.status_code == 401 or response.status_code == 403:
                     try:
-                        self.login_service.login_user()
-                        headers = {"Authorization": "Bearer " + self.login_service.get_api_token(), }
+                        self.login_service.login_user(get_threading_service().wrap_up_threads)
+                        headers = {"Authorization": "Bearer " + get_api_token(), }
                         response = requests.get(self.Thangs_Config.thangs_config['url']+"api/models/parts/"+str(self.model.partId)+"/download-url", headers=headers)
                         response.raise_for_status()
                     except Exception as ex:
