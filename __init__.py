@@ -40,6 +40,9 @@ import time
 from config import get_config, initialize
 initialize(bl_info["version"], __file__)
 
+from login_token_cache import initialize_token
+initialize_token(__file__)
+
 from . import addon_updater_ops
 from urllib.request import urlopen
 from .thangs_fetcher import ThangsFetcher
@@ -47,7 +50,7 @@ from api_clients import get_thangs_events
 from .thangs_importer import initialize_thangs_api, get_thangs_api
 from UI.common import View3DPanel
 from UI.sync import register as sync_register, unregister as sync_unregister
-from services import get_sync_service
+from services import get_sync_service, get_threading_service
 
 log = logging.getLogger(__name__)
 
@@ -1024,6 +1027,8 @@ def register():
     bpy.app.timers.register(execute_queued_functions)
     bpy.app.timers.register(uninstall_old_version_timer)
 
+    get_threading_service()
+
     log.info("Finished Register")
 
 
@@ -1070,6 +1075,9 @@ def unregister():
     addon_updater_ops.unregister()
 
     urllib.request.urlcleanup()
+
+    threading_service = get_threading_service()
+    threading_service.wrap_up_threads_now()
 
     sync_service = get_sync_service()
     sync_service.cancel_running_sync_process()
