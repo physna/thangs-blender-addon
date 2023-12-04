@@ -4,6 +4,7 @@ import shutil
 import bpy
 
 from typing import Optional
+from config import get_config
 
 
 __MODEL_THUMBNAILS_TEMP_DIR__ = os.path.join(bpy.app.tempdir, "model_thumbnails")
@@ -56,22 +57,28 @@ class ThumbnailService:
 
 
     def __download_thumbnail(self, thumbnail_url: str, model_id: int, sha: str) -> str:
-        r = requests.get(thumbnail_url, stream=True)
-        r.raise_for_status()
+        try:
+            r = requests.get(thumbnail_url, stream=True)
+            r.raise_for_status()
 
-        thumbnail_url_parsed = thumbnail_url
-        query_string_index = thumbnail_url.find('?')
-        if query_string_index != -1:
-            thumbnail_url_parsed = thumbnail_url_parsed[:query_string_index]
+            thumbnail_url_parsed = thumbnail_url
+            query_string_index = thumbnail_url.find('?')
+            if query_string_index != -1:
+                thumbnail_url_parsed = thumbnail_url_parsed[:query_string_index]
 
-        extension = thumbnail_url_parsed[thumbnail_url_parsed.rindex('.'):]
+            extension = thumbnail_url_parsed[thumbnail_url_parsed.rindex('.'):]
 
-        self.__ensure_model_thumbnail_directory_exists(model_id, sha)
+            self.__ensure_model_thumbnail_directory_exists(model_id, sha)
 
-        path_to_save_to = os.path.join(self.__get_model_thumbnail_temp_directory(model_id, sha), f'thumbnail{extension}')
-        with open(path_to_save_to, 'wb') as f:
-            r.raw.decode_content = True
-            shutil.copyfileobj(r.raw, f)
+            path_to_save_to = os.path.join(self.__get_model_thumbnail_temp_directory(model_id, sha), f'thumbnail{extension}')
+            with open(path_to_save_to, 'wb') as f:
+                r.raw.decode_content = True
+                shutil.copyfileobj(r.raw, f)
+        except Exception as e:
+            print(e)
+            self.__ensure_model_thumbnail_directory_exists(model_id, sha)
+
+            path_to_save_to = os.path.join(os.path.dirname(get_config().main_addon_file_location), "icons", "image-error-icon.png")
 
         return path_to_save_to
 
