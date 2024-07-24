@@ -550,7 +550,9 @@ class ThangsFetcher():
         if self.searchType == "object":
             self.selectionThumbnailGrab = True
             self.stl_callback()
-        for item in items[((self.CurrentPage-1)*8):(self.CurrentPage*8)]:
+        for item in items:
+            if I == 8:
+                break
             self.partList.clear()
 
             if len(item["thumbnails"]) > 0:
@@ -558,38 +560,65 @@ class ThangsFetcher():
             else:
                 thumbnail = item["thumbnailUrl"]
 
+            download_path = None
+            if item.get("modelId", None) != None:
+                download_path = item.get("modelId", None) + '.stl'
+
             self.models.append(ModelInfo(
-                item["modelId"],
-                item.get('modelTitle') or item.get('modelFileName'),
-                item['attributionUrl'],
-                item["ownerUsername"],
-                item["license"],
-                item["domain"],
-                item["scope"],
-                item.get("originalFileType"),
+                item.get("modelId", None),
+                item.get("modelTitle", None) or item.get("modelFileName", None),
+                item.get("attributionUrl", None),
+                item.get("ownerUsername", None),
+                item.get("license", None),
+                item.get("domain", None),
+                item.get("scope", None),
+                item.get("originalFileType", None),
+                download_path,
                 (((self.CurrentPage - 1) * 8) + I)
             ))
 
-            icon_path = os.path.join(temp_dir, item["modelId"])
-            if not os.path.exists(icon_path):
-                os.makedirs(icon_path)
-            thumbnailPath = thumbnail.replace("%2F", "/").replace("?", "/")
-            icon_path = os.path.join(icon_path, thumbnailPath.split('/')[-1])
-            if not os.path.exists(icon_path):
-                try:
-                    print(f'Fetching {thumbnail}')
-                    filePath = urllib.request.urlretrieve(thumbnail, icon_path)
-                    icon_path = os.path.join(item["modelId"], filePath[0])
-                except Exception as e:
-                    print(e)
-                    filePath = Path(__file__ + "\icons\placeholder.png")
-                    icon_path = os.path.join(item["modelId"], filePath)
+            model_images_folder = os.path.join(temp_dir, item["modelId"])
+            if not os.path.exists(model_images_folder):
+                os.makedirs(model_images_folder)
 
             try:
-                thumb = self.pcoll.load(item["modelId"], icon_path, 'IMAGE')
-            except:
-                thumb = self.pcoll.load(
-                    item["modelId"]+str(I), icon_path, 'IMAGE')
+                cached_image_path = self.cached_model_images.get(item.get("modelId", None), None)
+                if cached_image_path != None and os.path.exists(cached_image_path):
+                    image_path = cached_image_path
+                    print(f'Loading cached thumbnail {image_path}')
+                else:
+                    print(f'Fetching {thumbnail}')
+                    image_path = os.path.join(model_images_folder, str(uuid.uuid4()))
+                    urllib.request.urlretrieve(thumbnail, image_path)
+                    self.cached_model_images[item["modelId"]] = image_path
+            except Exception as e:
+                print(e)
+                filePath = os.path.join(os.path.dirname(self.Thangs_Config.main_addon_file_location),"icons","placeholder.png")
+                image_path = os.path.join(item["modelId"], filePath)
+                self.cached_model_images[item["modelId"]] = image_path
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - Thumbnail Error",
+                                    event_properties={
+                                        'exception': str(e),
+                                        'model': item.get("modelTitle", None) or item.get("modelFileName", None),
+                                        'query': self.query,
+                                        'page': self.CurrentPage,
+                                        'function': 'fetch'
+                                    })
+
+            try:
+                thumb = self.pcoll.load(item["modelId"], image_path, 'IMAGE')
+            except Exception as e:
+                # AFAIK this covers an edge case where search results have duplicate models and also duplicate model ID's.
+                # The pcoll elements need to be unique so we're adding the index to the end of the model ID.
+                thumb = self.pcoll.load(item["modelId"]+str(I), image_path, 'IMAGE')
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - Thumbnail Error",
+                                                    event_properties={
+                                                        'exception': str(e),
+                                                        'model': item.get("modelTitle", None) or item.get("modelFileName", None),
+                                                        'query': self.query,
+                                                        'page': self.CurrentPage,
+                                                        'function': 'load'
+                                                    })
 
             self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get(
                 "originalFileType"), thumb.icon_id, item["domain"], 0))
@@ -609,7 +638,7 @@ class ThangsFetcher():
 
             title = item.get('modelTitle') or item.get('modelFileName')
             self.modelList.append(self.ModelStruct(
-                modelTitle=title, partList=self.partList[:]))
+                modelTitle=title.strip(), partList=self.partList[:]))
 
             I += 1
 
@@ -681,7 +710,7 @@ class ThangsFetcher():
             try:
                 isDevOrStaging = 'true' if any([x in os.path.basename(self.Thangs_Config.config_path) for x in ["dev_", "staging_"]]) else 'false'
                 url_endpoint = str(
-                    self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl&sendContentLengthRangeHeader="+isDevOrStaging
+                    self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl"
                 print(url_endpoint)
                 response = requests.get(url_endpoint, headers=headers)
                 response.raise_for_status()

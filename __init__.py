@@ -944,7 +944,7 @@ def register():
     fetcher.preview_collections["main"] = fetcher.pcoll
     icon_collections["main"] = icons_dict
 
-    # bpy.utils.register_class(MeshSearch)
+    bpy.utils.register_class(MeshSearch)
     bpy.utils.register_class(TextSearch)
     bpy.utils.register_class(THANGS_OT_search_invoke)
     bpy.utils.register_class(SearchButton)
@@ -959,8 +959,8 @@ def register():
     bpy.utils.register_class(BrowseToCreatorOperator)
     bpy.utils.register_class(SearchBySelect)
     bpy.utils.register_class(BrowseToModelOperator)
-    # bpy.types.VIEW3D_MT_object_context_menu.append(draw_menu)
-    # bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(draw_menu)
+    bpy.types.VIEW3D_MT_object_context_menu.append(draw_menu)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(draw_menu)
 
     sync_register()
 
@@ -1050,7 +1050,7 @@ def unregister():
     fetcher.preview_collections.clear()
     icon_collections.clear()
 
-    # bpy.utils.unregister_class(MeshSearch)
+    bpy.utils.unregister_class(MeshSearch)
     bpy.utils.unregister_class(TextSearch)
     bpy.utils.unregister_class(THANGS_OT_search_invoke)
     bpy.utils.unregister_class(SearchButton)
@@ -1065,8 +1065,8 @@ def unregister():
     bpy.utils.unregister_class(BrowseToCreatorOperator)
     bpy.utils.unregister_class(SearchBySelect)
     bpy.utils.unregister_class(BrowseToModelOperator)
-    # bpy.types.VIEW3D_MT_object_context_menu.remove(draw_menu)
-    # bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(draw_menu)
+    bpy.types.VIEW3D_MT_object_context_menu.remove(draw_menu)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(draw_menu)
 
     sync_unregister()
 
