@@ -712,8 +712,12 @@ class ThangsFetcher():
                 url_endpoint = str(
                     self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl"
                 print(url_endpoint)
+                #response = requests.get(url_endpoint)
+                print("1")
                 response = requests.get(url_endpoint, headers=headers)
+                print("2")
                 response.raise_for_status()
+                print("3")
             except Exception as e:
                 if response.status_code == 401 or response.status_code == 403:
                     try:
@@ -744,11 +748,14 @@ class ThangsFetcher():
                     return
 
             responseData = response.json()
-
+            print("4")
             signedUrl = responseData["signedUrl"]
+            print("5")
             new_Filename = responseData["newFileName"]
+            print("6")
+            print(stl_path)
             data = open(stl_path, 'rb').read()
-
+            print("7")
             try:
                 if isDevOrStaging == 'true':
                     putHeaders = {
@@ -759,6 +766,7 @@ class ThangsFetcher():
                     putHeaders = {
                         "Content-Type": "model/stl",
                     }
+                print("8")
                 putRequest = requests.put(
                     url=signedUrl, data=data, headers=putHeaders)
                 print(putRequest.status_code)
