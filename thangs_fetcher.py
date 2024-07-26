@@ -210,7 +210,7 @@ class ThangsFetcher():
                 return stl_path
 
             except Exception as e:
-                print(str(e.reason))
+                print(e)
                 bpy.ops.object.mode_set(mode=previous_mode)
                 pass
 
