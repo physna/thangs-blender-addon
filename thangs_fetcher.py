@@ -10,6 +10,7 @@ import os
 import math
 import ssl
 import time
+import socket
 
 from .model_info import ModelInfo
 from api_clients import get_thangs_events
@@ -65,6 +66,8 @@ class ThangsFetcher():
         self.results_to_show = results_to_show
 
         self.cached_model_images = {}
+        self.lastSearchIsText = True
+        self.lastMeshSearchReponse = None
         pass
 
     class PartStruct():
@@ -115,14 +118,18 @@ class ThangsFetcher():
         self.selectionFailed = False
         pass
 
-    def search(self, query):
+    def search(self, query, newTextSearch = False):
         if self.searching:
             return False
         self.query = query
         # this should return immediately with True
         # kick off a thread that does the searching
-        self.search_thread = threading.Thread(
-            target=self.get_http_search).start()
+        if self.lastSearchIsText or newTextSearch:
+            self.search_thread = threading.Thread(
+                target=self.get_http_search).start()
+        else:
+            self.search_thread = threading.Thread(
+                target=self.display_stl_results(self.lastMeshSearchReponse, show_summary=True)).start()
         return True
 
     def selectionSearch(self, context):
@@ -148,7 +155,7 @@ class ThangsFetcher():
                 if act_obj.mode == "EDIT":
                     print("Searching Edit")
                     bpy.ops.mesh.duplicate_move()
-                    bpy.ops.mesh.solidify()
+                    #bpy.ops.mesh.solidify()
                     bpy.ops.mesh.separate(type='SELECTED')
 
                     # Back to object mode
@@ -241,7 +248,7 @@ class ThangsFetcher():
 
     def get_stl_results(self, items):
         print("Started Counting Results")
-        self.totalModels = len(items)
+        self.totalModels = len(self.lastMeshSearchReponse["results"])
         pageTotal = math.ceil(self.totalModels/self.results_to_show)
         if pageTotal > 99:
             self.PageTotal = 99
@@ -279,6 +286,7 @@ class ThangsFetcher():
             print(e + f" on Image {X}")
 
     def display_search_results(self, responseData, show_summary=True):
+        self.lastSearchIsText = True
         temp_dir = os.path.join(
             self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
         if not os.path.exists(temp_dir):
@@ -522,12 +530,15 @@ class ThangsFetcher():
             return None
 
     def display_stl_results(self, responseData, show_summary=True):
+        self.lastSearchIsText = False
         temp_dir = os.path.join(
             self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
 
-        items = responseData["results"]
+        self.CurrentPage = self.PageNumber
+
+        items = responseData["results"][(self.CurrentPage-1)*8 : self.CurrentPage*8]
         if self.newSearch == True:
             self.uuid = str(uuid.uuid4())
             self.searchMetaData = responseData["searchMetadata"]
@@ -546,13 +557,12 @@ class ThangsFetcher():
         ssl._create_default_https_context = ssl._create_unverified_context
 
         self.modelList.clear()
+        self.models.clear()
         I = 0
         if self.searchType == "object":
             self.selectionThumbnailGrab = True
             self.stl_callback()
         for item in items:
-            if I == 8:
-                break
             self.partList.clear()
 
             if len(item["thumbnails"]) > 0:
@@ -589,10 +599,13 @@ class ThangsFetcher():
                 else:
                     print(f'Fetching {thumbnail}')
                     image_path = os.path.join(model_images_folder, str(uuid.uuid4()))
+                    socket.setdefaulttimeout(3)
                     urllib.request.urlretrieve(thumbnail, image_path)
+                    socket.setdefaulttimeout(500)
                     self.cached_model_images[item["modelId"]] = image_path
             except Exception as e:
                 print(e)
+                socket.setdefaulttimeout(500)
                 filePath = os.path.join(os.path.dirname(self.Thangs_Config.main_addon_file_location),"icons","placeholder.png")
                 image_path = os.path.join(item["modelId"], filePath)
                 self.cached_model_images[item["modelId"]] = image_path
@@ -622,19 +635,6 @@ class ThangsFetcher():
 
             self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get(
                 "originalFileType"), thumb.icon_id, item["domain"], 0))
-
-            if len(item["parts"]) > 0:
-                parts = item["parts"]
-                X = 1
-                for part in parts:
-                    print("Getting Thumbnail for {0}".format(part["modelId"]))
-                    self.partList.append(self.PartStruct(
-                        part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
-
-                    thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
-                        I, X, part["thumbnailUrl"], part["modelId"], temp_dir)).start()
-
-                    X += 1
 
             title = item.get('modelTitle') or item.get('modelFileName')
             self.modelList.append(self.ModelStruct(
@@ -820,6 +820,10 @@ class ThangsFetcher():
 
             responseData = response.json()
             responseData["searchMetadata"] = {}
+
+            self.lastMeshSearchReponse = responseData
+            self.PageNumber = 1
+            self.CurrentPage = 1
             self.display_stl_results(responseData, show_summary=True)
         except Exception as e:
             print(e)

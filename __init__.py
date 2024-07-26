@@ -832,7 +832,7 @@ preview_collections = fetcher.preview_collections
 def startSearch(self, value):
     if bpy.context.scene.thangs_model_search:
         queryText = bpy.context.scene.thangs_model_search
-        fetcher.search(query=queryText)
+        fetcher.search(query=queryText, newTextSearch=True)
 
 
 def uninstall_old_version_timer():
