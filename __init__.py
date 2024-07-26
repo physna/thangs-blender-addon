@@ -270,7 +270,7 @@ class SearchBySelect(bpy.types.Operator):
         global thangs_api
         global fetcher
 
-        print("Starting Login: Search by Select")
+        #print("Starting Login: Search by Select")
         try:
             print("Before STL Search")
             print("Act Obj")
@@ -291,10 +291,10 @@ class SearchBySelect(bpy.types.Operator):
         fetcher.selectionEmpty = False
         fetcher.selectionFailed = False
 
-        print("Starting Login and MeshSearch")
+        #print("Starting Login and MeshSearch")
         stl_path = fetcher.selectionSearch(bpy.context)
-        search_thread = threading.Thread(
-            target=self.stl_login_user, args=(_context, stl_path,)).start()
+        #search_thread = threading.Thread(
+            #target=self.stl_login_user, args=(_context, stl_path,)).start()
         return {'FINISHED'}
 
 def Model_Event(position):
