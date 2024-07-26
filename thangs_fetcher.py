@@ -136,24 +136,21 @@ class ThangsFetcher():
         if self.searching or self.selectionSearching:
             return False
         self.selectionSearching = True
-        print("6")
+
         self.thangs_ui_mode = 'SEARCH'
         self.stl_callback()
-        print("-5")
+
         act_obj = bpy.context.active_object
-        print("-4")
+
         temp_dir = os.path.join(
             self.Config.THANGS_MODEL_DIR, "ThangsSelectionSearch")
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
-        print("-3")
+
         if act_obj:
-            print("-2")
             previous_mode = act_obj.mode  # Keep current mode
             # Keep already created
-            print("-1")
             previous_objects = set(context.scene.objects)
-            print("0")
             try:
                 if act_obj.mode == "EDIT":
                     print("Searching Edit")
@@ -182,50 +179,68 @@ class ThangsFetcher():
                         use_selection=True)
 
                 else:
-                    print(".1")
-                    bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked": False, "mode": 'TRANSLATION'}, 
-                                                  TRANSFORM_OT_translate={"value": (0, 0, 0), 
-                                                                          #"orient_axis_ortho": 'X', 
-                                                                          "orient_type": 'GLOBAL', 
-                                                                          "orient_matrix": ((1, 0, 0), (0, 1, 0), (0, 0, 1)), 
-                                                                          "orient_matrix_type": 'GLOBAL', 
-                                                                          "constraint_axis": (False, False, False), 
-                                                                          "mirror": False, 
-                                                                          "use_proportional_edit": False, 
-                                                                          "proportional_edit_falloff": 'SMOOTH', 
-                                                                          "proportional_size": 1,
-                                                                          "use_proportional_connected": False, 
-                                                                          "use_proportional_projected": False, 
-                                                                          "snap": False, 
-                                                                          "snap_target": 'CLOSEST', 
-                                                                          "snap_point": (0, 0, 0), 
-                                                                          "snap_align": False, 
-                                                                          "snap_normal": (0, 0, 0), 
-                                                                          "gpencil_strokes": False, 
-                                                                          "cursor_transform": False, 
-                                                                          "texture_space": False, 
-                                                                          "remove_on_cancel": False, 
-                                                                          "view2d_edge_pan": False, 
-                                                                          "release_confirm": False, 
-                                                                          "use_accurate": False, 
-                                                                          "use_automerge_and_split": False})
-                    print(".2")
+                    if bpy.app.version >= (3, 6, 0):
+                        bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked": False, "mode": 'TRANSLATION'}, 
+                                                    TRANSFORM_OT_translate={"value": (0, 0, 0), 
+                                                                            "orient_type": 'GLOBAL', 
+                                                                            "orient_matrix": ((1, 0, 0), (0, 1, 0), (0, 0, 1)), 
+                                                                            "orient_matrix_type": 'GLOBAL', 
+                                                                            "constraint_axis": (False, False, False), 
+                                                                            "mirror": False, 
+                                                                            "use_proportional_edit": False, 
+                                                                            "proportional_edit_falloff": 'SMOOTH', 
+                                                                            "proportional_size": 1,
+                                                                            "use_proportional_connected": False, 
+                                                                            "use_proportional_projected": False, 
+                                                                            "snap": False, 
+                                                                            "snap_target": 'CLOSEST', 
+                                                                            "snap_point": (0, 0, 0), 
+                                                                            "snap_align": False, 
+                                                                            "snap_normal": (0, 0, 0), 
+                                                                            "gpencil_strokes": False, 
+                                                                            "cursor_transform": False, 
+                                                                            "texture_space": False, 
+                                                                            "remove_on_cancel": False, 
+                                                                            "view2d_edge_pan": False, 
+                                                                            "release_confirm": False, 
+                                                                            "use_accurate": False, 
+                                                                            "use_automerge_and_split": False})
+                    else:
+                        bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked": False, "mode": 'TRANSLATION'}, 
+                                                    TRANSFORM_OT_translate={"value": (0, 0, 0), 
+                                                                            "orient_axis_ortho": 'X', 
+                                                                            "orient_type": 'GLOBAL', 
+                                                                            "orient_matrix": ((1, 0, 0), (0, 1, 0), (0, 0, 1)), 
+                                                                            "orient_matrix_type": 'GLOBAL', 
+                                                                            "constraint_axis": (False, False, False), 
+                                                                            "mirror": False, 
+                                                                            "use_proportional_edit": False, 
+                                                                            "proportional_edit_falloff": 'SMOOTH', 
+                                                                            "proportional_size": 1,
+                                                                            "use_proportional_connected": False, 
+                                                                            "use_proportional_projected": False, 
+                                                                            "snap": False, 
+                                                                            "snap_target": 'CLOSEST', 
+                                                                            "snap_point": (0, 0, 0), 
+                                                                            "snap_align": False, 
+                                                                            "snap_normal": (0, 0, 0), 
+                                                                            "gpencil_strokes": False, 
+                                                                            "cursor_transform": False, 
+                                                                            "texture_space": False, 
+                                                                            "remove_on_cancel": False, 
+                                                                            "view2d_edge_pan": False, 
+                                                                            "release_confirm": False, 
+                                                                            "use_accurate": False, 
+                                                                            "use_automerge_and_split": False})
                     new_object = next(
                         o for o in context.scene.objects if o not in previous_objects)
-                    print(".3")
                     new_object.update_from_editmode()
-                    print(".4")
                     context.view_layer.objects.active = new_object
-                    print(".5")
                     path = Path(temp_dir)
-                    print(".6")
                     stl_path = path / f"blender_selection.stl"
-                    print(".7")
                     bpy.ops.export_mesh.stl(
                         filepath=str(stl_path),
                         use_selection=True)
-                    print(".8")
-                    print("stl_path: " + str(stl_path))
                     print(bpy.context.active_object)
                     context.view_layer.objects.active = new_object
 
