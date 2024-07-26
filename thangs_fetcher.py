@@ -192,7 +192,7 @@ class ThangsFetcher():
                         filepath=str(stl_path),
                         use_selection=True)
 
-                    print(stl_path)
+                    print("stl_path: " + str(stl_path))
                     print(bpy.context.active_object)
                     context.view_layer.objects.active = new_object
 
