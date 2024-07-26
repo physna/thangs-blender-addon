@@ -293,8 +293,8 @@ class SearchBySelect(bpy.types.Operator):
 
         #print("Starting Login and MeshSearch")
         stl_path = fetcher.selectionSearch(bpy.context)
-        #search_thread = threading.Thread(
-            #target=self.stl_login_user, args=(_context, stl_path,)).start()
+        search_thread = threading.Thread(
+            target=self.stl_login_user, args=(_context, stl_path,)).start()
         return {'FINISHED'}
 
 def Model_Event(position):
