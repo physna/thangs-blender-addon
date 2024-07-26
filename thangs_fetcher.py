@@ -183,8 +183,32 @@ class ThangsFetcher():
 
                 else:
                     print(".1")
-                    bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked": False, "mode": 'TRANSLATION'}, TRANSFORM_OT_translate={"value": (0, 0, 0), "orient_axis_ortho": 'X', "orient_type": 'GLOBAL', "orient_matrix": ((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type": 'GLOBAL', "constraint_axis": (False, False, False), "mirror": False, "use_proportional_edit": False, "proportional_edit_falloff": 'SMOOTH', "proportional_size": 1,
-                                                                                                                                        "use_proportional_connected": False, "use_proportional_projected": False, "snap": False, "snap_target": 'CLOSEST', "snap_point": (0, 0, 0), "snap_align": False, "snap_normal": (0, 0, 0), "gpencil_strokes": False, "cursor_transform": False, "texture_space": False, "remove_on_cancel": False, "view2d_edge_pan": False, "release_confirm": False, "use_accurate": False, "use_automerge_and_split": False})
+                    bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked": False, "mode": 'TRANSLATION'}, 
+                                                  TRANSFORM_OT_translate={"value": (0, 0, 0), 
+                                                                          #"orient_axis_ortho": 'X', 
+                                                                          "orient_type": 'GLOBAL', 
+                                                                          "orient_matrix": ((1, 0, 0), (0, 1, 0), (0, 0, 1)), 
+                                                                          "orient_matrix_type": 'GLOBAL', 
+                                                                          "constraint_axis": (False, False, False), 
+                                                                          "mirror": False, 
+                                                                          "use_proportional_edit": False, 
+                                                                          "proportional_edit_falloff": 'SMOOTH', 
+                                                                          "proportional_size": 1,
+                                                                          "use_proportional_connected": False, 
+                                                                          "use_proportional_projected": False, 
+                                                                          "snap": False, 
+                                                                          "snap_target": 'CLOSEST', 
+                                                                          "snap_point": (0, 0, 0), 
+                                                                          "snap_align": False, 
+                                                                          "snap_normal": (0, 0, 0), 
+                                                                          "gpencil_strokes": False, 
+                                                                          "cursor_transform": False, 
+                                                                          "texture_space": False, 
+                                                                          "remove_on_cancel": False, 
+                                                                          "view2d_edge_pan": False, 
+                                                                          "release_confirm": False, 
+                                                                          "use_accurate": False, 
+                                                                          "use_automerge_and_split": False})
                     print(".2")
                     new_object = next(
                         o for o in context.scene.objects if o not in previous_objects)
