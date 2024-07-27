@@ -346,6 +346,17 @@ class ImportModelOperator(Operator):
     def login_user(self, _context, LicenseUrl, modelIndex, partIndex):
         global thangs_api
         global fetcher
+        try:
+            bpy.app.timers.unregister(execute_queued_functions)
+        except Exception as e:
+            print(e)
+            pass
+
+        try:
+            bpy.app.timers.register(execute_queued_functions)
+        except Exception as e:
+            print(e)
+            pass
 
         print("Starting Login: Import Model")
         try:

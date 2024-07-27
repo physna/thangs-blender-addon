@@ -71,8 +71,10 @@ def import_model(file_extension, file_path):
 
         ReturnObject.failed = False
         ReturnObject.importing = False
-    except:
+    except Exception as e:
+        print(e) 
         ReturnObject.failed = True
         ReturnObject.importing = False
+        pass
 
     return ReturnObject

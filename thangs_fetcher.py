@@ -755,9 +755,6 @@ class ThangsFetcher():
 
             self.pcoll = self.preview_collections["main"]
 
-            if not get_api_token():
-                self.login_service.login_user(get_threading_service().wrap_up_threads)
-
             valid_api_token = False
             if isinstance(get_api_token(), str):
                 valid_api_token = True
