@@ -346,6 +346,17 @@ class ImportModelOperator(Operator):
     def login_user(self, _context, LicenseUrl, modelIndex, partIndex):
         global thangs_api
         global fetcher
+        try:
+            bpy.app.timers.unregister(execute_queued_functions)
+        except Exception as e:
+            print(e)
+            pass
+
+        try:
+            bpy.app.timers.register(execute_queued_functions)
+        except Exception as e:
+            print(e)
+            pass
 
         print("Starting Login: Import Model")
         try:
@@ -832,7 +843,7 @@ preview_collections = fetcher.preview_collections
 def startSearch(self, value):
     if bpy.context.scene.thangs_model_search:
         queryText = bpy.context.scene.thangs_model_search
-        fetcher.search(query=queryText)
+        fetcher.search(query=queryText, newTextSearch=True)
 
 
 def uninstall_old_version_timer():
@@ -944,7 +955,7 @@ def register():
     fetcher.preview_collections["main"] = fetcher.pcoll
     icon_collections["main"] = icons_dict
 
-    # bpy.utils.register_class(MeshSearch)
+    bpy.utils.register_class(MeshSearch)
     bpy.utils.register_class(TextSearch)
     bpy.utils.register_class(THANGS_OT_search_invoke)
     bpy.utils.register_class(SearchButton)
@@ -959,8 +970,8 @@ def register():
     bpy.utils.register_class(BrowseToCreatorOperator)
     bpy.utils.register_class(SearchBySelect)
     bpy.utils.register_class(BrowseToModelOperator)
-    # bpy.types.VIEW3D_MT_object_context_menu.append(draw_menu)
-    # bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(draw_menu)
+    bpy.types.VIEW3D_MT_object_context_menu.append(draw_menu)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.append(draw_menu)
 
     sync_register()
 
@@ -1050,7 +1061,7 @@ def unregister():
     fetcher.preview_collections.clear()
     icon_collections.clear()
 
-    # bpy.utils.unregister_class(MeshSearch)
+    bpy.utils.unregister_class(MeshSearch)
     bpy.utils.unregister_class(TextSearch)
     bpy.utils.unregister_class(THANGS_OT_search_invoke)
     bpy.utils.unregister_class(SearchButton)
@@ -1065,8 +1076,8 @@ def unregister():
     bpy.utils.unregister_class(BrowseToCreatorOperator)
     bpy.utils.unregister_class(SearchBySelect)
     bpy.utils.unregister_class(BrowseToModelOperator)
-    # bpy.types.VIEW3D_MT_object_context_menu.remove(draw_menu)
-    # bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(draw_menu)
+    bpy.types.VIEW3D_MT_object_context_menu.remove(draw_menu)
+    bpy.types.VIEW3D_MT_edit_mesh_context_menu.remove(draw_menu)
 
     sync_unregister()
 

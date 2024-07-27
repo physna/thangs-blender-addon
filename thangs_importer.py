@@ -320,6 +320,7 @@ class ThangsApi:
                 'import_model_duration_seconds': import_model_duration_seconds,
                 'exception': str(e),
             })
+
         download_model_duration_seconds = self.calc_duration(self.download_start_time, self.download_end_time)
         import_model_duration_seconds = self.calc_duration(self.download_end_time, time.time())
         self.amplitude.send_amplitude_event("Thangs Blender Addon - import model", event_properties={
