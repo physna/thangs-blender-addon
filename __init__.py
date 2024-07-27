@@ -148,7 +148,7 @@ def import_model():
 
 
 resultsToShow = 8
-
+#test change
 initialize_thangs_api(callback=import_model)
 fetcher = ThangsFetcher(callback=on_complete_search,
                         results_to_show=resultsToShow,
