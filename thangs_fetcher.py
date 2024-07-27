@@ -10,6 +10,7 @@ import os
 import math
 import ssl
 import time
+import socket
 
 from .model_info import ModelInfo
 from api_clients import get_thangs_events
@@ -65,6 +66,8 @@ class ThangsFetcher():
         self.results_to_show = results_to_show
 
         self.cached_model_images = {}
+        self.lastSearchIsText = True
+        self.lastMeshSearchReponse = None
         pass
 
     class PartStruct():
@@ -115,14 +118,18 @@ class ThangsFetcher():
         self.selectionFailed = False
         pass
 
-    def search(self, query):
+    def search(self, query, newTextSearch = False):
         if self.searching:
             return False
         self.query = query
         # this should return immediately with True
         # kick off a thread that does the searching
-        self.search_thread = threading.Thread(
-            target=self.get_http_search).start()
+        if self.lastSearchIsText or newTextSearch:
+            self.search_thread = threading.Thread(
+                target=self.get_http_search).start()
+        else:
+            self.search_thread = threading.Thread(
+                target=self.display_stl_results(self.lastMeshSearchReponse, show_summary=True)).start()
         return True
 
     def selectionSearch(self, context):
@@ -134,6 +141,7 @@ class ThangsFetcher():
         self.stl_callback()
 
         act_obj = bpy.context.active_object
+
         temp_dir = os.path.join(
             self.Config.THANGS_MODEL_DIR, "ThangsSelectionSearch")
         if not os.path.exists(temp_dir):
@@ -143,12 +151,11 @@ class ThangsFetcher():
             previous_mode = act_obj.mode  # Keep current mode
             # Keep already created
             previous_objects = set(context.scene.objects)
-
             try:
                 if act_obj.mode == "EDIT":
                     print("Searching Edit")
                     bpy.ops.mesh.duplicate_move()
-                    bpy.ops.mesh.solidify()
+                    #bpy.ops.mesh.solidify()
                     bpy.ops.mesh.separate(type='SELECTED')
 
                     # Back to object mode
@@ -172,28 +179,82 @@ class ThangsFetcher():
                         use_selection=True)
 
                 else:
-                    bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked": False, "mode": 'TRANSLATION'}, TRANSFORM_OT_translate={"value": (0, 0, 0), "orient_axis_ortho": 'X', "orient_type": 'GLOBAL', "orient_matrix": ((1, 0, 0), (0, 1, 0), (0, 0, 1)), "orient_matrix_type": 'GLOBAL', "constraint_axis": (False, False, False), "mirror": False, "use_proportional_edit": False, "proportional_edit_falloff": 'SMOOTH', "proportional_size": 1,
-                                                                                                                                        "use_proportional_connected": False, "use_proportional_projected": False, "snap": False, "snap_target": 'CLOSEST', "snap_point": (0, 0, 0), "snap_align": False, "snap_normal": (0, 0, 0), "gpencil_strokes": False, "cursor_transform": False, "texture_space": False, "remove_on_cancel": False, "view2d_edge_pan": False, "release_confirm": False, "use_accurate": False, "use_automerge_and_split": False})
-                    new_object = next(
-                        o for o in context.scene.objects if o not in previous_objects)
-                    new_object.update_from_editmode()
+                    obj = bpy.context.active_object
+                    if obj.type == 'MESH':
+                        if bpy.app.version >= (3, 6, 0):
+                            bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked": False, "mode": 'TRANSLATION'}, 
+                                                        TRANSFORM_OT_translate={"value": (0, 0, 0), 
+                                                                                "orient_type": 'GLOBAL', 
+                                                                                "orient_matrix": ((1, 0, 0), (0, 1, 0), (0, 0, 1)), 
+                                                                                "orient_matrix_type": 'GLOBAL', 
+                                                                                "constraint_axis": (False, False, False), 
+                                                                                "mirror": False, 
+                                                                                "use_proportional_edit": False, 
+                                                                                "proportional_edit_falloff": 'SMOOTH', 
+                                                                                "proportional_size": 1,
+                                                                                "use_proportional_connected": False, 
+                                                                                "use_proportional_projected": False, 
+                                                                                "snap": False, 
+                                                                                "snap_target": 'CLOSEST', 
+                                                                                "snap_point": (0, 0, 0), 
+                                                                                "snap_align": False, 
+                                                                                "snap_normal": (0, 0, 0), 
+                                                                                "gpencil_strokes": False, 
+                                                                                "cursor_transform": False, 
+                                                                                "texture_space": False, 
+                                                                                "remove_on_cancel": False, 
+                                                                                "view2d_edge_pan": False, 
+                                                                                "release_confirm": False, 
+                                                                                "use_accurate": False, 
+                                                                                "use_automerge_and_split": False})
+                        else:
+                            bpy.ops.object.duplicate_move(OBJECT_OT_duplicate={"linked": False, "mode": 'TRANSLATION'}, 
+                                                        TRANSFORM_OT_translate={"value": (0, 0, 0), 
+                                                                                "orient_axis_ortho": 'X', 
+                                                                                "orient_type": 'GLOBAL', 
+                                                                                "orient_matrix": ((1, 0, 0), (0, 1, 0), (0, 0, 1)), 
+                                                                                "orient_matrix_type": 'GLOBAL', 
+                                                                                "constraint_axis": (False, False, False), 
+                                                                                "mirror": False, 
+                                                                                "use_proportional_edit": False, 
+                                                                                "proportional_edit_falloff": 'SMOOTH', 
+                                                                                "proportional_size": 1,
+                                                                                "use_proportional_connected": False, 
+                                                                                "use_proportional_projected": False, 
+                                                                                "snap": False, 
+                                                                                "snap_target": 'CLOSEST', 
+                                                                                "snap_point": (0, 0, 0), 
+                                                                                "snap_align": False, 
+                                                                                "snap_normal": (0, 0, 0), 
+                                                                                "gpencil_strokes": False, 
+                                                                                "cursor_transform": False, 
+                                                                                "texture_space": False, 
+                                                                                "remove_on_cancel": False, 
+                                                                                "view2d_edge_pan": False, 
+                                                                                "release_confirm": False, 
+                                                                                "use_accurate": False, 
+                                                                                "use_automerge_and_split": False})
+                        new_object = next(
+                            o for o in context.scene.objects if o not in previous_objects)
+                        new_object.update_from_editmode()
+                        context.view_layer.objects.active = new_object
+                        path = Path(temp_dir)
+                        stl_path = path / f"blender_selection.stl"
+                        bpy.ops.export_mesh.stl(
+                            filepath=str(stl_path),
+                            use_selection=True)
+                        print(bpy.context.active_object)
+                        context.view_layer.objects.active = new_object
 
-                    context.view_layer.objects.active = new_object
-                    path = Path(temp_dir)
-                    stl_path = path / f"blender_selection.stl"
-                    bpy.ops.export_mesh.stl(
-                        filepath=str(stl_path),
-                        use_selection=True)
-
-                    print(stl_path)
-                    print(bpy.context.active_object)
-                    context.view_layer.objects.active = new_object
+                    else:
+                        raise
 
                 bpy.ops.object.delete()
 
                 return stl_path
 
-            except:
+            except Exception as e:
+                print(e)
                 bpy.ops.object.mode_set(mode=previous_mode)
                 pass
 
@@ -241,7 +302,7 @@ class ThangsFetcher():
 
     def get_stl_results(self, items):
         print("Started Counting Results")
-        self.totalModels = len(items)
+        self.totalModels = len(self.lastMeshSearchReponse["results"])
         pageTotal = math.ceil(self.totalModels/self.results_to_show)
         if pageTotal > 99:
             self.PageTotal = 99
@@ -279,6 +340,7 @@ class ThangsFetcher():
             print(e + f" on Image {X}")
 
     def display_search_results(self, responseData, show_summary=True):
+        self.lastSearchIsText = True
         temp_dir = os.path.join(
             self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
         if not os.path.exists(temp_dir):
@@ -522,12 +584,15 @@ class ThangsFetcher():
             return None
 
     def display_stl_results(self, responseData, show_summary=True):
+        self.lastSearchIsText = False
         temp_dir = os.path.join(
             self.Config.THANGS_MODEL_DIR, "ThangsSearchIcons")
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
 
-        items = responseData["results"]
+        self.CurrentPage = self.PageNumber
+
+        items = responseData["results"][(self.CurrentPage-1)*8 : self.CurrentPage*8]
         if self.newSearch == True:
             self.uuid = str(uuid.uuid4())
             self.searchMetaData = responseData["searchMetadata"]
@@ -546,11 +611,12 @@ class ThangsFetcher():
         ssl._create_default_https_context = ssl._create_unverified_context
 
         self.modelList.clear()
+        self.models.clear()
         I = 0
         if self.searchType == "object":
             self.selectionThumbnailGrab = True
             self.stl_callback()
-        for item in items[((self.CurrentPage-1)*8):(self.CurrentPage*8)]:
+        for item in items:
             self.partList.clear()
 
             if len(item["thumbnails"]) > 0:
@@ -558,58 +624,75 @@ class ThangsFetcher():
             else:
                 thumbnail = item["thumbnailUrl"]
 
+            download_path = None
+            if item.get("modelId", None) != None:
+                download_path = item.get("modelId", None) + '.stl'
+
             self.models.append(ModelInfo(
-                item["modelId"],
-                item.get('modelTitle') or item.get('modelFileName'),
-                item['attributionUrl'],
-                item["ownerUsername"],
-                item["license"],
-                item["domain"],
-                item["scope"],
-                item.get("originalFileType"),
+                item.get("modelId", None),
+                item.get("modelTitle", None) or item.get("modelFileName", None),
+                item.get("attributionUrl", None),
+                item.get("ownerUsername", None),
+                item.get("license", None),
+                item.get("domain", None),
+                item.get("scope", None),
+                item.get("originalFileType", None),
+                download_path,
                 (((self.CurrentPage - 1) * 8) + I)
             ))
 
-            icon_path = os.path.join(temp_dir, item["modelId"])
-            if not os.path.exists(icon_path):
-                os.makedirs(icon_path)
-            thumbnailPath = thumbnail.replace("%2F", "/").replace("?", "/")
-            icon_path = os.path.join(icon_path, thumbnailPath.split('/')[-1])
-            if not os.path.exists(icon_path):
-                try:
-                    print(f'Fetching {thumbnail}')
-                    filePath = urllib.request.urlretrieve(thumbnail, icon_path)
-                    icon_path = os.path.join(item["modelId"], filePath[0])
-                except Exception as e:
-                    print(e)
-                    filePath = Path(__file__ + "\icons\placeholder.png")
-                    icon_path = os.path.join(item["modelId"], filePath)
+            model_images_folder = os.path.join(temp_dir, item["modelId"])
+            if not os.path.exists(model_images_folder):
+                os.makedirs(model_images_folder)
 
             try:
-                thumb = self.pcoll.load(item["modelId"], icon_path, 'IMAGE')
-            except:
-                thumb = self.pcoll.load(
-                    item["modelId"]+str(I), icon_path, 'IMAGE')
+                cached_image_path = self.cached_model_images.get(item.get("modelId", None), None)
+                if cached_image_path != None and os.path.exists(cached_image_path):
+                    image_path = cached_image_path
+                    print(f'Loading cached thumbnail {image_path}')
+                else:
+                    print(f'Fetching {thumbnail}')
+                    image_path = os.path.join(model_images_folder, str(uuid.uuid4()))
+                    socket.setdefaulttimeout(3)
+                    urllib.request.urlretrieve(thumbnail, image_path)
+                    socket.setdefaulttimeout(500)
+                    self.cached_model_images[item["modelId"]] = image_path
+            except Exception as e:
+                print(e)
+                socket.setdefaulttimeout(500)
+                filePath = os.path.join(os.path.dirname(self.Thangs_Config.main_addon_file_location),"icons","placeholder.png")
+                image_path = os.path.join(item["modelId"], filePath)
+                self.cached_model_images[item["modelId"]] = image_path
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - Thumbnail Error",
+                                    event_properties={
+                                        'exception': str(e),
+                                        'model': item.get("modelTitle", None) or item.get("modelFileName", None),
+                                        'query': self.query,
+                                        'page': self.CurrentPage,
+                                        'function': 'fetch'
+                                    })
+
+            try:
+                thumb = self.pcoll.load(item["modelId"], image_path, 'IMAGE')
+            except Exception as e:
+                # AFAIK this covers an edge case where search results have duplicate models and also duplicate model ID's.
+                # The pcoll elements need to be unique so we're adding the index to the end of the model ID.
+                thumb = self.pcoll.load(item["modelId"]+str(I), image_path, 'IMAGE')
+                self.amplitude.send_amplitude_event("Thangs Blender Addon - Thumbnail Error",
+                                                    event_properties={
+                                                        'exception': str(e),
+                                                        'model': item.get("modelTitle", None) or item.get("modelFileName", None),
+                                                        'query': self.query,
+                                                        'page': self.CurrentPage,
+                                                        'function': 'load'
+                                                    })
 
             self.partList.append(self.PartStruct(item["modelId"], item["modelFileName"], item.get(
                 "originalFileType"), thumb.icon_id, item["domain"], 0))
 
-            if len(item["parts"]) > 0:
-                parts = item["parts"]
-                X = 1
-                for part in parts:
-                    print("Getting Thumbnail for {0}".format(part["modelId"]))
-                    self.partList.append(self.PartStruct(
-                        part["modelId"], part["modelFileName"], part.get("originalFileType"), "", part["domain"], X))
-
-                    thumb_thread = threading.Thread(target=self.get_lazy_thumbs, args=(
-                        I, X, part["thumbnailUrl"], part["modelId"], temp_dir)).start()
-
-                    X += 1
-
             title = item.get('modelTitle') or item.get('modelFileName')
             self.modelList.append(self.ModelStruct(
-                modelTitle=title, partList=self.partList[:]))
+                modelTitle=title.strip(), partList=self.partList[:]))
 
             I += 1
 
@@ -672,25 +755,30 @@ class ThangsFetcher():
 
             self.pcoll = self.preview_collections["main"]
 
-            if not get_api_token():
-                self.login_service.login_user(get_threading_service().wrap_up_threads)
-            headers = {
-                "Authorization": "Bearer " + get_api_token(),
-            }
+            valid_api_token = False
+            if isinstance(get_api_token(), str):
+                valid_api_token = True
 
             try:
                 isDevOrStaging = 'true' if any([x in os.path.basename(self.Thangs_Config.config_path) for x in ["dev_", "staging_"]]) else 'false'
                 url_endpoint = str(
                     self.Thangs_Config.thangs_config['url'])+"api/search/v1/mesh-url?filename=mesh.stl&sendContentLengthRangeHeader="+isDevOrStaging
                 print(url_endpoint)
-                response = requests.get(url_endpoint, headers=headers)
+                if valid_api_token:
+                    response = requests.get(url_endpoint, headers={"Authorization": "Bearer " + get_api_token(), })
+                else:
+                    response = requests.get(url_endpoint)
                 response.raise_for_status()
+
             except Exception as e:
+                print(e)
                 if response.status_code == 401 or response.status_code == 403:
                     try:
                         self.login_service.login_user(get_threading_service().wrap_up_threads)
-                        headers = {"Authorization": "Bearer " + get_api_token(), }
-                        response = requests.get(url_endpoint, headers=headers)
+                        if valid_api_token:
+                            response = requests.get(url_endpoint, headers={"Authorization": "Bearer " + get_api_token(), })
+                        else:
+                            response = requests.get(url_endpoint)
                         response.raise_for_status()
                     except Exception as ex:
                         self.selectionSearching = False
@@ -715,7 +803,6 @@ class ThangsFetcher():
                     return
 
             responseData = response.json()
-
             signedUrl = responseData["signedUrl"]
             new_Filename = responseData["newFileName"]
             data = open(stl_path, 'rb').read()
@@ -730,6 +817,7 @@ class ThangsFetcher():
                     putHeaders = {
                         "Content-Type": "model/stl",
                     }
+
                 putRequest = requests.put(
                     url=signedUrl, data=data, headers=putHeaders)
                 print(putRequest.status_code)
@@ -754,7 +842,10 @@ class ThangsFetcher():
                     self.Thangs_Config.thangs_config['url']+"api/search/v1/mesh-search?filepath=" + new_Filename)
                 print(url)
 
-                response = requests.get(url=url, headers=headers)
+                if valid_api_token:
+                    response = requests.get(url=url, headers={"Authorization": "Bearer " + get_api_token(), })
+                else:
+                    response = requests.get(url=url)
                 response.raise_for_status()
             except Exception as e:
                 second_attempt_succeeded = False
@@ -762,8 +853,10 @@ class ThangsFetcher():
                     if response.status_code == 401 or response.status_code == 403:
                         try:
                             self.login_service.login_user(get_threading_service().wrap_up_threads)
-                            headers = {"Authorization": "Bearer " + get_api_token(), }
-                            response = requests.get(url=url, headers=headers)
+                            if valid_api_token:
+                                response = requests.get(url=url, headers={"Authorization": "Bearer " + get_api_token(), })
+                            else:
+                                response = requests.get(url=url)
                             response.raise_for_status()
                             second_attempt_succeeded = True
                         except Exception as ex:
@@ -791,6 +884,10 @@ class ThangsFetcher():
 
             responseData = response.json()
             responseData["searchMetadata"] = {}
+
+            self.lastMeshSearchReponse = responseData
+            self.PageNumber = 1
+            self.CurrentPage = 1
             self.display_stl_results(responseData, show_summary=True)
         except Exception as e:
             print(e)
