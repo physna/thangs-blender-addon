@@ -22,9 +22,9 @@ def get_thangs_api():
     return _thangs_api
 
 
-def initialize_thangs_api(callback):
+def initialize_thangs_api(callback, callback_search):
     global _thangs_api
-    _thangs_api = ThangsApi(callback)
+    _thangs_api = ThangsApi(callback, callback_search)
 
 
 class Config:
@@ -86,8 +86,9 @@ class Utils:
 
 
 class ThangsApi:
-    def __init__(self, callback=None):
+    def __init__(self, callback=None, callback_search=None):
         self.import_callback = callback
+        self.redraw_search_callback = callback_search
         self.Thangs_Config = get_config()
         self.amplitude = get_thangs_events()
 
@@ -195,6 +196,9 @@ class ThangsApi:
                                                             'domain': self.model.domain,
                                                             'exception': str(e),
                                                         })
+                    self.failed = True
+                    self.importing = False
+                    self.run_in_main_thread(self.redraw_search_callback)
                     return
             self.import_limit = False
             responseData = response.json()
