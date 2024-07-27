@@ -149,7 +149,7 @@ def import_model():
 
 resultsToShow = 8
 
-initialize_thangs_api(callback=import_model, callback_search=on_complete_search)
+initialize_thangs_api(callback=import_model)
 fetcher = ThangsFetcher(callback=on_complete_search,
                         results_to_show=resultsToShow,
                         stl_callback=redraw_search)
