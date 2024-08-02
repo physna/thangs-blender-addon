@@ -67,7 +67,11 @@ def import_model(file_extension, file_path):
                                       set_material_blend=True)
         else:
             print('STL Import')
-            bpy.ops.import_mesh.stl(filepath=file_path)
+            if bpy.app.version < (4, 2, 0):
+                bpy.ops.import_mesh.stl(filepath=file_path)
+            else:
+                bpy.ops.wm.stl_import(filepath=file_path)
+            
 
         ReturnObject.failed = False
         ReturnObject.importing = False
