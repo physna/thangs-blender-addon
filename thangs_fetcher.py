@@ -181,7 +181,7 @@ class ThangsFetcher():
                     else:
                         bpy.ops.wm.stl_export(
                         filepath=str(stl_path),
-                        use_selection=True)
+                        export_selected_objects=True)
 
 
                 else:
@@ -253,7 +253,7 @@ class ThangsFetcher():
                         else:
                             bpy.ops.wm.stl_export(
                             filepath=str(stl_path),
-                            use_selection=True)
+                            export_selected_objects=True)
                         print(bpy.context.active_object)
                         context.view_layer.objects.active = new_object
 
