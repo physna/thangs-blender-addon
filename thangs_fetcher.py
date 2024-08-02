@@ -174,9 +174,15 @@ class ThangsFetcher():
                     path = Path(temp_dir)
                     stl_path = path / f"blender_selection.stl"
                     print(stl_path)
-                    bpy.ops.export_mesh.stl(
+                    if bpy.app.version < (4, 2, 0):
+                        bpy.ops.export_mesh.stl(
                         filepath=str(stl_path),
                         use_selection=True)
+                    else:
+                        bpy.ops.wm.stl_export(
+                        filepath=str(stl_path),
+                        export_selected_objects=True)
+
 
                 else:
                     obj = bpy.context.active_object
@@ -240,9 +246,14 @@ class ThangsFetcher():
                         context.view_layer.objects.active = new_object
                         path = Path(temp_dir)
                         stl_path = path / f"blender_selection.stl"
-                        bpy.ops.export_mesh.stl(
+                        if bpy.app.version < (4, 2, 0):
+                            bpy.ops.export_mesh.stl(
                             filepath=str(stl_path),
                             use_selection=True)
+                        else:
+                            bpy.ops.wm.stl_export(
+                            filepath=str(stl_path),
+                            export_selected_objects=True)
                         print(bpy.context.active_object)
                         context.view_layer.objects.active = new_object
 
